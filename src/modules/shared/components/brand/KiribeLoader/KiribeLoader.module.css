@@ -1,0 +1,99 @@
+/* Looping "hand-stamped" wordmark: each glyph pops, holds, then fades — the
+   glyphs share one cycle duration but stagger via animation-delay, so the
+   staggered wave repeats forever without desync. */
+
+.root {
+  display: inline-block;
+  line-height: 0;
+  color: var(--color-burgundy);
+}
+
+.svg {
+  display: block;
+  height: 100%;
+  width: auto;
+}
+
+.glyph,
+.accent {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+}
+
+.glyph {
+  animation: kiribeGlyphCycle var(--kiribe-cycle, 3s) var(--ease-spring)
+    infinite both;
+}
+
+.accent {
+  animation: kiribeAccentCycle var(--kiribe-cycle, 3s) var(--ease-spring)
+    infinite both;
+}
+
+@keyframes kiribeGlyphCycle {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  10% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  66% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes kiribeAccentCycle {
+  0% {
+    opacity: 0;
+    transform: translateY(-10%) rotate(-16deg);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(1%) rotate(8deg);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+  66% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+  80% {
+    opacity: 0;
+    transform: translateY(-6%) rotate(-6deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6%) rotate(-6deg);
+  }
+}
+
+/* Reduced motion — static wordmark with a gentle breathing pulse, no stagger. */
+@media (prefers-reduced-motion: reduce) {
+  .glyph,
+  .accent {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .root {
+    animation: logo-pulse 2.4s ease-in-out infinite;
+  }
+}

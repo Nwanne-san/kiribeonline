@@ -1,0 +1,32 @@
+.mark {
+  display: inline-block;
+  line-height: 0;
+  color: var(--color-burgundy);
+}
+
+/* Light tone for dark surfaces (footer) — burgundy on navy fails contrast. */
+.light {
+  color: var(--color-cream);
+}
+
+.svg {
+  display: block;
+  height: 100%;
+  width: auto;
+}
+
+.accent {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Subtle logo "wink" while a route transition is pending. */
+.loading .accent {
+  animation: accent-flick 0.55s var(--ease-spring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading .accent {
+    animation: none;
+  }
+}
