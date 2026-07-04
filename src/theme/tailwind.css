@@ -1,0 +1,288 @@
+@import "tailwindcss";
+@layer theme, base, mui, components, utilities;
+
+@theme {
+  /* ── Typography ──────────────────────────────────────────── */
+  --font-headline: "Outfit", system-ui, sans-serif;
+  --font-body: "Open Sans", system-ui, sans-serif;
+  --font-sans: var(--font-body);
+
+  /* ── Brand palette ───────────────────────────────────────── */
+  --color-burgundy: #6b1d2a;
+  --color-burgundy-dark: #4a1420;
+  --color-burgundy-light: #8b2d3e;
+  --color-burgundy-contrast: #ffffff;
+
+  --color-mustard: #c9a227;
+  --color-mustard-dark: #a88620;
+  --color-mustard-light: #f5e6a8;
+  --color-mustard-contrast: #1a1a1a;
+
+  /* ── Surfaces ────────────────────────────────────────────── */
+  --color-cream: #faf8f5;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f9fafb;
+  --color-surface-muted: #f3f4f6;
+  --color-surface-overlay: rgba(0, 0, 0, 0.55);
+
+  --color-footer: #101828;
+  --color-archive-hero: #1c1214;
+
+  /* ── Text + border ───────────────────────────────────────── */
+  --color-ink: #1a1a1a;
+  --color-ink-secondary: #4b5563;
+  --color-muted: #6b7280;
+  --color-muted-soft: #98a2b3;
+  --color-border: #e5e7eb;
+  --color-border-soft: #f0f0f0;
+  --color-divider: #d1d1d1;
+
+  /* ── Status colours ──────────────────────────────────────── */
+  --color-success: #15803d;
+  --color-success-bg: #ecfdf3;
+  --color-warning: #b54708;
+  --color-warning-bg: #fff4e5;
+  --color-danger: #b42318;
+  --color-danger-bg: #fee4e2;
+  --color-info: #0086c9;
+  --color-info-bg: #e7fffd;
+
+  /* ── Category accents (match src/theme/category-colors.ts) */
+  --color-cat-film: #6b1d2a;
+  --color-cat-tv: #1a1a1a;
+  --color-cat-opinion: #c9a227;
+  --color-cat-news: #2563eb;
+  --color-cat-spotlight: #7c3aed;
+  --color-cat-documentary: #15803d;
+  --color-cat-events: #0d9488;
+
+  /* ── Backwards-compat aliases (older code uses kiribe-*) ── */
+  --color-kiribe-mustard: var(--color-mustard);
+  --color-kiribe-mustard-light: var(--color-mustard-light);
+  --color-kiribe-burgundy: var(--color-burgundy);
+  --color-kiribe-burgundy-dark: var(--color-burgundy-dark);
+  --color-kiribe-cream: var(--color-cream);
+  --color-kiribe-ink: var(--color-ink);
+  --color-kiribe-muted: var(--color-muted);
+  --color-kiribe-border: var(--color-border);
+  --color-kiribe-white: var(--color-surface);
+
+  /* ── Layout primitives ───────────────────────────────────── */
+  --container-editorial: 1216px;
+  --container-narrow: 720px;
+
+  /* ── Radii ───────────────────────────────────────────────── */
+  --radius-card: 8px;
+  --radius-card-lg: 12px;
+  --radius-pill: 9999px;
+
+  /* ── Shadows ─────────────────────────────────────────────── */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.08),
+    0 12px 32px rgba(0, 0, 0, 0.08);
+
+  /* ── Motion ──────────────────────────────────────────────── */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* playful overshoot — matches the hand-drawn brand */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+
+  /* ── Breakpoints (mirror CW) ─────────────────────────────── */
+  --breakpoint-xs: 24rem; /* 384px */
+  --breakpoint-sm: 30rem; /* 480px */
+  --breakpoint-md: 48rem; /* 768px */
+  --breakpoint-base: 64rem; /* 1024px */
+  --breakpoint-lg: 80rem; /* 1280px */
+  --breakpoint-xl: 90rem; /* 1440px */
+  --breakpoint-2xl: 100rem; /* 1600px */
+  --breakpoint-3xl: 120rem; /* 1920px */
+}
+
+/* ── Global base styles ────────────────────────────────────── */
+body {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-cream);
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  background: transparent;
+}
+
+/* ── Component shortcuts (used by both Tailwind + MUI files) ─ */
+@layer components {
+  .editorial-container {
+    @apply mx-auto w-full px-4 md:px-8;
+    max-width: var(--container-editorial);
+  }
+
+  .editorial-section {
+    @apply py-12 md:py-16;
+  }
+
+  .kicker {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .gold-rule {
+    width: 3rem;
+    height: 2px;
+    background: var(--color-mustard);
+  }
+
+  .gold-rule-wide {
+    width: 6rem;
+    height: 2px;
+    background: var(--color-mustard);
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* ── Motion presets ────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 180ms var(--ease-out-soft) forwards;
+}
+
+/* Skeleton sheen — a sweeping highlight over MUI's built-in pulse */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.6s var(--ease-out-soft) infinite;
+  pointer-events: none;
+}
+
+/* Loader — letter bodies pop in with a spring overshoot */
+@keyframes letter-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Loader — accents/tittles flick in with a small wiggle */
+@keyframes accent-flick {
+  0% {
+    opacity: 0;
+    transform: translateY(-8%) rotate(-14deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(1%) rotate(7deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+}
+
+/* Loader (reduced motion) — a gentle breathing opacity */
+@keyframes logo-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Route progress — indeterminate sweep across the header edge */
+@keyframes bar-indeterminate {
+  0% {
+    transform: translateX(-100%) scaleX(0.4);
+  }
+  50% {
+    transform: translateX(0%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.5);
+  }
+}
+
+/* Reduced motion — collapse expressive animation to simple fades/none */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeIn {
+    animation: fadeIn 1ms linear forwards;
+  }
+  .skeleton-shimmer::after {
+    animation: none;
+    display: none;
+  }
+}
+
+/* ── Form autofill clean-up (matches CW pattern) ──────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-surface) inset !important;
+  box-shadow: 0 0 0px 1000px var(--color-surface) inset !important;
+  -webkit-text-fill-color: inherit !important;
+  transition: background-color 5000s ease-in-out 0s;
+}

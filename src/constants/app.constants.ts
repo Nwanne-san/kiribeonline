@@ -1,0 +1,54 @@
+/** Non-secret app-wide defaults — import from `@/constants`. */
+
+export const DEFAULT_PAGE_LIMIT = 24;
+export const MAX_PAGE_LIMIT = 50;
+export const PAGE_LIMIT_OPTIONS = [12, 24, 48] as const;
+
+export const MIN_SEARCH_LENGTH = 2;
+export const DEFAULT_DEBOUNCE_MS = 300;
+
+export const URL_PARAMS = {
+  page: "page",
+  limit: "limit",
+  q: "q",
+  view: "view",
+  filter: "filter",
+  modal: "modal",
+} as const;
+
+export const LIST_VIEW_MODES = ["grid", "list", "feed"] as const;
+export type ListViewMode = (typeof LIST_VIEW_MODES)[number];
+export const DEFAULT_LIST_VIEW: ListViewMode = "grid";
+
+export const LIST_STALE_TIME_MS = 5 * 60 * 1000;
+export const SEARCH_STALE_TIME_MS = 0;
+export const QUERY_RETRY_COUNT = 2;
+
+export const DEFAULT_ARTICLES_RATE_LIMIT = 60;
+export const DEFAULT_SEARCH_RATE_LIMIT = 30;
+export const DEFAULT_ANALYTICS_VIEW_RATE_LIMIT = 120;
+export const DEFAULT_HEALTH_RATE_LIMIT = 30;
+
+/** Public write endpoints. */
+export const DEFAULT_CONTACT_RATE_LIMIT = 5;
+export const DEFAULT_SUBSCRIBE_RATE_LIMIT = 3;
+export const DEFAULT_SUBSCRIBE_CONFIRM_RATE_LIMIT = 10;
+
+/** Credential endpoint — two dimensions: per IP and per email. */
+export const DEFAULT_ADMIN_LOGIN_RATE_LIMIT = 5;
+export const DEFAULT_ADMIN_LOGIN_EMAIL_RATE_LIMIT = 10;
+
+/** Shared bucket for all admin write routes, keyed on the session user id. */
+export const DEFAULT_ADMIN_WRITE_RATE_LIMIT = 60;
+
+/** Rate-limit windows. */
+export const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+export const RATE_LIMIT_WINDOW_15_MIN_MS = 15 * 60 * 1000;
+export const RATE_LIMIT_WINDOW_1_HOUR_MS = 60 * 60 * 1000;
+
+export const DEFAULT_LIST_REVALIDATE_SECONDS = 60;
+
+/** Max size for a single admin media upload. */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+export const ARTICLE_LIST_SORT = "-publishedAt";
