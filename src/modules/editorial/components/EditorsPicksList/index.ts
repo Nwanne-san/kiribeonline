@@ -1,0 +1,1 @@
+export { EditorsPicksList } from "./EditorsPicksList";
