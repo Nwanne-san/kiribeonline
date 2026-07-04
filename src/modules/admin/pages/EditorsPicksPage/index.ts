@@ -1,0 +1,1 @@
+export { EditorsPicksPage } from "./EditorsPicksPage";

@@ -1,0 +1,1 @@
+export { CategoryArchivePage } from "./CategoryArchivePage";
