@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    target-branch: develop
+    labels:
+      - dependencies
+    groups:
+      payload:
+        patterns:
+          - "@payloadcms/*"
+          - "payload"
+      mui:
+        patterns:
+          - "@mui/*"
+          - "@emotion/*"
+      dev-deps:
+        dependency-type: development
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    target-branch: develop
+    labels:
+      - ci

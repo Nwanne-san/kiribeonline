@@ -1,0 +1,277 @@
+"use client";
+
+import CloseIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Collapse from "@mui/material/Collapse";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import NextLink from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
+import { KiribeTypography, publicRoute } from "@/modules/shared/components/ui";
+import { PublicRoutes } from "@/routes/public.routes";
+import { CATEGORY_COLORS } from "@/theme/category-colors";
+
+type SearchResult = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  publishedAt?: string;
+  categories?: Array<{ name?: string; slug?: string }>;
+};
+
+const MIN_QUERY = 2;
+const DEBOUNCE_MS = 200;
+
+function getCategoryColor(slug?: string) {
+  if (!slug) return "#6B1D2A";
+  const key = slug as keyof typeof CATEGORY_COLORS;
+  return CATEGORY_COLORS[key]?.border ?? "#6B1D2A";
+}
+
+export function HeaderSearch() {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Focus the input on open.
+  useEffect(() => {
+    if (open) {
+      const t = setTimeout(() => inputRef.current?.focus(), 80);
+      return () => clearTimeout(t);
+    }
+    setTouched(false);
+    setResults([]);
+    setQ("");
+  }, [open]);
+
+  // Esc closes.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // Debounced search.
+  useEffect(() => {
+    if (!open) return;
+    const trimmed = q.trim();
+    if (trimmed.length < MIN_QUERY) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setTouched(true);
+    const handle = setTimeout(async () => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      try {
+        const res = await fetch(
+          `/api/articles?q=${encodeURIComponent(trimmed)}&limit=5`,
+          { signal: controller.signal }
+        );
+        if (!res.ok) throw new Error("Search failed");
+        const json = (await res.json()) as { data?: { docs?: SearchResult[] } };
+        setResults(json.data?.docs ?? []);
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          setResults([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(handle);
+  }, [q, open]);
+
+  return (
+    <>
+      <IconButton
+        aria-label={open ? "Close search" : "Open search"}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        sx={{ color: "text.primary", p: 0.75 }}
+        size="small"
+      >
+        {open ? <CloseIcon fontSize="small" /> : <SearchIcon fontSize="small" />}
+      </IconButton>
+
+      {open && (
+        <Box
+          onClick={() => setOpen(false)}
+          sx={{
+            position: "fixed",
+            inset: "64px 0 0 0",
+            bgcolor: "rgba(0,0,0,0.4)",
+            zIndex: (theme) => theme.zIndex.appBar - 1,
+          }}
+          aria-hidden
+        />
+      )}
+
+      <Collapse
+        in={open}
+        timeout={180}
+        sx={{
+          position: "absolute",
+          top: 64,
+          left: 0,
+          right: 0,
+          zIndex: (theme) => theme.zIndex.appBar,
+        }}
+      >
+        <Box
+          onClick={(e) => e.stopPropagation()}
+          sx={{
+            bgcolor: "background.paper",
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            boxShadow: "0 12px 24px rgba(0,0,0,0.08)",
+          }}
+        >
+          <Box
+            sx={{
+              maxWidth: 1280,
+              mx: "auto",
+              px: { xs: 2, md: 4 },
+              py: { xs: 2.5, md: 3 },
+            }}
+          >
+            <TextField
+              inputRef={inputRef}
+              fullWidth
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search articles…"
+              inputProps={{ "aria-label": "Search Kiribé articles" }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: "text.secondary" }} />
+                  </InputAdornment>
+                ),
+                endAdornment: loading ? (
+                  <InputAdornment position="end">
+                    <CircularProgress size={18} thickness={5} color="inherit" />
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  fontSize: "1.125rem",
+                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+                  "& fieldset": { borderColor: "divider" },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                  "&.Mui-focused fieldset": { borderColor: "primary.main", borderWidth: 1 },
+                },
+                "& .MuiOutlinedInput-input": { py: 1.75 },
+              }}
+            />
+
+            <Box sx={{ mt: 2, minHeight: 80 }}>
+              {!touched && q.trim().length === 0 && (
+                <KiribeTypography variant="body2" color="text.secondary">
+                  Type a title, topic, or author to search the Kiribé archive.
+                </KiribeTypography>
+              )}
+
+              {touched && q.trim().length > 0 && q.trim().length < MIN_QUERY && (
+                <KiribeTypography variant="body2" color="text.secondary">
+                  Keep typing — at least {MIN_QUERY} characters.
+                </KiribeTypography>
+              )}
+
+              {touched && q.trim().length >= MIN_QUERY && !loading && results.length === 0 && (
+                <KiribeTypography variant="body2" color="text.secondary">
+                  No matches for &ldquo;{q.trim()}&rdquo;. Try a different term.
+                </KiribeTypography>
+              )}
+
+              {results.length > 0 && (
+                <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />} spacing={0}>
+                  {results.map((article) => {
+                    const cat = article.categories?.[0];
+                    return (
+                      <NextLink
+                        key={article.id}
+                        href={publicRoute(PublicRoutes.articleDetail, { slug: article.slug })}
+                        onClick={() => setOpen(false)}
+                        style={{ textDecoration: "none", color: "inherit" }}
+                      >
+                        <Box
+                          sx={{
+                            py: 1.5,
+                            px: 1,
+                            mx: -1,
+                            borderRadius: 1,
+                            transition: "background 120ms ease",
+                            "&:hover": { bgcolor: "action.hover" },
+                          }}
+                        >
+                          <Stack direction="row" alignItems="flex-start" spacing={1.5}>
+                            {cat?.name && (
+                              <Box sx={{ flexShrink: 0, mt: 0.5 }}>
+                                <CategoryBadge
+                                  label={cat.name}
+                                  color={getCategoryColor(cat.slug)}
+                                  variant="solid"
+                                />
+                              </Box>
+                            )}
+                            <Box sx={{ minWidth: 0 }}>
+                              <KiribeTypography
+                                sx={{
+                                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+                                  fontSize: "1rem",
+                                  fontWeight: 600,
+                                  lineHeight: 1.35,
+                                  color: "text.primary",
+                                }}
+                              >
+                                {article.title}
+                              </KiribeTypography>
+                              {article.excerpt && (
+                                <KiribeTypography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  sx={{
+                                    mt: 0.5,
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 1,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  {article.excerpt}
+                                </KiribeTypography>
+                              )}
+                            </Box>
+                          </Stack>
+                        </Box>
+                      </NextLink>
+                    );
+                  })}
+                </Stack>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Collapse>
+    </>
+  );
+}

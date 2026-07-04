@@ -1,0 +1,1 @@
+export { KiribeTypography } from "./KiribeTypography";
