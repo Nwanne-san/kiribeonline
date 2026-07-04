@@ -1,0 +1,23 @@
+---
+description: Editorial list pages must sync state to URL via shared hooks and constants
+globs: src/modules/editorial/**,src/utils/hooks/**,src/app/api/articles/**,src/app/api/search/**
+alwaysApply: false
+---
+
+# Kiribe list URL state
+
+## Rules
+
+1. Sync list UI state to URL query params — never hold `page`, `q`, `view`, or filters only in React state
+2. Use shared hooks: `usePagination`, `useFilter`, `useDebouncedUrlParam`, `useListViewMode`, `useModalRoute`
+3. Compose editorial fetching in `useArticlesList` — do not duplicate query wiring in page components
+4. Import limits and debounce from `@/constants` — never hardcode `24`, `300`, etc. in components or API routes
+5. Client list reads use app routes `/api/articles` and `/api/search`, not Payload REST directly
+6. Reset `page` to 1 when search, filter, or view mode changes
+7. Server must always `clampLimit()` — never trust client `limit`
+
+## Reference
+
+- Constants: `src/constants/app.constants.ts`
+- Content layer: `src/lib/content/`
+- Architect memory: `.claude/agent-memory/software-architect/url-state-pagination.md`
