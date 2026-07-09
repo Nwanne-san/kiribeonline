@@ -63,8 +63,9 @@ src/lib/payload/   # getPayloadClient()
 
 ### API layer
 
+- **Server domain logic lives in `src/server/`** (BrandDrive-style domain co-location): `src/server/modules/<domain>/` holds `<domain>.service.ts` + `.dto.ts` + `.types.ts` + `.access.ts`; auth guards + capability model live in `src/server/auth/` and `src/server/access/roles.ts`. Thin route handlers in `src/app/api/admin/<domain>/route.ts` import from `@/server/*`. See `docs/ARCHITECTURE.md`.
 - `src/utils/client.ts` — Axios singleton, cookie auth
-- `src/services/*.service.ts` — endpoint configs (add as API grows)
+- `src/services/*.service.ts` — client endpoint configs (add as API grows)
 - TanStack Query: `useQueryService`, `useInfiniteQueryService`, `useMutationService`
 - URL list state: `usePagination`, `useFilter`, `useDebouncedUrlParam`, `useListViewMode`, `useModalRoute`
 - App constants: `src/constants/app.constants.ts` — page limits, debounce, cache defaults (never hardcode in components)
@@ -151,6 +152,10 @@ Project memory lives in `.claude/agent-memory/<role>/`. Keep `MEMORY.md` under 2
 |---------|------|
 | Architecture rules | `docs/ARCHITECTURE.md` |
 | Payload config | `src/payload.config.ts` |
+| Server domain logic | `src/server/modules/<domain>/` |
+| Capability model | `src/server/access/roles.ts` |
+| Auth guards / session | `src/server/auth/` |
+| Auth hardening plan | `docs/AUTH-HARDENING.md` |
 | getPayload | `src/lib/payload/get-payload.ts` |
 | HTTP client | `src/utils/client.ts` |
 | Content types | `src/modules/shared/types/content.ts` |
@@ -170,4 +175,9 @@ Project memory lives in `.claude/agent-memory/<role>/`. Keep `MEMORY.md` under 2
 
 ## Out of scope (v1)
 
-Separate Film/TV/Videos sections, multi-admin, comments, paywall, native app, i18n, personalization.
+Separate Film/TV/Videos sections, comments, paywall, native app, i18n, personalization.
+
+> **Multi-admin is now in scope.** The team uses role-based access (admin / editor
+> / writer / contributor) enforced by a capability map in `src/payload/access/roles.ts`.
+> Every admin mutation guards a capability server-side (`requireAdminWriteCapability`),
+> and the client reads its own capabilities from `/api/admin/me` via `usePermissions`.
