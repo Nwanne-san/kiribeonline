@@ -7,6 +7,11 @@ export const adminAuthService = {
   logout: { path: `${ADMIN_API}/auth/logout`, method: ApiMethods.POST },
 };
 
+/** Current admin identity + resolved capabilities (client permission source). */
+export const adminMeService = {
+  get: { path: `${ADMIN_API}/me`, method: ApiMethods.GET },
+};
+
 export const adminDashboardService = {
   get: { path: `${ADMIN_API}/dashboard`, method: ApiMethods.GET },
 };
@@ -18,9 +23,18 @@ export const adminAnalyticsService = {
 export const adminArticlesService = {
   list: { path: `${ADMIN_API}/articles`, method: ApiMethods.GET },
   create: { path: `${ADMIN_API}/articles`, method: ApiMethods.POST },
+  bulk: { path: `${ADMIN_API}/articles/bulk`, method: ApiMethods.POST },
   detail: (id: string) => ({ path: `${ADMIN_API}/articles/${id}`, method: ApiMethods.GET }),
   update: (id: string) => ({ path: `${ADMIN_API}/articles/${id}`, method: ApiMethods.PATCH }),
   remove: (id: string) => ({ path: `${ADMIN_API}/articles/${id}`, method: ApiMethods.DELETE }),
+};
+
+export const adminUsersService = {
+  list: { path: `${ADMIN_API}/users`, method: ApiMethods.GET },
+  invite: { path: `${ADMIN_API}/users`, method: ApiMethods.POST },
+  detail: (id: string) => ({ path: `${ADMIN_API}/users/${id}`, method: ApiMethods.GET }),
+  update: (id: string) => ({ path: `${ADMIN_API}/users/${id}`, method: ApiMethods.PATCH }),
+  remove: (id: string) => ({ path: `${ADMIN_API}/users/${id}`, method: ApiMethods.DELETE }),
 };
 
 export const adminCategoriesService = {
@@ -55,6 +69,7 @@ export const adminSettingsService = {
 
 /** Stable React Query key namespaces for admin lists/details. */
 export const adminQueryKeys = {
+  me: "admin-me",
   dashboard: "admin-dashboard",
   analytics: "admin-analytics",
   articles: "admin-articles",
@@ -64,4 +79,6 @@ export const adminQueryKeys = {
   media: "admin-media",
   homepage: "admin-homepage",
   settings: "admin-settings",
+  users: "admin-users",
+  user: "admin-user",
 } as const;

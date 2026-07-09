@@ -1,4 +1,4 @@
-import { requireAdminUser } from "@/lib/auth";
+import { requireAdminUser } from "@/server/auth";
 import { AdminShell } from "@/modules/admin/components/AdminShell";
 
 export const dynamic = "force-dynamic";

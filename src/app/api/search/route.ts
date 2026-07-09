@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { apiError, apiSuccess, handleRouteError } from "@/lib/api";
-import { getClientIp } from "@/lib/auth";
+import { getClientIp } from "@/server/auth";
 import { isSearchQueryValid, queryArticles } from "@/lib/content";
 import {
   DEFAULT_SEARCH_RATE_LIMIT,

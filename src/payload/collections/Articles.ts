@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
-import { adminOnly } from "../access";
+import { denyFieldWrite, requireCapability } from "../access";
+import { articleStatusFieldAccess } from "@/server/modules/articles/articles.access";
 import { slugField } from "../fields/slug";
 import { auditAfterChange, auditAfterDelete } from "../hooks/audit";
 import {
@@ -25,9 +26,9 @@ export const Articles: CollectionConfig = {
         },
       };
     },
-    create: adminOnly,
-    update: adminOnly,
-    delete: adminOnly,
+    create: requireCapability("articles:create"),
+    update: requireCapability("articles:edit"),
+    delete: requireCapability("articles:delete"),
   },
   versions: {
     drafts: true,
@@ -66,9 +67,21 @@ export const Articles: CollectionConfig = {
       hasMany: true,
     },
     {
+      name: "author",
+      type: "relationship",
+      relationTo: "users",
+      admin: {
+        position: "sidebar",
+        description: "Byline shown on the article and used for author stats",
+      },
+    },
+    {
       name: "status",
       type: "select",
       defaultValue: "draft",
+      access: {
+        update: articleStatusFieldAccess,
+      },
       options: [
         { label: "Draft", value: "draft" },
         { label: "Scheduled", value: "scheduled" },
@@ -108,6 +121,10 @@ export const Articles: CollectionConfig = {
       name: "viewCount",
       type: "number",
       defaultValue: 0,
+      access: {
+        // System-managed (incremented via overrideAccess); never API-writable.
+        update: denyFieldWrite,
+      },
       admin: {
         position: "sidebar",
         readOnly: true,

@@ -3,21 +3,26 @@ import { apiSuccess, parseBody } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
-  requireAdminWrite,
-} from "@/lib/auth";
+  requireAdminWriteCapability,
+} from "@/server/auth";
 import {
   createAdminArticle,
   listAdminArticles,
-} from "@/lib/admin/articles";
-import { articleInputSchema } from "@/lib/validation/admin";
+} from "@/server/modules/articles";
+import { articleInputSchema } from "@/server/modules";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
     await requireAdminUserFromRequest(request);
-    const status = request.nextUrl.searchParams.get("status") ?? undefined;
-    const result = await listAdminArticles({ status: status ?? undefined });
+    const params = request.nextUrl.searchParams;
+    const result = await listAdminArticles({
+      status: params.get("status") ?? undefined,
+      q: params.get("q") ?? undefined,
+      page: params.get("page") ? Number(params.get("page")) : undefined,
+      limit: params.get("limit") ? Number(params.get("limit")) : undefined,
+    });
     return apiSuccess(result);
   } catch (error) {
     return handleAdminRouteError(error);
@@ -26,7 +31,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "articles:create");
     const body = await request.json();
     const input = parseBody(articleInputSchema, body);
     const doc = await createAdminArticle(input);

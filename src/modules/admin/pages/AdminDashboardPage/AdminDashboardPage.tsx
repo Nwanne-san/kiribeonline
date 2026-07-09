@@ -21,9 +21,11 @@ import { KiribeButton, KiribeTypography } from "@/modules/shared/components/ui";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 
 type DashboardStats = {
-  published: number;
-  draft: number;
-  scheduled: number;
+  articles: {
+    published: number;
+    draft: number;
+    scheduled: number;
+  };
   media: number;
 };
 
@@ -47,9 +49,9 @@ export function AdminDashboardPage() {
   });
 
   const stats = [
-    { label: "Published", value: data?.published ?? 0 },
-    { label: "Drafts", value: data?.draft ?? 0 },
-    { label: "Scheduled", value: data?.scheduled ?? 0 },
+    { label: "Published", value: data?.articles?.published ?? 0 },
+    { label: "Drafts", value: data?.articles?.draft ?? 0 },
+    { label: "Scheduled", value: data?.articles?.scheduled ?? 0 },
     { label: "Media", value: data?.media ?? 0 },
   ];
 

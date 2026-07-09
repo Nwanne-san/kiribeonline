@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { apiSuccess } from "@/lib/api";
-import { handleAdminRouteError, requireAdminUserFromRequest } from "@/lib/auth";
-import { getAnalyticsData } from "@/lib/admin/analytics";
+import { handleAdminRouteError, requireAdminUserFromRequest } from "@/server/auth";
+import { getAnalyticsData } from "@/server/modules/analytics";
 
 export const dynamic = "force-dynamic";
 

@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { handleRouteError } from "@/lib/api";
 import { getCategoriesForPublic } from "@/lib/content/query-categories";
-import { getClientIp } from "@/lib/auth";
+import { getClientIp } from "@/server/auth";
 import { DEFAULT_ARTICLES_RATE_LIMIT, RATE_LIMIT_WINDOW_MS } from "@/constants";
 import { rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
 

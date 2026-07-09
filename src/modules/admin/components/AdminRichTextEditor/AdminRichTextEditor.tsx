@@ -88,8 +88,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminCard, AdminFieldLabel } from "@/modules/admin/components/AdminUi";
 import { KiribeTextField } from "@/modules/shared/components/ui";
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
-import type { AdminMediaRef } from "@/lib/admin/types";
-import { normalizeLexicalBody } from "@/lib/admin/text-to-lexical";
+import type { AdminMediaRef } from "@/server/modules";
+import { normalizeLexicalBody } from "@/server/shared/text-to-lexical";
 
 const theme = {
   paragraph: "kiribe-lexical-p",

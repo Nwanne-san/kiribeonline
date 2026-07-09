@@ -3,17 +3,17 @@ import { apiSuccess, parseBody } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
-  requireAdminWrite,
-} from "@/lib/auth";
-import { getSiteSettingsAdmin, updateSiteSettingsAdmin } from "@/lib/admin/homepage";
-import { settingsPatchSchema } from "@/lib/validation/admin";
+  requireAdminWriteCapability,
+} from "@/server/auth";
+import { getSiteSettings, updateSiteSettings } from "@/server/modules/settings";
+import { settingsPatchSchema } from "@/server/modules/settings/settings.dto";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
     await requireAdminUserFromRequest(request);
-    const data = await getSiteSettingsAdmin();
+    const data = await getSiteSettings();
     return apiSuccess(data);
   } catch (error) {
     return handleAdminRouteError(error);
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "settings:manage");
     const body = await request.json();
     const input = parseBody(settingsPatchSchema, body);
     const data: Record<string, unknown> = {};
@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest) {
         ogImage: input.seoDefaults.ogImageId ?? undefined,
       };
     }
-    const updated = await updateSiteSettingsAdmin(data);
+    const updated = await updateSiteSettings(data);
     return apiSuccess(updated);
   } catch (error) {
     return handleAdminRouteError(error);

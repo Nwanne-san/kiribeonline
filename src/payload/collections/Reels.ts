@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { adminOnly } from "../access";
+import { requireCapability } from "../access";
 import { slugField } from "../fields/slug";
 import { auditAfterChange, auditAfterDelete } from "../hooks/audit";
 import {
@@ -19,9 +19,9 @@ export const Reels: CollectionConfig = {
       if (user) return true;
       return { published: { equals: true } };
     },
-    create: adminOnly,
-    update: adminOnly,
-    delete: adminOnly,
+    create: requireCapability("reels:manage"),
+    update: requireCapability("reels:manage"),
+    delete: requireCapability("reels:manage"),
   },
   fields: [
     { name: "title", type: "text", required: true },

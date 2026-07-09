@@ -4,8 +4,8 @@ import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
   requireAdminWrite,
-} from "@/lib/auth";
-import { deleteCreatorAdmin, getCreatorAdmin, updateCreatorAdmin } from "@/lib/admin/creators";
+} from "@/server/auth";
+import { deleteCreatorAdmin, getCreatorAdmin, updateCreatorAdmin } from "@/server/modules/creators";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";

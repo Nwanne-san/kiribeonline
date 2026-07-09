@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { APP_URL } from "@/lib/email/resend";
-import { getClientIp } from "@/lib/auth";
+import { getClientIp } from "@/server/auth";
 import {
   DEFAULT_SUBSCRIBE_CONFIRM_RATE_LIMIT,
   RATE_LIMIT_WINDOW_15_MIN_MS,

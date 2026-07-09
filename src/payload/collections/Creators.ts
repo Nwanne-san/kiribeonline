@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { adminOnly, anyone } from "../access";
+import { anyone, requireCapability } from "../access";
 import { slugField } from "../fields/slug";
 import { auditAfterChange, auditAfterDelete } from "../hooks/audit";
 import {
@@ -16,9 +16,9 @@ export const Creators: CollectionConfig = {
   },
   access: {
     read: anyone,
-    create: adminOnly,
-    update: adminOnly,
-    delete: adminOnly,
+    create: requireCapability("creators:manage"),
+    update: requireCapability("creators:manage"),
+    delete: requireCapability("creators:manage"),
   },
   fields: [
     { name: "name", type: "text", required: true },

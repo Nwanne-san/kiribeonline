@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { apiSuccess } from "@/lib/api";
-import { handleAdminRouteError, requireAdminWrite } from "@/lib/auth";
-import { deleteMedia } from "@/lib/admin";
+import { handleAdminRouteError, requireAdminWrite } from "@/server/auth";
+import { deleteMedia } from "@/server/modules";
 
 export const dynamic = "force-dynamic";
 

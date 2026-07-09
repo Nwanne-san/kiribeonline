@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { adminOnly, anyone } from "../access";
+import { anyone, requireCapability } from "../access";
 import { auditAfterChange, auditAfterDelete } from "../hooks/audit";
 
 export const Media: CollectionConfig = {
@@ -10,9 +10,9 @@ export const Media: CollectionConfig = {
   },
   access: {
     read: anyone,
-    create: adminOnly,
-    update: adminOnly,
-    delete: adminOnly,
+    create: requireCapability("media:upload"),
+    update: requireCapability("media:upload"),
+    delete: requireCapability("media:delete"),
   },
   upload: {
     staticDir: "media",

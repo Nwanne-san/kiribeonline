@@ -26,8 +26,8 @@ import { useMutationService } from "@/utils/hooks/useMutationService";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import client from "@/utils/client";
 import { unwrapApiData } from "@/lib/api/unwrap";
-import type { AdminMediaRef } from "@/lib/admin/types";
-import { normalizeLexicalBody, textToLexical } from "@/lib/admin/text-to-lexical";
+import type { AdminMediaRef } from "@/server/modules";
+import { normalizeLexicalBody, textToLexical } from "@/server/shared/text-to-lexical";
 
 type Category = { id: string; name: string; brandColor?: string | null };
 type Tag = { id: string; name: string; brandColor?: string | null };

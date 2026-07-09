@@ -142,6 +142,11 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
+  role: 'admin' | 'editor' | 'writer' | 'contributor';
+  status: 'active' | 'pending' | 'suspended';
+  avatar?: (number | null) | Media;
+  inviteTokenHash?: string | null;
+  inviteTokenExpiresAt?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -159,6 +164,28 @@ export interface User {
       }[]
     | null;
   password?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  caption?: string | null;
+  credit?: string | null;
+  usageCount?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -187,6 +214,10 @@ export interface Article {
   };
   categories?: (number | Category)[] | null;
   tags?: (number | Tag)[] | null;
+  /**
+   * Byline shown on the article and used for author stats
+   */
+  author?: (number | null) | User;
   status?: ('draft' | 'scheduled' | 'published' | 'archived') | null;
   publishedAt?: string | null;
   /**
@@ -203,28 +234,6 @@ export interface Article {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  caption?: string | null;
-  credit?: string | null;
-  usageCount?: number | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -370,6 +379,10 @@ export interface ContactMessage {
   subject: string;
   message: string;
   ipAddress?: string | null;
+  /**
+   * Marked read once an admin has seen the message
+   */
+  read?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -468,6 +481,11 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  role?: T;
+  status?: T;
+  avatar?: T;
+  inviteTokenHash?: T;
+  inviteTokenExpiresAt?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -497,6 +515,7 @@ export interface ArticlesSelect<T extends boolean = true> {
   body?: T;
   categories?: T;
   tags?: T;
+  author?: T;
   status?: T;
   publishedAt?: T;
   featured?: T;
@@ -645,6 +664,7 @@ export interface ContactMessagesSelect<T extends boolean = true> {
   subject?: T;
   message?: T;
   ipAddress?: T;
+  read?: T;
   updatedAt?: T;
   createdAt?: T;
 }

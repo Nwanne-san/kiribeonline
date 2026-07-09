@@ -1,16 +1,17 @@
 import type { NextRequest } from "next/server";
-import { apiSuccess, parseBody } from "@/lib/api";
+import { apiError, apiSuccess, parseBody } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
-  requireAdminWrite,
-} from "@/lib/auth";
+  requireAdminWriteCapability,
+} from "@/server/auth";
 import {
   deleteAdminArticle,
   getAdminArticle,
   updateAdminArticle,
-} from "@/lib/admin/articles";
-import { articlePatchSchema } from "@/lib/validation/admin";
+} from "@/server/modules/articles";
+import { articlePatchSchema } from "@/server/modules";
+import { can } from "@/server/access/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -29,10 +30,18 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
 
 export async function PATCH(request: NextRequest, { params }: RouteProps) {
   try {
-    await requireAdminWrite(request);
+    // Auth + rate-limit + base edit capability first, then parse the payload.
+    const user = await requireAdminWriteCapability(request, "articles:edit");
     const { id } = await params;
     const body = await request.json();
     const input = parseBody(articlePatchSchema, body);
+    // A status change into/out of published requires the stronger capability.
+    if (
+      (input.status === "published" || input.status === "archived") &&
+      !can(user.role, "articles:publish")
+    ) {
+      return apiError("Forbidden", 403);
+    }
     const doc = await updateAdminArticle(id, input);
     return apiSuccess(doc);
   } catch (error) {
@@ -42,7 +51,7 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
 
 export async function DELETE(request: NextRequest, { params }: RouteProps) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "articles:delete");
     const { id } = await params;
     await deleteAdminArticle(id);
     return apiSuccess({ deleted: true });

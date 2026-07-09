@@ -4,8 +4,8 @@ import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
   requireAdminWrite,
-} from "@/lib/auth";
-import { deleteReelAdmin, getReelAdmin, updateReelAdmin } from "@/lib/admin/reels";
+} from "@/server/auth";
+import { deleteReelAdmin, getReelAdmin, updateReelAdmin } from "@/server/modules/reels";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";

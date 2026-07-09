@@ -4,9 +4,9 @@ import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
   requireAdminWrite,
-} from "@/lib/auth";
-import { getHomepageAdmin, updateHomepageAdmin } from "@/lib/admin/homepage";
-import { homepagePatchSchema } from "@/lib/validation/admin";
+} from "@/server/auth";
+import { getHomepageAdmin, updateHomepageAdmin } from "@/server/modules/homepage";
+import { homepagePatchSchema } from "@/server/modules";
 
 export const dynamic = "force-dynamic";
 
