@@ -9,7 +9,12 @@ One Vercel project, branch-linked environments, separate Neon branches and R2 bu
 | `main` | Production | `kiribeonline.com` (client domain) | `main` | `kiribe-media-prod` |
 | `staging` | Preview (pinned) | `staging.kiribeonline.com` | `staging` | `kiribe-media-staging` |
 | `develop` | Preview (pinned, optional) | `dev.kiribeonline.com` or `*.vercel.app` | `dev` branch (or staging) | staging bucket |
-| feature PRs | Preview | `*.vercel.app` | dev/staging DB OK for QA | staging bucket |
+| feature PRs | Preview | `*.vercel.app` | **own ephemeral branch** (Neon–Vercel preview integration; falls back to `dev`) | staging bucket |
+
+Enable the **Neon–Vercel integration** so each preview deploy gets its own
+database branch (auto-created per PR, removed on merge). This keeps feature work
+off the shared `dev`/`staging`/`main` databases — see
+[GIT-WORKFLOW.md → Database branches](./GIT-WORKFLOW.md#database-branches-neon--isolate-work-protect-the-one-production-db).
 
 Set `ENVIRONMENT=production|staging|development` in each Vercel environment.
 

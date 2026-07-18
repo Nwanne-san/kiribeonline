@@ -1,12 +1,12 @@
-/** Category accent colors for filters and badges — V5 design */
+/** Category accent colors for filters and badges — Figma V5 exact fills. */
 export const CATEGORY_COLORS = {
   all: { border: "#1A1A1A", text: "#FFFFFF", bg: "#1A1A1A" },
-  film: { border: "#6B1D2A", text: "#6B1D2A", bg: "#6B1D2A" },
-  tv: { border: "#1A1A1A", text: "#1A1A1A", bg: "#1A1A1A" },
-  opinion: { border: "#C9A227", text: "#C9A227", bg: "#C9A227" },
+  film: { border: "#7F0400", text: "#7F0400", bg: "#7F0400" },
+  tv: { border: "#1E2939", text: "#1E2939", bg: "#1E2939" },
+  opinion: { border: "#E6A313", text: "#E6A313", bg: "#E6A313" },
   news: { border: "#2563EB", text: "#2563EB", bg: "#2563EB" },
-  spotlight: { border: "#7C3AED", text: "#7C3AED", bg: "#7C3AED" },
-  documentary: { border: "#15803D", text: "#15803D", bg: "#15803D" },
+  spotlight: { border: "#6E11B0", text: "#6E11B0", bg: "#6E11B0" },
+  documentary: { border: "#016630", text: "#016630", bg: "#016630" },
   events: { border: "#0D9488", text: "#0D9488", bg: "#0D9488" },
 } as const;
 

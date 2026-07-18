@@ -36,7 +36,10 @@ export function AdminLoginPage() {
         return;
       }
       unwrapApiData(json);
-      router.replace(AdminRoutes.dashboard);
+      // Route through the admin index so the server picks the right landing
+      // page for this user's capabilities (contributors can't open the
+      // analytics dashboard and would otherwise hit a 403).
+      router.replace(AdminRoutes.home);
     } catch {
       setError("Login failed.");
     } finally {

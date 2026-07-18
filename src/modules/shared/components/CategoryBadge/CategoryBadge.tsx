@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import { KiribeTypography } from "@/modules/shared/components/ui";
 
 type CategoryBadgeProps = {
   label: string;
@@ -7,29 +6,32 @@ type CategoryBadgeProps = {
   variant?: "solid" | "outline";
 };
 
-export function CategoryBadge({ label, color = "#6B1D2A", variant = "outline" }: CategoryBadgeProps) {
+/**
+ * Category tag — Figma V5: sharp-edged, Outfit, uppercase with 0.1em tracking.
+ * `solid` = filled accent chip (card overlays); `outline` = bordered accent chip (tag lists).
+ */
+export function CategoryBadge({ label, color = "#7F0400", variant = "outline" }: CategoryBadgeProps) {
   const isSolid = variant === "solid";
   return (
     <Box
       component="span"
       sx={{
         display: "inline-block",
-        fontSize: "0.65rem",
-        fontWeight: 700,
-        letterSpacing: "0.08em",
+        fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+        fontSize: "0.75rem",
+        fontWeight: 400,
+        letterSpacing: "0.1em",
+        lineHeight: "1rem",
         textTransform: "uppercase",
-        px: 0.75,
-        py: 0.25,
-        borderRadius: 0.5,
+        px: 1.25,
+        py: 0.5,
+        borderRadius: 0,
         border: `1px solid ${color}`,
         bgcolor: isSolid ? color : "transparent",
         color: isSolid ? "#fff" : color,
-        lineHeight: 1.4,
       }}
     >
-      <KiribeTypography component="span" variant="caption" sx={{ color: "inherit", fontWeight: 700 }}>
-        {label}
-      </KiribeTypography>
+      {label}
     </Box>
   );
 }

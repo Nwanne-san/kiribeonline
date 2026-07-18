@@ -1,5 +1,5 @@
 import type { GlobalConfig } from "payload";
-import { adminOnly, anyone } from "../access";
+import { anyone, requireCapability } from "../access";
 import { auditGlobalAfterChange } from "../hooks/audit-global";
 
 export const SiteSettings: GlobalConfig = {
@@ -7,7 +7,7 @@ export const SiteSettings: GlobalConfig = {
   label: "Site Settings",
   access: {
     read: anyone,
-    update: adminOnly,
+    update: requireCapability("settings:manage"),
   },
   hooks: {
     afterChange: [auditGlobalAfterChange("site-settings")],

@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { apiError, apiSuccess, handleRouteError } from "@/lib/api";
-import { getClientIp } from "@/lib/auth";
+import { getClientIp } from "@/server/auth";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 import { DEFAULT_ANALYTICS_VIEW_RATE_LIMIT, RATE_LIMIT_WINDOW_MS } from "@/constants";
 import { rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";

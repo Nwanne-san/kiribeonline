@@ -42,6 +42,30 @@ export function getRelativeTime(dateString: string | Date) {
   return formatDate(date);
 }
 
+/** Walk a Lexical body collecting text to estimate reading time (~200 wpm). */
+export function estimateReadingTime(body: unknown): number {
+  let words = 0;
+  const walk = (node: unknown) => {
+    if (!node || typeof node !== "object") return;
+    const n = node as { text?: unknown; children?: unknown };
+    if (typeof n.text === "string") {
+      words += n.text.trim().split(/\s+/).filter(Boolean).length;
+    }
+    if (Array.isArray(n.children)) n.children.forEach(walk);
+  };
+  const root = (body as { root?: unknown })?.root;
+  walk(root);
+  return Math.max(1, Math.round(words / 200));
+}
+
+/** Resolve a populated author relation to a display name, if available. */
+export function resolveAuthorName(
+  author?: { name?: string | null } | string | null
+): string | undefined {
+  if (author && typeof author === "object" && author.name) return author.name;
+  return undefined;
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()

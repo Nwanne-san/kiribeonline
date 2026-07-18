@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getClientIp } from "@/lib/auth";
+import { getClientIp } from "@/server/auth";
 import { DEFAULT_HEALTH_RATE_LIMIT, RATE_LIMIT_WINDOW_MS } from "@/constants";
 import { rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
 

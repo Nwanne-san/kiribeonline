@@ -4,10 +4,10 @@ import { apiSuccess } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
-  requireAdminWrite,
-} from "@/lib/auth";
+  requireAdminWriteCapability,
+} from "@/server/auth";
 import { MAX_UPLOAD_BYTES } from "@/constants";
-import { listMediaAdmin } from "@/lib/admin/homepage";
+import { listMedia } from "@/server/modules/media";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     await requireAdminUserFromRequest(request);
-    const result = await listMediaAdmin();
+    const { searchParams } = new URL(request.url);
+    const result = await listMedia({
+      page: searchParams.get("page") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
+    });
     return apiSuccess(result);
   } catch (error) {
     return handleAdminRouteError(error);
@@ -24,16 +28,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "media:upload");
     const formData = await request.formData();
     const file = formData.get("file");
     const alt = String(formData.get("alt") ?? "").trim();
 
     if (!(file instanceof File)) {
-      throw new Error("File is required.");
+      return NextResponse.json({ error: "File is required." }, { status: 400 });
     }
     if (!alt) {
-      throw new Error("Alt text is required.");
+      return NextResponse.json({ error: "Alt text is required." }, { status: 400 });
     }
     if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(

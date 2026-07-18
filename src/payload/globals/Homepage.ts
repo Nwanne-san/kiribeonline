@@ -1,5 +1,5 @@
 import type { GlobalConfig } from "payload";
-import { adminOnly, anyone } from "../access";
+import { anyone, requireCapability } from "../access";
 import { auditGlobalAfterChange } from "../hooks/audit-global";
 import { revalidateHomepageGlobalAfterChange } from "../hooks/revalidate-homepage";
 
@@ -14,7 +14,7 @@ export const Homepage: GlobalConfig = {
   label: "Homepage",
   access: {
     read: anyone,
-    update: adminOnly,
+    update: requireCapability("homepage:manage"),
   },
   hooks: {
     afterChange: [auditGlobalAfterChange("homepage"), revalidateHomepageGlobalAfterChange],

@@ -83,7 +83,12 @@ export default buildConfig({
               accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
               secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
             },
-            endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            // Prefer an explicit endpoint (paste the exact one from the bucket's
+            // S3 API panel — handles jurisdiction endpoints like `<id>.eu.…`).
+            // Falls back to the standard endpoint built from the account id.
+            endpoint:
+              process.env.R2_S3_ENDPOINT ||
+              `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
             region: "auto",
             forcePathStyle: true,
           },
