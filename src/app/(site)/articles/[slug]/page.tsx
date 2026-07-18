@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { mapPayloadArticle, queryArticleBySlug } from "@/lib/content";
+import { mapPayloadArticle, queryArticleBySlug, queryArticles } from "@/lib/content";
+import type { ArticleCardDoc } from "@/lib/content/types";
 import { ArticleDetailPage } from "@/modules/editorial/pages/ArticleDetailPage";
 
 type PageProps = {
@@ -28,5 +29,16 @@ export default async function Page({ params }: PageProps) {
   }
 
   const article = mapPayloadArticle(doc as never);
-  return <ArticleDetailPage article={article} />;
+
+  const primaryCategorySlug = article.categories?.[0]?.slug;
+  let relatedArticles: ArticleCardDoc[] = [];
+  if (primaryCategorySlug) {
+    const related = await queryArticles({
+      categorySlug: primaryCategorySlug,
+      limit: 4,
+    });
+    relatedArticles = related.docs.filter((doc) => doc.id !== article.id).slice(0, 3);
+  }
+
+  return <ArticleDetailPage article={article} relatedArticles={relatedArticles} />;
 }

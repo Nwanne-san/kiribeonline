@@ -11,6 +11,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import NextLink from "next/link";
 import { useEffect, useRef, useState } from "react";
+import type { PublicCategory } from "@/lib/content/query-categories";
 import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
 import { KiribeTypography, publicRoute } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
@@ -34,7 +35,7 @@ function getCategoryColor(slug?: string) {
   return CATEGORY_COLORS[key]?.border ?? "#6B1D2A";
 }
 
-export function HeaderSearch() {
+export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[] }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -185,9 +186,64 @@ export function HeaderSearch() {
 
             <Box sx={{ mt: 2, minHeight: 80 }}>
               {!touched && q.trim().length === 0 && (
-                <KiribeTypography variant="body2" color="text.secondary">
-                  Type a title, topic, or author to search the Kiribé archive.
-                </KiribeTypography>
+                <>
+                  <KiribeTypography variant="body2" color="text.secondary">
+                    Type a title, topic, or author to search the Kiribé archive.
+                  </KiribeTypography>
+
+                  {categories.length > 0 && (
+                    <Box sx={{ mt: 3 }}>
+                      <KiribeTypography
+                        component="p"
+                        sx={{
+                          fontSize: "0.6875rem",
+                          fontWeight: 600,
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase",
+                          color: "text.secondary",
+                          mb: 1.5,
+                        }}
+                      >
+                        Browse by category
+                      </KiribeTypography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                        {categories.map((category) => (
+                          <Box
+                            key={category.id}
+                            component={NextLink}
+                            href={publicRoute(PublicRoutes.categoryDetail, {
+                              slug: category.slug,
+                            })}
+                            onClick={() => setOpen(false)}
+                            sx={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              px: 1.75,
+                              py: 0.75,
+                              borderRadius: 999,
+                              border: "1px solid",
+                              borderColor: "divider",
+                              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+                              fontSize: "0.75rem",
+                              fontWeight: 500,
+                              letterSpacing: "0.04em",
+                              textTransform: "uppercase",
+                              color: "text.primary",
+                              textDecoration: "none",
+                              transition: "color 120ms ease, border-color 120ms ease",
+                              "&:hover": {
+                                borderColor: "primary.main",
+                                color: "primary.main",
+                              },
+                            }}
+                          >
+                            {category.name}
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </>
               )}
 
               {touched && q.trim().length > 0 && q.trim().length < MIN_QUERY && (
