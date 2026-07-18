@@ -83,12 +83,16 @@ async function getContentPerformance(): Promise<DashboardPerformanceItem[]> {
   }));
 }
 
-async function getRecentActivity(): Promise<DashboardActivityItem[]> {
+/**
+ * Recent audit-log events, newest first. Used both for the dashboard preview
+ * (small limit) and the full Recent Activity page (larger limit).
+ */
+export async function listActivity(limit = 8): Promise<DashboardActivityItem[]> {
   const payload = await getPayloadClient();
   const result = await payload.find({
     collection: "audit-logs",
     sort: "-createdAt",
-    limit: 8,
+    limit: Math.min(Math.max(limit, 1), 100),
     depth: 0,
     overrideAccess: true,
   });
@@ -100,6 +104,10 @@ async function getRecentActivity(): Promise<DashboardActivityItem[]> {
     targetId: doc.targetId ? String(doc.targetId) : undefined,
     createdAt: String(doc.createdAt ?? ""),
   }));
+}
+
+function getRecentActivity(): Promise<DashboardActivityItem[]> {
+  return listActivity(8);
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
