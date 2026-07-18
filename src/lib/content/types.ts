@@ -27,6 +27,10 @@ export type ArticleCardDoc = Pick<
   heroImage?: Article["heroImage"];
   categories?: Array<{ id: string; name: string; slug: string }>;
   tags?: Array<{ id: string; name: string; slug: string }>;
+  /** Populated byline (depth ≥ 1). May arrive as a bare id string at depth 0. */
+  author?: { id?: string | number; name?: string | null } | string | null;
+  /** Lexical body — present on raw Payload docs; used for read-time estimates. */
+  body?: unknown;
 };
 
 export type ArticleFilterInput = {

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { requireCronSecret } from "@/lib/auth";
+import { requireCronSecret } from "@/server/auth";
 import { apiSuccess } from "@/lib/api";
 import { publishScheduledArticles } from "@/services/cron.service";
 

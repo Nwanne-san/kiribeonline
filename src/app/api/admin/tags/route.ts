@@ -3,17 +3,17 @@ import { apiSuccess, parseBody } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
-  requireAdminWrite,
-} from "@/lib/auth";
-import { createTagAdmin, listTagsAdmin } from "@/lib/admin/homepage";
-import { tagInputSchema } from "@/lib/validation/admin";
+  requireAdminWriteCapability,
+} from "@/server/auth";
+import { createTag, listTags } from "@/server/modules/tags";
+import { tagInputSchema } from "@/server/modules/tags/tags.dto";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
     await requireAdminUserFromRequest(request);
-    const result = await listTagsAdmin();
+    const result = await listTags();
     return apiSuccess(result);
   } catch (error) {
     return handleAdminRouteError(error);
@@ -22,10 +22,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "taxonomy:manage");
     const body = await request.json();
     const input = parseBody(tagInputSchema, body);
-    const doc = await createTagAdmin(input);
+    const doc = await createTag(input);
     return apiSuccess(doc);
   } catch (error) {
     return handleAdminRouteError(error);

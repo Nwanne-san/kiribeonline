@@ -93,7 +93,7 @@ const DEFAULT_CATEGORY_MODULES: HomepageCategoryModule[] = [
   },
 ];
 
-function mapCreator(doc: Record<string, unknown>): PublicCreator {
+export function mapCreator(doc: Record<string, unknown>): PublicCreator {
   const portraitRaw = doc.portrait;
   const portrait =
     portraitRaw && typeof portraitRaw === "object"

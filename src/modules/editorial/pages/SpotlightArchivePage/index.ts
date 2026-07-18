@@ -1,0 +1,1 @@
+export { SpotlightArchivePage } from "./SpotlightArchivePage";

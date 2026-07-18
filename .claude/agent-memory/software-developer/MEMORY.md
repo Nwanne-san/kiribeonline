@@ -26,5 +26,7 @@
 - `middleware.ts` uses `@/routes/admin.routes` — keep enum in sync with app folder structure
 - Offline page is `"use client"` for retry button
 - Do not commit Figma tokens — use MCP env or `.env.local`
+- [Admin list URL params & server filtering](gotcha_admin_list_url_params.md) — URL_PARAMS is a fixed enum; do list filtering server-side, not per-page client-side
 - [Illustrations & error-boundary traps](gotcha_illustrations_error_boundaries.md) — brand-color SVGs vanish on colored bars; global-error has no CSS vars/globals
+- [useMutationService data type](gotcha_mutation_service_data_type.md) — function-form `data` is typed as full Req; omit it and let variables be the body
 - [next-svgr breaks metadata icons](gotcha_svgr_metadata_icons.md) — app-dir icon.svg needs a webpack resourceQuery exclusion in next.config.ts

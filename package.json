@@ -14,6 +14,7 @@
     "generate:importmap": "npm run payload generate:importmap",
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
+    "r2:check": "node scripts/check-r2.mjs",
     "create-admin": "tsx scripts/create-admin.mjs",
     "seed:taxonomy": "tsx scripts/seed-taxonomy.mjs",
     "seed:demo": "tsx scripts/seed-demo-content.mjs",

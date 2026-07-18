@@ -1,0 +1,1 @@
+export { FeaturedArticleCard } from "./FeaturedArticleCard";

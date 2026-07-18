@@ -17,7 +17,7 @@ import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import { adminMediaService, adminQueryKeys } from "@/services/admin.service";
-import type { AdminListResult, AdminMediaItem, AdminMediaRef } from "@/lib/admin/types";
+import type { AdminListResult, AdminMediaItem, AdminMediaRef } from "@/server/modules";
 
 export type MediaPickerProps = {
   label: string;

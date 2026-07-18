@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { adminOnly, anyone } from "../access";
+import { anyone, requireCapability } from "../access";
 import { slugField } from "../fields/slug";
 import { auditAfterChange, auditAfterDelete } from "../hooks/audit";
 import {
@@ -16,9 +16,9 @@ export const Tags: CollectionConfig = {
   },
   access: {
     read: anyone,
-    create: adminOnly,
-    update: adminOnly,
-    delete: adminOnly,
+    create: requireCapability("taxonomy:manage"),
+    update: requireCapability("taxonomy:manage"),
+    delete: requireCapability("taxonomy:manage"),
   },
   fields: [
     {

@@ -65,8 +65,28 @@ See `.env.example`. Never commit `.env.local`.
 | `ENVIRONMENT` | `development` \| `staging` \| `production` |
 | `DISABLE_PAYLOAD_STUDIO` | `true` in prod — editors use custom `/admin` only |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 measurement ID (public site only, optional) |
-| `R2_PUBLIC_URL` | Public base URL for R2 media |
+| `R2_PUBLIC_URL` | Public base URL for R2 media (full origin, no trailing slash) |
 | `CONTACT_TO_EMAIL` | Optional notification email for contact form |
+| `RESEND_API_KEY` | Resend key for transactional email (subscribe + admin invites). Unset → emails skipped, invite token returned to the admin |
+| `RESEND_FROM_EMAIL` | Verified sender, e.g. `Kiribé <hello@kiribeonline.com>` |
+| `ADMIN_TOKEN_TTL_SECONDS` | Admin session lifetime (default 7200 = 2h). Fail-closed: bad value → default |
+| `ADMIN_MAX_LOGIN_ATTEMPTS` | Account lockout threshold (default 5) |
+| `ADMIN_LOCK_TIME_SECONDS` | Lockout duration after threshold (default 900 = 15m) |
+
+### Cloudflare R2 (media storage)
+
+Uploads go to R2 when the four core `R2_*` vars are set; otherwise Payload falls
+back to local disk (dev only). Steps:
+
+1. **Bucket** — Cloudflare dashboard → **R2** → *Create bucket* (e.g. `kiribe-media`).
+   Copy the **Account ID** from R2 → Overview → `R2_ACCOUNT_ID`, bucket name → `R2_BUCKET_NAME`.
+2. **API token** — R2 → *Manage R2 API Tokens* → *Create API token*, scope **Object Read & Write**
+   on that bucket. Copy the Access Key ID → `R2_ACCESS_KEY_ID` and Secret (shown once) → `R2_SECRET_ACCESS_KEY`.
+3. **Public URL** — on the bucket, either enable the **Public Development URL** (`https://pub-xxxx.r2.dev`)
+   or attach a **custom domain** (e.g. `media.kiribeonline.com`). Set the full origin as `R2_PUBLIC_URL`.
+   This host is auto-added to `next/image` `remotePatterns` (see `next.config.ts`).
+4. **CORS** (only needed if uploading directly from the browser; the admin uploads server-side, so usually skip).
+5. **Verify** — `npm run r2:check` runs a put → get → public-fetch → delete round-trip and reports each step.
 
 ## Architecture
 

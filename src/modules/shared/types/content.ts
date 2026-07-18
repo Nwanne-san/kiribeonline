@@ -14,6 +14,13 @@ export interface Article {
   status: ArticleStatus;
   createdAt: string;
   updatedAt: string;
+  /** Byline resolved from the related user (depth ≥ 1). */
+  author?: ArticleAuthor;
+}
+
+export interface ArticleAuthor {
+  id: string;
+  name?: string;
 }
 
 export interface Category {

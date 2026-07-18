@@ -1,0 +1,1 @@
+export { AdminAcceptInvitePage } from "./AdminAcceptInvitePage";

@@ -35,6 +35,7 @@ type PayloadArticleDoc = {
   heroImage?: PayloadMedia | string | null;
   categories?: (PayloadCategory | string)[] | null;
   tags?: (PayloadTag | string)[] | null;
+  author?: { id: string | number; name?: string | null } | string | null;
   status: Article["status"];
   publishedAt?: string | null;
   createdAt: string;
@@ -95,6 +96,10 @@ export function mapPayloadArticle(doc: PayloadArticleDoc): Article {
       .map(mapCategory)
       .filter((item): item is Category => item !== null),
     tags: (doc.tags ?? []).map(mapTag).filter((item): item is Tag => item !== null),
+    author:
+      doc.author && typeof doc.author === "object"
+        ? { id: String(doc.author.id), name: doc.author.name ?? undefined }
+        : undefined,
     status: doc.status,
     publishedAt: doc.publishedAt ?? undefined,
     createdAt: doc.createdAt,

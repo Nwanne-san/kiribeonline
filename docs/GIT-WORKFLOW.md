@@ -17,6 +17,27 @@ Hotfix exception: a critical production fix may branch from `main`
 (`fix/hotfix-<slug>`), PR into `main`, then be back-merged into `staging` and
 `develop` immediately after.
 
+## Database branches (Neon) — isolate work, protect the one production DB
+
+There is exactly **one production database** (`main` Neon branch). Development work
+must **never** run against it, and feature work should not all pile onto a single
+shared dev DB where migrations and test data collide. Neon branching gives every
+line of work its own cheap, copy-on-write Postgres branch — use it so nothing
+clusters on production.
+
+| Work | Neon branch | How |
+|------|-------------|-----|
+| Production | `main` | Never used for dev. `DATABASE_URL` points here **only** in Vercel Production. |
+| `staging` | `staging` | Pre-prod verification only. |
+| `develop` | `dev` | Shared integration DB. |
+| **Each `feat/*` / `fix/*`** | **own ephemeral branch** | Neon–Vercel integration auto-creates a branch per preview deploy; locally, branch from `dev` and put its connection string in `.env.local`. |
+
+Rules:
+- **Migrations run first on your feature's own Neon branch**, verified there, before the PR — so a broken migration can never touch `dev`/`staging`/`main`.
+- Prefer the **Neon–Vercel preview integration** (auto branch per PR, torn down on merge) so preview deploys never share state.
+- For local work, create a branch (`neonctl branches create` or the console) off `dev`; delete it when the feature merges. Reset a polluted branch by re-branching from `dev`.
+- Never hardcode a branch URL in the repo — `DATABASE_URL` is env-scoped (Vercel scopes / `.env.local`). See [DEPLOYMENT.md](./DEPLOYMENT.md).
+
 ## The route every change takes
 
 ```

@@ -8,7 +8,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Link from "next/link";
 import { ApiMethods } from "../../../../../types/service";
-import type { AnalyticsData } from "@/lib/admin/types";
+import type { AnalyticsData } from "@/server/modules";
 import { KiribeTypography } from "@/modules/shared/components/ui";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 
