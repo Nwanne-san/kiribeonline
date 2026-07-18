@@ -46,7 +46,7 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [ ] About (+ contact section)
 - [x] Contact form + validation
 - [x] Subscribe form
-- [ ] Privacy Policy, Terms of Use
+- [x] Privacy Policy, Terms of Use
 - [x] Search results page (`/search?q=`)
 
 ### 2.2 Admin workflow
