@@ -1,38 +1,68 @@
 import { revalidateTag } from "next/cache";
 import { getPayloadClient } from "@/lib/payload/get-payload";
+import { getSiteBaseUrl } from "@/lib/seo/site-url";
 import { PublicRoutes } from "@/routes/public.routes";
 
-export async function generateSitemapXml(): Promise<string> {
-  const payload = await getPayloadClient();
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(
-    /\/$/,
-    ""
-  );
+export type SitemapEntry = {
+  url: string;
+  lastModified?: string;
+};
 
+/**
+ * Build the canonical list of public URLs for the sitemap: static marketing
+ * routes plus every published article. Shared by the native `/sitemap.xml`
+ * route and the cron XML generator so both stay in sync.
+ */
+export async function getSitemapEntries(): Promise<SitemapEntry[]> {
+  const baseUrl = getSiteBaseUrl();
+
+  // Only routes that actually ship. `/privacy` and `/terms` exist in the route
+  // enum but have no page yet — excluded so the public sitemap never advertises
+  // a 404. Add them back here when those pages land.
   const staticPaths = [
     PublicRoutes.home,
     PublicRoutes.articles,
+    PublicRoutes.categories,
     PublicRoutes.about,
     PublicRoutes.contact,
-    PublicRoutes.privacy,
-    PublicRoutes.terms,
   ];
+  const staticEntries: SitemapEntry[] = staticPaths.map((path) => ({
+    url: `${baseUrl}${path}`,
+  }));
 
-  const { docs: articles } = await payload.find({
-    collection: "articles",
-    where: { status: { equals: "published" } },
-    limit: 1000,
-    overrideAccess: true,
-  });
+  // Articles are best-effort: a DB outage degrades the sitemap to static routes
+  // rather than failing the request (and the static prerender), mirroring the
+  // resilience of the other public content queries.
+  try {
+    const payload = await getPayloadClient();
+    const { docs: articles } = await payload.find({
+      collection: "articles",
+      where: { status: { equals: "published" } },
+      limit: 1000,
+      overrideAccess: true,
+    });
 
-  const urls = [
-    ...staticPaths.map((path) => `${baseUrl}${path}`),
-    ...articles.map((article) => `${baseUrl}/articles/${article.slug}`),
-  ];
+    return [
+      ...staticEntries,
+      ...articles.map((article) => ({
+        url: `${baseUrl}/articles/${article.slug}`,
+        lastModified:
+          (article.updatedAt as string | undefined) ??
+          (article.publishedAt as string | undefined),
+      })),
+    ];
+  } catch (err) {
+    console.error("[sitemap] failed to load articles, serving static routes only", err);
+    return staticEntries;
+  }
+}
 
-  const body = urls
+export async function generateSitemapXml(): Promise<string> {
+  const entries = await getSitemapEntries();
+
+  const body = entries
     .map(
-      (url) =>
+      ({ url }) =>
         `<url><loc>${url}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`
     )
     .join("");
