@@ -9,7 +9,7 @@ import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import PublicOutlined from "@mui/icons-material/PublicOutlined";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminRoutes } from "@/routes/admin.routes";
 import { PublicRoutes } from "@/routes/public.routes";
 import { ROLE_LABELS } from "@/server/access/roles";
@@ -20,7 +20,7 @@ import {
 } from "@/modules/shared/components/brand";
 import { InitialAvatar } from "@/modules/admin/components/ui/AdminPrimitives";
 import { usePermissions } from "@/modules/admin/hooks/usePermissions";
-import { NAV_GROUPS, isNavActive, type NavItem } from "./nav";
+import { NAV_GROUPS, isNavActive, type NavGroup, type NavItem } from "./nav";
 
 const COLLAPSE_KEY = "kiribe.admin.sidebarCollapsed";
 const DESKTOP_QUERY = "(min-width: 80rem)"; // lg — matches sidebar `lg:` breakpoint
@@ -39,7 +39,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 function AdminShellBody({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { me } = usePermissions();
+  const { me, can } = usePermissions();
+
+  // Hide nav items the current role can't use so nobody clicks into a 403.
+  // Items without a `capability` stay visible for everyone; a group that ends
+  // up empty (e.g. its only items were gated) is dropped entirely.
+  const navGroups = useMemo<NavGroup[]>(
+    () =>
+      NAV_GROUPS.map((group) => ({
+        ...group,
+        items: group.items.filter((item) => !item.capability || can(item.capability)),
+      })).filter((group) => group.items.length > 0),
+    [can]
+  );
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -86,7 +98,7 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const activeLabel =
-    NAV_GROUPS.flatMap((g) => g.items).find((i) => isNavActive(i, pathname))?.label ??
+    navGroups.flatMap((g) => g.items).find((i) => isNavActive(i, pathname))?.label ??
     "Dashboard";
 
   return (
@@ -98,6 +110,7 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
         } ${collapsed ? "w-[76px]" : "w-60"}`}
       >
         <Sidebar
+          groups={navGroups}
           collapsed={collapsed}
           pathname={pathname}
           onNavigate={navigate}
@@ -117,6 +130,7 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
           />
           <aside className="admin-drawer-enter absolute inset-y-0 left-0 flex w-60 flex-col bg-[#0c0c10] shadow-xl">
             <Sidebar
+              groups={navGroups}
               collapsed={false}
               pathname={pathname}
               onNavigate={navigate}
@@ -152,12 +166,14 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
 /* ─────────────────────────────────────────────────────────── Sidebar */
 
 function Sidebar({
+  groups,
   collapsed,
   pathname,
   onNavigate,
   onViewSite,
   onLogout,
 }: {
+  groups: NavGroup[];
   collapsed: boolean;
   pathname: string;
   onNavigate: (route: string) => void;
@@ -180,7 +196,7 @@ function Sidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3">
-        {NAV_GROUPS.map((group, gi) => (
+        {groups.map((group, gi) => (
           <div key={group.heading ?? gi} className={gi > 0 ? "mt-4" : ""}>
             {group.heading && !collapsed && (
               <div className="px-5 pb-1.5 pt-2 text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-gray-600">

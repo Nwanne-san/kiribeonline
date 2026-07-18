@@ -1,5 +1,6 @@
 /** Custom Kiribe admin routes — primary editor UX (not Payload Studio). */
 export enum AdminRoutes {
+  home = "/admin",
   login = "/admin/login",
   acceptInvite = "/admin/accept-invite",
   dashboard = "/admin/dashboard",

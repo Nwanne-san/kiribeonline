@@ -120,6 +120,46 @@ const theme = {
   },
 };
 
+/** Schemes we allow in article links. Everything else (javascript:, data:,
+ * vbscript: …) is rejected so a link can't run script when clicked. */
+const ALLOWED_LINK_SCHEMES = new Set(["http", "https", "mailto"]);
+
+type LinkSanitizeResult = { url: string } | { error: string };
+
+/**
+ * Validate/normalise a URL typed into the link dialog.
+ *
+ * - Control chars and whitespace are stripped first, so obfuscations like
+ *   `java\tscript:` collapse to `javascript:` and get caught.
+ * - Explicit schemes must be http/https/mailto; anything else is rejected.
+ * - Relative/anchor targets (`/path`, `#id`, `?q`) pass through untouched.
+ * - Scheme-relative (`//host`) and bare (`example.com`) URLs default to https.
+ *
+ * A "scheme" containing a dot (e.g. `example.com:8080`) is treated as a
+ * host:port, not a scheme, so bare domains with ports still work.
+ */
+function sanitizeLinkUrl(raw: string): LinkSanitizeResult {
+  const cleaned = raw.replace(/[\u0000-\u0020\u007f-\u009f]/g, "");
+  if (!cleaned) return { error: "Enter a URL." };
+
+  // Scheme-relative (`//host`) → default to https. Checked before the relative
+  // branch below so it isn't swallowed by the leading-slash test.
+  if (cleaned.startsWith("//")) return { url: `https:${cleaned}` };
+
+  // Relative paths / anchors / queries stay as-is (internal links).
+  if (/^[/#?]/.test(cleaned)) return { url: cleaned };
+
+  const schemeMatch = cleaned.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/);
+  if (schemeMatch && !schemeMatch[1].includes(".")) {
+    const scheme = schemeMatch[1].toLowerCase();
+    if (ALLOWED_LINK_SCHEMES.has(scheme)) return { url: cleaned };
+    return { error: "Only http, https and mailto links are allowed." };
+  }
+
+  // No scheme — a bare domain like `example.com`; default to https.
+  return { url: `https://${cleaned}` };
+}
+
 const BLOCK_OPTIONS: { value: string; label: string }[] = [
   { value: "paragraph", label: "Paragraph" },
   { value: "h1", label: "Heading 1" },
@@ -523,7 +563,25 @@ export function AdminRichTextEditor({
   const [imageDialog, setImageDialog] = useState(false);
   const [pendingUpload, setPendingUpload] = useState<AdminMediaRef | null>(null);
   const [linkDialog, setLinkDialog] = useState<{ url: string } | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const [pendingLink, setPendingLink] = useState<{ url: string } | null>(null);
+
+  const applyLink = () => {
+    const raw = linkDialog?.url ?? "";
+    const result = sanitizeLinkUrl(raw);
+    if ("error" in result) {
+      setLinkError(result.error);
+      return;
+    }
+    setPendingLink({ url: result.url });
+    setLinkDialog(null);
+    setLinkError(null);
+  };
+
+  const closeLinkDialog = () => {
+    setLinkDialog(null);
+    setLinkError(null);
+  };
 
   const initialConfig = useMemo(
     () => ({
@@ -556,7 +614,10 @@ export function AdminRichTextEditor({
       <LexicalComposer initialConfig={initialConfig}>
         <Toolbar
           onOpenImage={() => setImageDialog(true)}
-          onOpenLink={(currentUrl) => setLinkDialog({ url: currentUrl ?? "" })}
+          onOpenLink={(currentUrl) => {
+            setLinkError(null);
+            setLinkDialog({ url: currentUrl ?? "" });
+          }}
         />
         <Box
           sx={{
@@ -680,7 +741,7 @@ export function AdminRichTextEditor({
       {/* Link insertion */}
       <Dialog
         open={linkDialog !== null}
-        onClose={() => setLinkDialog(null)}
+        onClose={closeLinkDialog}
         maxWidth="xs"
         fullWidth
       >
@@ -692,29 +753,26 @@ export function AdminRichTextEditor({
             label="URL"
             placeholder="https://example.com"
             value={linkDialog?.url ?? ""}
-            onChange={(e) =>
-              setLinkDialog({ url: e.target.value })
-            }
+            error={Boolean(linkError)}
+            errorText={linkError ?? undefined}
+            onChange={(e) => {
+              setLinkDialog({ url: e.target.value });
+              if (linkError) setLinkError(null);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && linkDialog?.url) {
                 e.preventDefault();
-                setPendingLink({ url: linkDialog.url });
-                setLinkDialog(null);
+                applyLink();
               }
             }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setLinkDialog(null)}>Cancel</Button>
+          <Button onClick={closeLinkDialog}>Cancel</Button>
           <Button
             variant="contained"
             disabled={!linkDialog?.url}
-            onClick={() => {
-              if (linkDialog?.url) {
-                setPendingLink({ url: linkDialog.url });
-                setLinkDialog(null);
-              }
-            }}
+            onClick={applyLink}
           >
             Apply
           </Button>

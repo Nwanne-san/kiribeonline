@@ -35,11 +35,16 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
     const { id } = await params;
     const body = await request.json();
     const input = parseBody(articlePatchSchema, body);
-    // A status change into/out of published requires the stronger capability.
-    if (
-      (input.status === "published" || input.status === "archived") &&
-      !can(user.role, "articles:publish")
-    ) {
+    // A status change into/out of published — including scheduled, which the
+    // cron later publishes — or homepage exposure via featured, requires the
+    // stronger capability.
+    const wantsPublish =
+      input.status === "published" ||
+      input.status === "scheduled" ||
+      input.status === "archived" ||
+      input.featured === true ||
+      (input.featuredPriority !== undefined && input.featuredPriority > 0);
+    if (wantsPublish && !can(user.role, "articles:publish")) {
       return apiError("Forbidden", 403);
     }
     const doc = await updateAdminArticle(id, input);

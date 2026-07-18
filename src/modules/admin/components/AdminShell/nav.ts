@@ -15,6 +15,7 @@ import MovieOutlined from "@mui/icons-material/MovieOutlined";
 import VideocamOutlined from "@mui/icons-material/VideocamOutlined";
 import InsightsOutlined from "@mui/icons-material/InsightsOutlined";
 import { AdminRoutes } from "@/routes/admin.routes";
+import type { Capability } from "@/server/access/roles";
 
 export type NavIcon = ComponentType<{
   fontSize?: "small" | "inherit" | "medium" | "large";
@@ -30,6 +31,12 @@ export type NavItem = {
   matchPrefix?: string;
   /** Not-yet-built screen — shown in the nav but not clickable. */
   soon?: boolean;
+  /**
+   * Capability required to see this item. Items without one are visible to
+   * every role; gated items are filtered out when the current user lacks the
+   * capability so they never click into a 403 screen.
+   */
+  capability?: Capability;
 };
 
 export type NavGroup = {
@@ -47,7 +54,12 @@ export type NavGroup = {
 export const NAV_GROUPS: NavGroup[] = [
   {
     items: [
-      { label: "Dashboard", icon: GridViewOutlined, route: AdminRoutes.dashboard },
+      {
+        label: "Dashboard",
+        icon: GridViewOutlined,
+        route: AdminRoutes.dashboard,
+        capability: "analytics:read",
+      },
       { label: "Articles", icon: ArticleOutlined, route: AdminRoutes.articles },
       {
         label: "Categories & Tags",
@@ -58,20 +70,55 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Media Library", icon: PermMediaOutlined, route: AdminRoutes.media },
       { label: "Pages", icon: LayersOutlined, soon: true },
       { label: "Navigation & Footer", icon: NearMeOutlined, soon: true },
-      { label: "Users & Roles", icon: GroupOutlined, route: AdminRoutes.usersRoles },
+      {
+        label: "Users & Roles",
+        icon: GroupOutlined,
+        route: AdminRoutes.usersRoles,
+        capability: "users:manage",
+      },
       { label: "Editorial Calendar", icon: CalendarTodayOutlined, soon: true },
       { label: "SEO", icon: QueryStatsOutlined, soon: true },
-      { label: "Settings", icon: SettingsOutlined, route: AdminRoutes.settings },
+      {
+        label: "Settings",
+        icon: SettingsOutlined,
+        route: AdminRoutes.settings,
+        capability: "settings:manage",
+      },
     ],
   },
   {
     heading: "Content tools",
     items: [
-      { label: "Homepage", icon: HomeOutlined, route: AdminRoutes.homepage },
-      { label: "Editor's Picks", icon: StarOutline, route: AdminRoutes.editorsPicks },
-      { label: "Creators", icon: MovieOutlined, route: AdminRoutes.creators },
-      { label: "Reels", icon: VideocamOutlined, route: AdminRoutes.reels },
-      { label: "Analytics", icon: InsightsOutlined, route: AdminRoutes.analytics },
+      {
+        label: "Homepage",
+        icon: HomeOutlined,
+        route: AdminRoutes.homepage,
+        capability: "homepage:manage",
+      },
+      {
+        label: "Editor's Picks",
+        icon: StarOutline,
+        route: AdminRoutes.editorsPicks,
+        capability: "homepage:manage",
+      },
+      {
+        label: "Creators",
+        icon: MovieOutlined,
+        route: AdminRoutes.creators,
+        capability: "creators:manage",
+      },
+      {
+        label: "Reels",
+        icon: VideocamOutlined,
+        route: AdminRoutes.reels,
+        capability: "reels:manage",
+      },
+      {
+        label: "Analytics",
+        icon: InsightsOutlined,
+        route: AdminRoutes.analytics,
+        capability: "analytics:read",
+      },
     ],
   },
 ];

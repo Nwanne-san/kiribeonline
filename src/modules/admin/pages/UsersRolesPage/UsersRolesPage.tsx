@@ -3,10 +3,13 @@
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
+import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import PersonAddAlt1Rounded from "@mui/icons-material/PersonAddAlt1Rounded";
+import WarningAmberRounded from "@mui/icons-material/WarningAmberRounded";
 import { useEffect, useMemo, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
+import { AdminRoutes } from "@/routes/admin.routes";
 import {
   AdminButton,
   AdminPanel,
@@ -437,6 +440,10 @@ function InviteUserModal({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<UserRole>("writer");
+  // When email delivery is off, the API returns the raw invite token once. We
+  // hold it here so the admin can copy the accept-invite link before closing —
+  // without it, an invitee can never activate their account.
+  const [fallback, setFallback] = useState<InviteResponse | null>(null);
 
   useEscapeToClose(onClose);
 
@@ -453,7 +460,15 @@ function InviteUserModal({ onClose }: { onClose: () => void }) {
           ? "An invitation email is on its way."
           : "Invite created — share the invite link with the new member.",
       errorTitle: "Could not send invite",
-      onSuccess: () => onClose(),
+      onSuccess: (r) => {
+        // If the email went out there's nothing to hand off — close. Otherwise
+        // keep the modal open on the fallback panel so the link can be copied.
+        if (r.emailSent || !r.inviteToken) {
+          onClose();
+        } else {
+          setFallback(r);
+        }
+      },
     },
   });
 
@@ -467,6 +482,14 @@ function InviteUserModal({ onClose }: { onClose: () => void }) {
       name: name.trim() || undefined,
       role,
     });
+  }
+
+  if (fallback?.inviteToken) {
+    return (
+      <ModalShell titleId="invite-link-title" onClose={onClose}>
+        <InviteLinkPanel invite={fallback} email={email.trim()} onClose={onClose} />
+      </ModalShell>
+    );
   }
 
   return (
@@ -541,6 +564,109 @@ function InviteUserModal({ onClose }: { onClose: () => void }) {
         </div>
       </form>
     </ModalShell>
+  );
+}
+
+/** Absolute accept-invite link for a token, built from the current origin. */
+function buildInviteUrl(token: string): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}${AdminRoutes.acceptInvite}?token=${encodeURIComponent(token)}`;
+}
+
+function formatExpiry(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * Shown after an invite is created but email delivery is unavailable. Surfaces
+ * the one-time accept-invite link so the admin can hand it to the invitee —
+ * without this the invited account can never be activated.
+ */
+function InviteLinkPanel({
+  invite,
+  email,
+  onClose,
+}: {
+  invite: InviteResponse;
+  email: string;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const url = buildInviteUrl(invite.inviteToken ?? "");
+  const expiry = formatExpiry(invite.inviteExpiresAt);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2
+            id="invite-link-title"
+            className="font-headline text-lg font-bold text-burgundy"
+          >
+            Invite link
+          </h2>
+          <p className="mt-1 text-xs text-muted">
+            Email delivery is off, so share this link with
+            {email ? ` ${email}` : " the new member"} directly.
+          </p>
+        </div>
+        <CloseButton onClose={onClose} />
+      </div>
+
+      <div className="flex items-start gap-2 rounded-lg border border-[#fed7aa] bg-[#fffbeb] p-3">
+        <WarningAmberRounded sx={{ fontSize: 18 }} className="mt-0.5 shrink-0 text-[#b54708]" />
+        <p className="text-xs text-[#b54708]">
+          This link is shown <strong>once</strong> and can&apos;t be retrieved
+          later. Copy it now{expiry ? ` — it expires ${expiry}.` : "."}
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">
+          Accept-invite URL
+        </span>
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={url}
+            onFocus={(e) => e.currentTarget.select()}
+            className={`${inputClass} font-mono text-xs`}
+            aria-label="Accept-invite URL"
+          />
+          <AdminButton
+            variant="secondary"
+            onClick={copy}
+            leftIcon={<ContentCopyRounded sx={{ fontSize: 15 }} />}
+          >
+            {copied ? "Copied" : "Copy"}
+          </AdminButton>
+        </div>
+      </div>
+
+      <div className="mt-1 flex justify-end">
+        <AdminButton variant="primary" onClick={onClose}>
+          Done
+        </AdminButton>
+      </div>
+    </div>
   );
 }
 

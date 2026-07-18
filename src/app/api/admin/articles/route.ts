@@ -1,10 +1,11 @@
 import type { NextRequest } from "next/server";
-import { apiSuccess, parseBody } from "@/lib/api";
+import { apiError, apiSuccess, parseBody } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
   requireAdminWriteCapability,
 } from "@/server/auth";
+import { can } from "@/server/access/roles";
 import {
   createAdminArticle,
   listAdminArticles,
@@ -35,10 +36,25 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdminWriteCapability(request, "articles:create");
+    const user = await requireAdminWriteCapability(request, "articles:create");
     const body = await request.json();
     const input = parseBody(articleInputSchema, body);
-    const doc = await createAdminArticle(input);
+    // Creating straight into published/scheduled/archived — or onto the
+    // homepage via featured — is a publish action, not a create action.
+    // Mirrors the PATCH escalation guard.
+    const wantsPublish =
+      input.status === "published" ||
+      input.status === "scheduled" ||
+      input.status === "archived" ||
+      input.featured === true ||
+      (input.featuredPriority ?? 0) > 0;
+    if (wantsPublish && !can(user.role, "articles:publish")) {
+      return apiError("Forbidden", 403);
+    }
+    // Default attribution to the creating user so articles are never
+    // unassigned; an explicit authorId (e.g. an editor filing for someone
+    // else) still wins.
+    const doc = await createAdminArticle({ ...input, authorId: input.authorId ?? user.id });
     return apiSuccess(doc);
   } catch (error) {
     return handleAdminRouteError(error);

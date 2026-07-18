@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
 import { AdminCard, AdminPageHeader } from "@/modules/admin/components/AdminUi";
 import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
+import { KiribeLoader } from "@/modules/shared/components/brand";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import client from "@/utils/client";
@@ -47,6 +48,7 @@ export function HomepageBuilderPage() {
   const [reelIds, setReelIds] = useState<string[]>([]);
   const [reelsEnabled, setReelsEnabled] = useState(true);
   const [archiveCtaEnabled, setArchiveCtaEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const { data: articles } = useQueryService<Record<string, never>, { docs: Article[] }>({
     service: { path: "/api/admin/articles?status=published", method: ApiMethods.GET },
@@ -70,6 +72,7 @@ export function HomepageBuilderPage() {
 
   useEffect(() => {
     void (async () => {
+      try {
       const res = await client.request<never, Record<string, unknown>>({
         path: "/api/admin/homepage",
         method: ApiMethods.GET,
@@ -111,6 +114,9 @@ export function HomepageBuilderPage() {
       setReelIds(reelRows.map((r) => String(r.id)));
       setReelsEnabled(data.reelsEnabled !== false);
       setArchiveCtaEnabled(data.archiveCtaEnabled !== false);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -210,6 +216,14 @@ export function HomepageBuilderPage() {
   const moveReel = (index: number, dir: -1 | 1) => {
     setReelIds((prev) => moveItem(prev, index, dir));
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
+        <KiribeLoader size="sm" label="Loading homepage" />
+      </Box>
+    );
+  }
 
   return (
     <Stack spacing={3}>
