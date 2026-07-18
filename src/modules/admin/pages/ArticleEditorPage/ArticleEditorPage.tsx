@@ -22,12 +22,13 @@ import {
 import { AdminRichTextEditor } from "@/modules/admin/components/AdminRichTextEditor";
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
 import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
+import { KiribeLoader } from "@/modules/shared/components/brand";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import client from "@/utils/client";
 import { unwrapApiData } from "@/lib/api/unwrap";
-import type { AdminMediaRef } from "@/lib/admin/types";
-import { normalizeLexicalBody, textToLexical } from "@/lib/admin/text-to-lexical";
+import type { AdminMediaRef } from "@/server/modules";
+import { normalizeLexicalBody, textToLexical } from "@/server/shared/text-to-lexical";
 
 type Category = { id: string; name: string; brandColor?: string | null };
 type Tag = { id: string; name: string; brandColor?: string | null };
@@ -44,7 +45,11 @@ type ArticleDoc = {
   categories?: Category[];
   tags?: Tag[];
   heroImage?: { id: string; url?: string; alt?: string } | string;
-  seo?: { title?: string; description?: string; ogImage?: { id: string } | string };
+  seo?: {
+    title?: string;
+    description?: string;
+    ogImage?: { id: string; url?: string; alt?: string } | string;
+  };
   viewCount?: number;
 };
 
@@ -58,6 +63,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState<Record<string, unknown>>(() => textToLexical(""));
   const [editorReady, setEditorReady] = useState(!articleId);
+  const [loading, setLoading] = useState(Boolean(articleId));
   const [status, setStatus] = useState("draft");
   const [publishedAt, setPublishedAt] = useState("");
   const [featured, setFeatured] = useState(false);
@@ -84,28 +90,38 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   useEffect(() => {
     if (!articleId) return;
     void (async () => {
-      const res = await client.request<never, ArticleDoc>({
-        path: `/api/admin/articles/${articleId}`,
-        method: ApiMethods.GET,
-      });
-      const doc = unwrapApiData(res);
-      setTitle(doc.title);
-      setExcerpt(doc.excerpt ?? "");
-      setBody(normalizeLexicalBody(doc.body));
-      setEditorReady(true);
-      setStatus(doc.status);
-      setPublishedAt(doc.publishedAt ? doc.publishedAt.slice(0, 16) : "");
-      setFeatured(Boolean(doc.featured));
-      setFeaturedPriority(doc.featuredPriority ?? 0);
-      setCategoryIds((doc.categories ?? []).map((c) => String(c.id)));
-      setTagIds((doc.tags ?? []).map((t) => String(t.id)));
-      const hero = doc.heroImage;
-      if (hero && typeof hero === "object") {
-        setHeroImage({ id: String(hero.id), url: hero.url, alt: hero.alt });
+      try {
+        const res = await client.request<never, ArticleDoc>({
+          path: `/api/admin/articles/${articleId}`,
+          method: ApiMethods.GET,
+        });
+        const doc = unwrapApiData(res);
+        setTitle(doc.title);
+        setExcerpt(doc.excerpt ?? "");
+        setBody(normalizeLexicalBody(doc.body));
+        setEditorReady(true);
+        setStatus(doc.status);
+        setPublishedAt(doc.publishedAt ? doc.publishedAt.slice(0, 16) : "");
+        setFeatured(Boolean(doc.featured));
+        setFeaturedPriority(doc.featuredPriority ?? 0);
+        setCategoryIds((doc.categories ?? []).map((c) => String(c.id)));
+        setTagIds((doc.tags ?? []).map((t) => String(t.id)));
+        const hero = doc.heroImage;
+        if (hero && typeof hero === "object") {
+          setHeroImage({ id: String(hero.id), url: hero.url, alt: hero.alt });
+        }
+        setSeoTitle(doc.seo?.title ?? "");
+        setSeoDescription(doc.seo?.description ?? "");
+        // Rehydrate the stored OG image so it survives an edit that doesn't
+        // touch SEO — otherwise `seoOgImage` stays null and save strips it.
+        const og = doc.seo?.ogImage;
+        if (og && typeof og === "object") {
+          setSeoOgImage({ id: String(og.id), url: og.url, alt: og.alt });
+        }
+        setViewCount(doc.viewCount ?? null);
+      } finally {
+        setLoading(false);
       }
-      setSeoTitle(doc.seo?.title ?? "");
-      setSeoDescription(doc.seo?.description ?? "");
-      setViewCount(doc.viewCount ?? null);
     })();
   }, [articleId]);
 
@@ -118,6 +134,10 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     options: {
       keys: ["admin", "articles"],
       successTitle: "Article saved",
+      // Surfaces server rejections (e.g. a 403 when a writer/contributor tries
+      // to publish or feature without articles:publish) as an error toast
+      // rather than a silent no-op.
+      errorTitle: "Could not save article",
       onSuccess: () => router.push(AdminRoutes.articles),
     },
   });
@@ -142,6 +162,14 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
       },
     });
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
+        <KiribeLoader size="sm" label="Loading article" />
+      </Box>
+    );
+  }
 
   return (
     <Stack component="form" onSubmit={onSubmit} spacing={2}>

@@ -1,7 +1,13 @@
 "use client";
 
 import CloseIcon from "@mui/icons-material/Close";
+import FacebookIcon from "@mui/icons-material/Facebook";
+import InstagramIcon from "@mui/icons-material/Instagram";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import MenuIcon from "@mui/icons-material/Menu";
+import MusicNoteIcon from "@mui/icons-material/MusicNote";
+import TwitterIcon from "@mui/icons-material/Twitter";
+import YouTubeIcon from "@mui/icons-material/YouTube";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
@@ -13,6 +19,7 @@ import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import type { SvgIconComponent } from "@mui/icons-material";
 import NextLink from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -25,9 +32,68 @@ import {
   RouteProgress,
   useNavigationProgress,
 } from "@/modules/shared/components/brand";
+import { useSubscribeModal } from "@/modules/marketing/components/SubscribeModal";
 import { HeaderSearch } from "./HeaderSearch";
 
 type NavLink = { label: string; href: string };
+
+/** Social rail — Figma V5 nav. Icons resolve to admin-configured links by platform. */
+const SOCIAL_ICONS: { key: string; label: string; Icon: SvgIconComponent }[] = [
+  { key: "facebook", label: "Facebook", Icon: FacebookIcon },
+  { key: "instagram", label: "Instagram", Icon: InstagramIcon },
+  { key: "twitter", label: "X", Icon: TwitterIcon },
+  { key: "linkedin", label: "LinkedIn", Icon: LinkedInIcon },
+  { key: "youtube", label: "YouTube", Icon: YouTubeIcon },
+  { key: "tiktok", label: "TikTok", Icon: MusicNoteIcon },
+];
+
+function resolveSocialHref(
+  platformKey: string,
+  socialLinks: SiteSettings["socialLinks"]
+): string | undefined {
+  const match = socialLinks?.find(
+    (link) => link.platform?.toLowerCase().replace(/\s+/g, "") === platformKey
+  );
+  return match?.url;
+}
+
+function SocialRail({ socialLinks }: { socialLinks?: SiteSettings["socialLinks"] }) {
+  const items = SOCIAL_ICONS.map((social) => ({
+    ...social,
+    href: resolveSocialHref(social.key, socialLinks),
+  })).filter((social) => Boolean(social.href));
+
+  if (items.length === 0) return null;
+
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      sx={{
+        display: { xs: "none", xl: "flex" },
+        pr: 1.5,
+        mr: 0.5,
+        borderRight: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      {items.map(({ key, label, Icon, href }) => (
+        <IconButton
+          key={key}
+          component="a"
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={label}
+          size="small"
+          sx={{ p: 0.75, color: "#6A7282", "&:hover": { color: "primary.main" } }}
+        >
+          <Icon sx={{ fontSize: 15 }} />
+        </IconButton>
+      ))}
+    </Stack>
+  );
+}
 
 /** Primary nav as designed in Figma 2001:2 — fixed order, six labels. */
 const PRIMARY_NAV: { label: string; slug: string }[] = [
@@ -50,6 +116,7 @@ function buildPrimaryNav(navCategories: PublicCategory[]): NavLink[] {
 }
 
 export function SiteHeader({
+  siteSettings,
   navCategories = [],
 }: {
   siteSettings?: SiteSettings;
@@ -59,6 +126,7 @@ export function SiteHeader({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
   const { pending } = useNavigationProgress();
+  const { open: openSubscribe } = useSubscribeModal();
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -115,63 +183,49 @@ export function SiteHeader({
                 display: { xs: "none", lg: "flex" },
               }}
             >
-              {nav.map(({ label, href }) => (
-                <Link
-                  key={label}
-                  component={NextLink}
-                  href={href}
-                  underline="none"
-                  sx={{
-                    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    color: "text.primary",
-                    transition: "color var(--duration-fast) ease",
-                    "&:hover": { color: "primary.main" },
-                  }}
-                >
-                  {label}
-                </Link>
-              ))}
+              {nav.map(({ label, href }) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={label}
+                    component={NextLink}
+                    href={href}
+                    underline="none"
+                    aria-current={active ? "page" : undefined}
+                    sx={{
+                      fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                      letterSpacing: "0.025em",
+                      textTransform: "uppercase",
+                      color: active ? "primary.main" : "#364153",
+                      transition: "color var(--duration-fast) ease",
+                      "&:hover": { color: "primary.main" },
+                    }}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
             </Stack>
 
             <Box sx={{ flex: { xs: 1, lg: 0 } }} />
 
             <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+              <SocialRail socialLinks={siteSettings?.socialLinks} />
+              <HeaderSearch categories={navCategories} />
               <KiribeButton
-                accent
-                component={NextLink}
-                href={PublicRoutes.articles}
-                size="small"
-                sx={{
-                  display: { xs: "none", md: "inline-flex" },
-                  px: 2,
-                  py: 0.875,
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                  color: "common.white",
-                  boxShadow: "none",
-                  "&:hover": { boxShadow: "none" },
-                }}
-              >
-                All Articles
-              </KiribeButton>
-              <HeaderSearch />
-              <KiribeButton
-                component={NextLink}
-                href="/#newsletter"
+                onClick={openSubscribe}
                 size="small"
                 sx={{
                   display: { xs: "none", sm: "inline-flex" },
-                  px: 2,
-                  py: 0.875,
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  letterSpacing: "0.05em",
+                  px: 2.5,
+                  py: 1,
+                  borderRadius: 0,
+                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  letterSpacing: "0.025em",
                   textTransform: "uppercase",
                   color: "common.white",
                   boxShadow: "none",
@@ -270,14 +324,17 @@ export function SiteHeader({
 
           <Box sx={{ p: 2.5, borderTop: "1px solid", borderColor: "divider" }}>
             <KiribeButton
-              component={NextLink}
-              href="/#newsletter"
               fullWidth
-              onClick={() => setDrawerOpen(false)}
+              onClick={() => {
+                setDrawerOpen(false);
+                openSubscribe();
+              }}
               sx={{
                 py: 1.25,
-                fontSize: "0.75rem",
-                letterSpacing: "0.05em",
+                borderRadius: 0,
+                fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+                fontSize: "0.875rem",
+                letterSpacing: "0.025em",
                 textTransform: "uppercase",
                 color: "common.white",
               }}
@@ -298,9 +355,11 @@ export function SiteHeader({
  */
 const FOOTER_SECTIONS: { name: string; slug: string }[] = [
   { name: "Film", slug: "film" },
-  { name: "Television", slug: "tv" },
+  { name: "TV", slug: "tv" },
   { name: "Videos", slug: "videos" },
   { name: "News", slug: "news" },
+  { name: "Opinion", slug: "opinion" },
+  { name: "Spotlight", slug: "spotlight" },
 ];
 
 export function SiteFooter({
@@ -317,16 +376,17 @@ export function SiteFooter({
   const sections = FOOTER_SECTIONS;
 
   const footerLinkSx = {
-    color: "rgba(255,255,255,0.7)",
+    color: "#99A1AF",
     fontSize: "0.875rem",
     transition: "color var(--duration-fast) ease",
     "&:hover": { color: "common.white" },
   } as const;
 
   const colHeadingSx = {
-    fontWeight: 700,
+    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+    fontWeight: 500,
     fontSize: "0.875rem",
-    letterSpacing: "0.05em",
+    letterSpacing: "0.025em",
     color: "common.white",
     textTransform: "uppercase",
     mb: 2,
@@ -342,7 +402,7 @@ export function SiteFooter({
             </Box>
             <Typography
               variant="body2"
-              sx={{ color: "rgba(255,255,255,0.7)", maxWidth: 260, fontSize: "0.875rem", lineHeight: 1.6 }}
+              sx={{ color: "#99A1AF", maxWidth: 260, fontSize: "0.875rem", lineHeight: 1.6 }}
             >
               {tagline}
             </Typography>
@@ -406,16 +466,39 @@ export function SiteFooter({
           </Grid>
         </Grid>
 
-        <Divider sx={{ borderColor: "rgba(255,255,255,0.1)", my: { xs: 4, md: 5 } }} />
-
-        <Typography
-          variant="caption"
-          align="center"
-          display="block"
-          sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.875rem" }}
+        <Box
+          sx={{
+            mt: { xs: 4, md: 5 },
+            pt: 4,
+            borderTop: "1px solid",
+            borderColor: "#1E2939",
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "flex-start", sm: "center" },
+            justifyContent: "space-between",
+            gap: 2,
+          }}
         >
-          © {new Date().getFullYear()} {brandName}. All rights reserved.
-        </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: "#99A1AF", fontSize: "0.875rem" }}
+          >
+            © {new Date().getFullYear()} {brandName}. All rights reserved.
+          </Typography>
+          <Link
+            component={NextLink}
+            href="/admin"
+            underline="hover"
+            sx={{
+              color: "#4A5565",
+              fontSize: "0.75rem",
+              transition: "color var(--duration-fast) ease",
+              "&:hover": { color: "common.white" },
+            }}
+          >
+            Admin ↗
+          </Link>
+        </Box>
       </Container>
     </Box>
   );

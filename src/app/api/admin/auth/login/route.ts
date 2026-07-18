@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { apiError, apiSuccess, handleRouteError, parseBody } from "@/lib/api";
-import { getClientIp } from "@/lib/auth";
+import { getClientIp } from "@/server/auth";
 import { getPayloadClient } from "@/lib/payload/get-payload";
-import { loginSchema } from "@/lib/validation/admin";
+import { loginSchema } from "@/server/auth/auth.dto";
 import {
   DEFAULT_ADMIN_LOGIN_EMAIL_RATE_LIMIT,
   DEFAULT_ADMIN_LOGIN_RATE_LIMIT,
@@ -10,6 +10,7 @@ import {
   RATE_LIMIT_WINDOW_1_HOUR_MS,
 } from "@/constants";
 import { peekRateLimit, rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,27 @@ export async function POST(request: NextRequest) {
         DEFAULT_ADMIN_LOGIN_EMAIL_RATE_LIMIT,
         RATE_LIMIT_WINDOW_1_HOUR_MS
       );
+      // Audit the failure (generic; no signal on whether the account exists).
+      await writeAuditLog(payload, {
+        action: "auth.login_failed",
+        actorEmail: emailKey,
+        metadata: { ip },
+      });
+      return apiError("Invalid email or password.", 401);
+    }
+
+    // Credentials were valid, but only `active` accounts may sign in. A `pending`
+    // invitee (not yet activated) or a `suspended` account is turned away and no
+    // session cookie is issued.
+    const status = (result.user as { status?: string }).status;
+    if (status && status !== "active") {
+      await writeAuditLog(payload, {
+        action: "auth.login_rejected_status",
+        actorEmail: emailKey,
+        targetType: "users",
+        targetId: String(result.user.id),
+        metadata: { status, ip },
+      });
       return apiError("Invalid email or password.", 401);
     }
 

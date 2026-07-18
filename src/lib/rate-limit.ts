@@ -154,12 +154,17 @@ export async function checkRateLimit(config: RateLimitConfig): Promise<RateLimit
   return checkMemory(config);
 }
 
-/** Resolve the effective limit for an endpoint, honouring the env override. */
+/**
+ * Resolve the effective limit for an endpoint, honouring the env override.
+ * Fail-closed: a malformed, zero, or negative override never weakens (or
+ * disables) the limiter — it falls back to the safe default. AUTH-HARDENING §3.
+ */
 function resolveLimit(endpoint: string, defaultLimit: number): number {
   const envKey = `${endpoint.toUpperCase().replace(/\//g, "_")}_RATE_LIMIT`;
   const envLimit = process.env[envKey];
-  const limit = envLimit ? Number.parseInt(envLimit, 10) : defaultLimit;
-  return Number.isFinite(limit) ? limit : defaultLimit;
+  if (!envLimit) return defaultLimit;
+  const parsed = Number.parseInt(envLimit, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultLimit;
 }
 
 export async function rateLimitForEndpoint(

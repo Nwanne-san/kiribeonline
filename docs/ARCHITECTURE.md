@@ -8,11 +8,44 @@ This doc explains **where code lives** and **how to add features** without the r
 
 | Layer | Path | Responsibility |
 |-------|------|----------------|
-| **Routes** | `src/app/` | URLs only. Import a page from `src/modules/`. No business logic. |
+| **Routes** | `src/app/` | URLs only. Import a page from `src/modules/`, or (for `api/`) call a `src/server/` module. No business logic. |
 | **Features** | `src/modules/` | UI, hooks, page views grouped by product area. |
-| **Platform** | `src/payload/`, `src/lib/` | CMS schema, server infra, storage, DB helpers. |
+| **Server (domain)** | `src/server/` | Backend domain logic grouped by domain (service + dto + types + access), plus auth guards and the capability model. |
+| **Platform** | `src/payload/`, `src/lib/` | CMS schema (`payload/`) and generic infra: HTTP helpers, storage, DB, rate-limit, public validation (`lib/`). |
 
-**Rule:** If you're writing JSX for a page, it goes in `modules/`. If you're defining a collection field, it goes in `payload/`. If you're adding a health check or R2 helper, it goes in `lib/`.
+**Rule:** JSX for a page → `modules/`. A collection field → `payload/`. A domain's server logic (an admin service, its Zod DTO, its access rule) → `src/server/modules/<domain>/`. Generic, domain-agnostic infra (R2, health, rate-limit, `getPayloadClient`) → `lib/`.
+
+### `src/server/` — domain-oriented backend (BrandDrive-style)
+
+Route handlers must live under `src/app/api/` (Next.js) and entities under `src/payload/` (Payload), so a full NestJS-style module isn't possible. Everything *else* for a domain is co-located:
+
+```
+src/server/
+├── access/roles.ts          # Capability model: roles, ROLE_CAPABILITIES, can(), resolveRole()
+├── auth/                     # Guards + session (the "auth module")
+│   ├── session.ts            # Payload session → AdminUser (role/status), suspended/pending gates
+│   ├── capability.ts         # requireAdminCapability / requireAdminWriteCapability
+│   ├── admin-write.ts        # auth + shared rate-limit for mutations
+│   ├── admin-api.ts          # route error handling
+│   ├── auth.dto.ts           # loginSchema
+│   ├── client-ip.ts, cron.ts
+│   └── index.ts              # barrel → import from "@/server/auth"
+├── shared/                   # Cross-domain primitives
+│   ├── types.ts              # AdminMediaRef, AdminTermRef, AdminAuthorRef, AdminListResult
+│   └── text-to-lexical.ts
+└── modules/<domain>/         # one folder per domain
+    ├── <domain>.service.ts   # business logic (Payload Local API, overrideAccess)
+    ├── <domain>.dto.ts       # Zod: API-input schemas + RHF form schemas
+    ├── <domain>.types.ts     # domain view-model types
+    ├── <domain>.access.ts    # domain-specific Payload access (e.g. articles.access.ts)
+    └── index.ts              # barrel → import from "@/server/modules/<domain>"
+```
+
+**Import conventions**
+- Controllers (`app/api/admin/<domain>/route.ts`) import guards from `@/server/auth` and logic from `@/server/modules/<domain>`.
+- Payload collections import generic access glue from `../access` (`requireCapability`, `adminRoleOnly`, `denyFieldWrite`, `denySelfFieldMutation`) and domain field-access from `@/server/modules/<domain>/<domain>.access`.
+- Client components may `import type` view-model types from `@/server/modules/*` — **types only** (never runtime values; server code must not enter client bundles).
+- The capability contract in `src/server/access/roles.ts` is the single source of truth for both server enforcement and the client's `usePermissions` hook (`/api/admin/me`).
 
 ---
 
@@ -66,11 +99,16 @@ src/
 │   ├── hooks/                  # Audit logging on admin mutations
 │   └── access/                 # Access control helpers
 │
-├── lib/                        # Server infrastructure (no React)
+├── server/                     # Domain-oriented backend (see "src/server/" above)
+│   ├── access/roles.ts         # Capability model (source of truth)
+│   ├── auth/                   # Session, capability guards, admin-write, login DTO
+│   ├── shared/                 # Cross-domain types + text-to-lexical
+│   └── modules/<domain>/       # service + dto + types + access per domain
+│
+├── lib/                        # Generic infrastructure (no React, no domain logic)
 │   ├── api/                    # apiSuccess, parseBody (Zod), handleRouteError
-│   ├── auth/                   # CRON_SECRET, getClientIp
 │   ├── audit/                  # writeAuditLog helper
-│   ├── validation/             # Shared Zod schemas (contact, subscribe)
+│   ├── validation/             # PUBLIC Zod schemas only (contact, subscribe, helpers)
 │   ├── content/                # Article list queries, filters, pagination helpers
 │   ├── url/                    # build-list-query helpers
 │   ├── rate-limit.ts           # Per-endpoint IP sliding window
@@ -114,8 +152,9 @@ export default function Page() {
 ### `admin/` + `api/admin/` — custom editor UX
 
 - Login: `/admin/login` → `POST /api/admin/auth/login` (Payload session cookie).
-- All `/api/admin/*` routes call `requireAdminUserFromRequest`.
-- Mutations go through `src/lib/admin/*` services into Payload Local API.
+- All `/api/admin/*` routes authenticate first: reads via `requireAdminUserFromRequest`, mutations via `requireAdminWriteCapability(request, "<capability>")` (auth + rate-limit + capability).
+- Mutations go through `src/server/modules/<domain>/<domain>.service.ts` into the Payload Local API (with `overrideAccess: true` — capability enforcement lives at the route + collection-access layers).
+- The client reads its own capabilities from `GET /api/admin/me` via `usePermissions` and gates UI off them; server checks remain authoritative.
 
 ### `api/` — app-owned endpoints
 

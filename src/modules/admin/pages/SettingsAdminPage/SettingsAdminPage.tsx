@@ -1,9 +1,11 @@
 "use client";
 
+import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { useEffect, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
 import { KiribeButton, KiribeTextField, KiribeTypography } from "@/modules/shared/components/ui";
+import { KiribeLoader } from "@/modules/shared/components/brand";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import client from "@/utils/client";
 import { unwrapApiData } from "@/lib/api/unwrap";
@@ -11,17 +13,22 @@ import { unwrapApiData } from "@/lib/api/unwrap";
 export function SettingsAdminPage() {
   const [siteName, setSiteName] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void (async () => {
-      const res = await client.request<never, Record<string, unknown>>({
-        path: "/api/admin/settings",
-        method: ApiMethods.GET,
-      });
-      const data = unwrapApiData(res);
-      setSiteName(String(data.siteName ?? ""));
-      const seo = data.seoDefaults as { description?: string } | undefined;
-      setSeoDescription(String(seo?.description ?? ""));
+      try {
+        const res = await client.request<never, Record<string, unknown>>({
+          path: "/api/admin/settings",
+          method: ApiMethods.GET,
+        });
+        const data = unwrapApiData(res);
+        setSiteName(String(data.siteName ?? ""));
+        const seo = data.seoDefaults as { description?: string } | undefined;
+        setSeoDescription(String(seo?.description ?? ""));
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -33,6 +40,14 @@ export function SettingsAdminPage() {
     }),
     options: { keys: ["admin", "settings"] },
   });
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
+        <KiribeLoader size="sm" label="Loading settings" />
+      </Box>
+    );
+  }
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 560 }}>

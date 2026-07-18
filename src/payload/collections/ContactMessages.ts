@@ -6,12 +6,12 @@ export const ContactMessages: CollectionConfig = {
   admin: {
     useAsTitle: "subject",
     group: "Marketing",
-    defaultColumns: ["name", "email", "subject", "createdAt"],
+    defaultColumns: ["name", "email", "subject", "read", "createdAt"],
   },
   access: {
     read: adminOnly,
     create: () => true,
-    update: () => false,
+    update: adminOnly,
     delete: adminOnly,
   },
   fields: [
@@ -20,6 +20,12 @@ export const ContactMessages: CollectionConfig = {
     { name: "subject", type: "text", required: true },
     { name: "message", type: "textarea", required: true },
     { name: "ipAddress", type: "text" },
+    {
+      name: "read",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { description: "Marked read once an admin has seen the message" },
+    },
   ],
   timestamps: true,
 };

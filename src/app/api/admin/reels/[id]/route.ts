@@ -3,9 +3,9 @@ import { apiSuccess, parseBody } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
-  requireAdminWrite,
-} from "@/lib/auth";
-import { deleteReelAdmin, getReelAdmin, updateReelAdmin } from "@/lib/admin/reels";
+  requireAdminWriteCapability,
+} from "@/server/auth";
+import { deleteReelAdmin, getReelAdmin, updateReelAdmin } from "@/server/modules/reels";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "reels:manage");
     const { id } = await params;
     const body = await request.json();
     const input = parseBody(reelPatchSchema, body);
@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "reels:manage");
     const { id } = await params;
     return apiSuccess(await deleteReelAdmin(id));
   } catch (error) {

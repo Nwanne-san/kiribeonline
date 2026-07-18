@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { apiSuccess, handleRouteError, parseBody } from "@/lib/api";
-import { getClientIp } from "@/lib/auth";
+import { getClientIp } from "@/server/auth";
 import { subscribeFormSchema } from "@/lib/validation/subscribe";
 import { DEFAULT_SUBSCRIBE_RATE_LIMIT, RATE_LIMIT_WINDOW_15_MIN_MS } from "@/constants";
 import { rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";

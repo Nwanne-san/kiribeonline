@@ -1,0 +1,1 @@
+export { RecentActivityPage } from "./RecentActivityPage";

@@ -11,7 +11,7 @@ import {
   AdminPageHeader,
 } from "@/modules/admin/components/AdminUi";
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
-import type { AdminMediaRef } from "@/lib/admin/types";
+import type { AdminMediaRef } from "@/server/modules";
 import { AdminRoutes } from "@/routes/admin.routes";
 import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
 import { useMutationService } from "@/utils/hooks/useMutationService";

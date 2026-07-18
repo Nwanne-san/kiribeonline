@@ -179,6 +179,20 @@ body {
   animation: fadeIn 180ms var(--ease-out-soft) forwards;
 }
 
+/* Admin mobile drawer slide-in */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.admin-drawer-enter {
+  animation: slideInLeft 260ms var(--ease-out-soft);
+}
+
 /* Skeleton sheen — a sweeping highlight over MUI's built-in pulse */
 @keyframes shimmer {
   from {
