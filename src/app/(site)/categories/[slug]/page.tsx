@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getCategoriesForPublic } from "@/lib/content";
 import { getSpotlightArchiveData } from "@/lib/content/query-creators";
 import { CategoryArchivePage } from "@/modules/editorial/pages/CategoryArchivePage";
 import { SpotlightArchivePage } from "@/modules/editorial/pages/SpotlightArchivePage";
@@ -9,17 +10,32 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const canonical = `/categories/${slug}`;
+
   if (slug === "spotlight") {
+    const title = "Spotlight — Category";
+    const description =
+      "In-depth profiles of the directors, actors, and creatives defining contemporary culture.";
     return {
-      title: "Spotlight — Category",
-      description:
-        "In-depth profiles of the directors, actors, and creatives defining contemporary culture.",
+      title,
+      description,
+      alternates: { canonical },
+      openGraph: { type: "website", title, description, url: canonical },
     };
   }
-  const title = slug.replace(/-/g, " ");
+
+  // Prefer the category's real name (cached lookup) over the slug when available.
+  const categories = await getCategoriesForPublic();
+  const category = categories.find((item) => item.slug === slug);
+  const name = category?.name ?? slug.replace(/-/g, " ");
+
+  const title = `${name} — Category`;
+  const description = `Browse ${name} articles on Kiribé Online.`;
   return {
-    title: `${title} — Category`,
-    description: `Browse ${title} articles on Kiribé Online.`,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { type: "website", title, description, url: canonical },
   };
 }
 

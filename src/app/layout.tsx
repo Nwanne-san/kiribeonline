@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Open_Sans, Outfit } from "next/font/google";
 import { GoogleAnalytics } from "@/modules/shared/components/GoogleAnalytics";
+import { getSiteBaseUrl } from "@/lib/seo/site-url";
 import Providers from "./providers";
 import "./globals.css";
 
@@ -16,13 +17,29 @@ const openSans = Open_Sans({
   display: "swap",
 });
 
+const SITE_NAME = "Kiribé Online";
+const SITE_DESCRIPTION =
+  "Premium editorial and entertainment — film, television, opinion, news, and spotlight features.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteBaseUrl()),
   title: {
-    default: "Kiribe Online",
-    template: "%s | Kiribe Online",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Premium editorial and entertainment — film, television, opinion, news, and spotlight features.",
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
