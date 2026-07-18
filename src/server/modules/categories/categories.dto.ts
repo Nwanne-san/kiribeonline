@@ -27,3 +27,11 @@ export const categoryInputSchema = z.object({
   brandColor: z.string().optional(),
   showInNav: z.boolean().optional(),
 });
+
+// --- API update schema (partial: PATCH /categories/:id) ---
+export const categoryUpdateInputSchema = categoryInputSchema.partial();
+
+// --- API reorder schema (PATCH /categories/reorder) ---
+export const categoryReorderSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1),
+});

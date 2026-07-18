@@ -17,9 +17,13 @@ export async function GET(request: NextRequest) {
   try {
     await requireAdminUserFromRequest(request);
     const params = request.nextUrl.searchParams;
+    const sortParam = params.get("sort");
     const result = await listAdminArticles({
       status: params.get("status") ?? undefined,
       q: params.get("q") ?? undefined,
+      categoryId: params.get("categoryId") ?? undefined,
+      authorId: params.get("authorId") ?? undefined,
+      sort: sortParam === "newest" || sortParam === "oldest" ? sortParam : undefined,
       page: params.get("page") ? Number(params.get("page")) : undefined,
       limit: params.get("limit") ? Number(params.get("limit")) : undefined,
     });

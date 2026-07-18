@@ -74,6 +74,7 @@ import { $findMatchingParent, mergeRegister } from "@lexical/utils";
 import {
   $createParagraphNode,
   $getSelection,
+  $insertNodes,
   $isRangeSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
@@ -90,6 +91,7 @@ import { KiribeTextField } from "@/modules/shared/components/ui";
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
 import type { AdminMediaRef } from "@/server/modules";
 import { normalizeLexicalBody } from "@/server/shared/text-to-lexical";
+import { $createUploadNode, UploadNode } from "./UploadNode";
 
 const theme = {
   paragraph: "kiribe-lexical-p",
@@ -453,18 +455,20 @@ function InsertUploadPlugin({ media }: { media: AdminMediaRef | null }) {
   useEffect(() => {
     if (!media) return;
     editor.update(() => {
-      const selection = $getSelection();
-      const uploadNode = {
-        type: "upload",
-        version: 2,
+      const uploadNode = $createUploadNode({
         relationTo: "media",
-        value: media.id,
-        fields: null,
-        format: "",
-        indent: 0,
-      };
+        // Coerce numeric-string ids to numbers for the Postgres relationship
+        // (matches the article relationship handling on the server).
+        value: /^\d+$/.test(media.id) ? Number(media.id) : media.id,
+        src: media.url,
+        altText: media.alt,
+      });
+      const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        selection.insertNodes([uploadNode as never]);
+        selection.insertNodes([uploadNode]);
+      } else {
+        // No caret (e.g. inserted from a toolbar button) — append to the root.
+        $insertNodes([uploadNode]);
       }
     });
   }, [editor, media]);
@@ -537,6 +541,7 @@ export function AdminRichTextEditor({
         CodeNode,
         CodeHighlightNode,
         HorizontalRuleNode,
+        UploadNode,
       ],
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- init once

@@ -3,7 +3,7 @@ import { apiSuccess, parseBody } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
-  requireAdminWrite,
+  requireAdminWriteCapability,
 } from "@/server/auth";
 import { createCreatorAdmin, listCreatorsAdmin } from "@/server/modules/creators";
 import { z } from "zod";
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "creators:manage");
     const body = await request.json();
     const input = parseBody(creatorInputSchema, body);
     return apiSuccess(await createCreatorAdmin(input));

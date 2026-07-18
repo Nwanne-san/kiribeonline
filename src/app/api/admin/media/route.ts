@@ -15,7 +15,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     await requireAdminUserFromRequest(request);
-    const result = await listMedia();
+    const { searchParams } = new URL(request.url);
+    const result = await listMedia({
+      page: searchParams.get("page") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
+    });
     return apiSuccess(result);
   } catch (error) {
     return handleAdminRouteError(error);
@@ -30,10 +34,10 @@ export async function POST(request: NextRequest) {
     const alt = String(formData.get("alt") ?? "").trim();
 
     if (!(file instanceof File)) {
-      throw new Error("File is required.");
+      return NextResponse.json({ error: "File is required." }, { status: 400 });
     }
     if (!alt) {
-      throw new Error("Alt text is required.");
+      return NextResponse.json({ error: "Alt text is required." }, { status: 400 });
     }
     if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(

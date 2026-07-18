@@ -40,11 +40,15 @@ export const adminUsersService = {
 export const adminCategoriesService = {
   list: { path: `${ADMIN_API}/categories`, method: ApiMethods.GET },
   create: { path: `${ADMIN_API}/categories`, method: ApiMethods.POST },
+  reorder: { path: `${ADMIN_API}/categories/reorder`, method: ApiMethods.PATCH },
+  update: (id: string) => ({ path: `${ADMIN_API}/categories/${id}`, method: ApiMethods.PATCH }),
+  remove: (id: string) => ({ path: `${ADMIN_API}/categories/${id}`, method: ApiMethods.DELETE }),
 };
 
 export const adminTagsService = {
   list: { path: `${ADMIN_API}/tags`, method: ApiMethods.GET },
   create: { path: `${ADMIN_API}/tags`, method: ApiMethods.POST },
+  remove: (id: string) => ({ path: `${ADMIN_API}/tags/${id}`, method: ApiMethods.DELETE }),
 };
 
 export const adminMediaService = {

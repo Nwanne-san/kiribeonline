@@ -1,1 +1,1 @@
-export { TagsAdminPage as TagsPage } from "../TaxonomyAdminPage/TaxonomyAdminPage";
+export { CategoriesTagsPage as TagsPage } from "../CategoriesTagsPage/CategoriesTagsPage";

@@ -4,6 +4,10 @@ export const DEFAULT_PAGE_LIMIT = 24;
 export const MAX_PAGE_LIMIT = 50;
 export const PAGE_LIMIT_OPTIONS = [12, 24, 48] as const;
 
+/** Admin list views — tighter default with a page-size selector (Figma). */
+export const ADMIN_DEFAULT_PAGE_LIMIT = 20;
+export const ADMIN_PAGE_LIMIT_OPTIONS = [10, 20, 50] as const;
+
 export const MIN_SEARCH_LENGTH = 2;
 export const DEFAULT_DEBOUNCE_MS = 300;
 
@@ -38,6 +42,12 @@ export const DEFAULT_SUBSCRIBE_CONFIRM_RATE_LIMIT = 10;
 export const DEFAULT_ADMIN_LOGIN_RATE_LIMIT = 5;
 export const DEFAULT_ADMIN_LOGIN_EMAIL_RATE_LIMIT = 10;
 
+/**
+ * Sensitive credential mutations (accept-invite, password reset) — tight tier,
+ * matching BrandDrive's sensitive-route posture (~5/min). See AUTH-HARDENING §3.
+ */
+export const DEFAULT_ADMIN_SENSITIVE_RATE_LIMIT = 5;
+
 /** Shared bucket for all admin write routes, keyed on the session user id. */
 export const DEFAULT_ADMIN_WRITE_RATE_LIMIT = 60;
 
@@ -45,6 +55,13 @@ export const DEFAULT_ADMIN_WRITE_RATE_LIMIT = 60;
 export const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 export const RATE_LIMIT_WINDOW_15_MIN_MS = 15 * 60 * 1000;
 export const RATE_LIMIT_WINDOW_1_HOUR_MS = 60 * 60 * 1000;
+
+/**
+ * Admin session token lifetime (seconds). Short by default (2h) per
+ * AUTH-HARDENING §2 — override with `ADMIN_TOKEN_TTL_SECONDS`. Payload issues a
+ * fresh token on each authenticated request, so active sessions roll forward.
+ */
+export const DEFAULT_ADMIN_TOKEN_TTL_SECONDS = 60 * 60 * 2;
 
 export const DEFAULT_LIST_REVALIDATE_SECONDS = 60;
 

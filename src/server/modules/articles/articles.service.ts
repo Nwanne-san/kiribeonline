@@ -4,6 +4,29 @@ import { textToLexical } from "@/server/shared/text-to-lexical";
 import type { ArticleInput } from "@/server/modules";
 import { slugify } from "@/utils/helper";
 
+/**
+ * Coerce a relationship id to the shape Payload expects. Our Postgres adapter
+ * uses integer ids, but the admin client sends them as strings (select values).
+ * All-digit strings become numbers; anything else (e.g. Mongo ObjectIds) is
+ * passed through unchanged. Empty/nullish → undefined (clears the relation).
+ */
+function toRelId(
+  value: string | number | null | undefined
+): number | string | undefined {
+  if (value === null || value === undefined || value === "") return undefined;
+  if (typeof value === "number") return value;
+  return /^\d+$/.test(value) ? Number(value) : value;
+}
+
+function toRelIds(
+  values: Array<string | number> | undefined
+): Array<number | string> | undefined {
+  if (!values) return undefined;
+  return values
+    .map((v) => toRelId(v))
+    .filter((v): v is number | string => v !== undefined);
+}
+
 function mapArticleInput(input: ArticleInput) {
   const body =
     input.body ??
@@ -14,10 +37,10 @@ function mapArticleInput(input: ArticleInput) {
     slug: input.slug ?? slugify(input.title),
     excerpt: input.excerpt,
     body,
-    categories: input.categoryIds,
-    tags: input.tagIds,
-    author: input.authorId ?? undefined,
-    heroImage: input.heroImageId ?? undefined,
+    categories: toRelIds(input.categoryIds) ?? [],
+    tags: toRelIds(input.tagIds) ?? [],
+    author: toRelId(input.authorId),
+    heroImage: toRelId(input.heroImageId),
     status: input.status,
     publishedAt: input.publishedAt ?? undefined,
     featured: input.featured ?? false,
@@ -26,7 +49,7 @@ function mapArticleInput(input: ArticleInput) {
       ? {
           title: input.seo.title,
           description: input.seo.description,
-          ogImage: input.seo.ogImageId ?? undefined,
+          ogImage: toRelId(input.seo.ogImageId),
         }
       : undefined,
   };
@@ -35,6 +58,12 @@ function mapArticleInput(input: ArticleInput) {
 export type ListAdminArticlesParams = {
   status?: string;
   q?: string;
+  /** Filter by category relationship id (membership match). */
+  categoryId?: string;
+  /** Filter by author (user) relationship id. */
+  authorId?: string;
+  /** Publish-date ordering. Defaults to newest first. */
+  sort?: "newest" | "oldest";
   page?: number;
   limit?: number;
 };
@@ -44,18 +73,30 @@ export async function listAdminArticles(params?: ListAdminArticlesParams) {
 
   const conditions: Where[] = [];
   if (params?.status) conditions.push({ status: { equals: params.status } });
+  if (params?.categoryId) conditions.push({ categories: { equals: params.categoryId } });
+  if (params?.authorId) conditions.push({ author: { equals: params.authorId } });
   if (params?.q) {
     const q = params.q.trim();
     conditions.push({ or: [{ title: { like: q } }, { slug: { like: q } }] });
   }
   const where: Where | undefined = conditions.length ? { and: conditions } : undefined;
 
+  // When the caller picks a date order, sort by publish date (matches the list's
+  // Date column). Otherwise keep the legacy recency order so other callers
+  // (e.g. the dashboard) are unaffected.
+  const sort =
+    params?.sort === "oldest"
+      ? "publishedAt"
+      : params?.sort === "newest"
+        ? "-publishedAt"
+        : "-updatedAt";
+
   return payload.find({
     collection: "articles",
     where,
     page: params?.page ?? 1,
     limit: params?.limit ?? 50,
-    sort: "-updatedAt",
+    sort,
     depth: 1,
     overrideAccess: true,
   });
@@ -121,10 +162,10 @@ export async function updateAdminArticle(id: string, input: Partial<ArticleInput
   if (input.excerpt !== undefined) data.excerpt = input.excerpt;
   if (input.body) data.body = input.body;
   else if (input.bodyText) data.body = textToLexical(input.bodyText);
-  if (input.categoryIds) data.categories = input.categoryIds;
-  if (input.tagIds) data.tags = input.tagIds;
-  if (input.authorId !== undefined) data.author = input.authorId;
-  if (input.heroImageId !== undefined) data.heroImage = input.heroImageId;
+  if (input.categoryIds) data.categories = toRelIds(input.categoryIds) ?? [];
+  if (input.tagIds) data.tags = toRelIds(input.tagIds) ?? [];
+  if (input.authorId !== undefined) data.author = toRelId(input.authorId) ?? null;
+  if (input.heroImageId !== undefined) data.heroImage = toRelId(input.heroImageId) ?? null;
   if (input.status) data.status = input.status;
   if (input.publishedAt !== undefined) data.publishedAt = input.publishedAt;
   if (input.featured !== undefined) data.featured = input.featured;
@@ -133,7 +174,7 @@ export async function updateAdminArticle(id: string, input: Partial<ArticleInput
     data.seo = {
       title: input.seo.title,
       description: input.seo.description,
-      ogImage: input.seo.ogImageId ?? undefined,
+      ogImage: toRelId(input.seo.ogImageId) ?? undefined,
     };
   }
   return payload.update({ collection: "articles", id, data, overrideAccess: true });

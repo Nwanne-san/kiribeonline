@@ -1,99 +1,32 @@
 "use client";
 
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import ArticleIcon from "@mui/icons-material/Article";
-import HomeIcon from "@mui/icons-material/Home";
-import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
-import CategoryIcon from "@mui/icons-material/Category";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import SettingsIcon from "@mui/icons-material/Settings";
-import AnalyticsIcon from "@mui/icons-material/Analytics";
-import LogoutIcon from "@mui/icons-material/Logout";
-import MenuIcon from "@mui/icons-material/Menu";
-import StarIcon from "@mui/icons-material/Star";
-import MovieIcon from "@mui/icons-material/Movie";
-import VideocamIcon from "@mui/icons-material/Videocam";
-import Box from "@mui/material/Box";
-import Drawer from "@mui/material/Drawer";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import Toolbar from "@mui/material/Toolbar";
-import AppBar from "@mui/material/AppBar";
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
-import useMediaQuery from "@mui/material/useMediaQuery";
-import { useTheme } from "@mui/material/styles";
+import MenuRounded from "@mui/icons-material/MenuRounded";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import NotificationsNoneRounded from "@mui/icons-material/NotificationsNoneRounded";
+import AddRounded from "@mui/icons-material/AddRounded";
+import FileUploadOutlined from "@mui/icons-material/FileUploadOutlined";
+import LogoutRounded from "@mui/icons-material/LogoutRounded";
+import PublicOutlined from "@mui/icons-material/PublicOutlined";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminRoutes } from "@/routes/admin.routes";
-import { KiribeButton } from "@/modules/shared/components/ui";
+import { PublicRoutes } from "@/routes/public.routes";
+import { ROLE_LABELS } from "@/server/access/roles";
 import {
   NavigationProgressProvider,
   RouteProgress,
-  useNavigationProgress,
+  BrandMark,
 } from "@/modules/shared/components/brand";
+import { InitialAvatar } from "@/modules/admin/components/ui/AdminPrimitives";
+import { usePermissions } from "@/modules/admin/hooks/usePermissions";
+import { NAV_GROUPS, isNavActive, type NavItem } from "./nav";
 
-const navItems = [
-  { label: "Dashboard", route: AdminRoutes.dashboard, icon: DashboardIcon },
-  { label: "Articles", route: AdminRoutes.articles, icon: ArticleIcon },
-  { label: "Homepage", route: AdminRoutes.homepage, icon: HomeIcon },
-  { label: "Editor's Picks", route: AdminRoutes.editorsPicks, icon: StarIcon },
-  { label: "Creators", route: AdminRoutes.creators, icon: MovieIcon },
-  { label: "Reels", route: AdminRoutes.reels, icon: VideocamIcon },
-  { label: "Media", route: AdminRoutes.media, icon: PhotoLibraryIcon },
-  { label: "Categories", route: AdminRoutes.categories, icon: CategoryIcon },
-  { label: "Tags", route: AdminRoutes.tags, icon: LocalOfferIcon },
-  { label: "Settings", route: AdminRoutes.settings, icon: SettingsIcon },
-  { label: "Analytics", route: AdminRoutes.analytics, icon: AnalyticsIcon },
-];
+const COLLAPSE_KEY = "kiribe.admin.sidebarCollapsed";
+const DESKTOP_QUERY = "(min-width: 80rem)"; // lg — matches sidebar `lg:` breakpoint
 
-function SidebarNav({ pathname, onNavigate }: { pathname: string; onNavigate: (route: string) => void }) {
-  return (
-    <>
-      <Toolbar sx={{ px: 2.5, minHeight: 64 }}>
-        <Typography variant="h6" color="primary.main" sx={{ fontWeight: 700, fontSize: "0.9375rem" }}>
-          Kiribé Admin
-        </Typography>
-      </Toolbar>
-      <List sx={{ px: 0 }}>
-        {navItems.map(({ label, route, icon: Icon }) => {
-          const active =
-            pathname === route ||
-            pathname.startsWith(`${route}/`) ||
-            (route === AdminRoutes.articles && pathname.includes("/admin/articles"));
-          return (
-            <ListItemButton
-              key={route}
-              selected={active}
-              onClick={() => onNavigate(route)}
-              sx={{
-                py: 1.1,
-                pl: active ? 2 : 2.5,
-                borderLeft: "3px solid",
-                borderColor: active ? "primary.main" : "transparent",
-                bgcolor: active ? "rgba(107, 29, 42, 0.06)" : "transparent",
-                "&.Mui-selected": { bgcolor: "rgba(107, 29, 42, 0.06)" },
-                "& .MuiListItemIcon-root": { color: active ? "primary.main" : "text.secondary", minWidth: 32 },
-                "& .MuiListItemText-primary": {
-                  fontSize: "0.8125rem",
-                  fontWeight: active ? 600 : 400,
-                  color: active ? "primary.main" : "text.primary",
-                },
-              }}
-            >
-              <ListItemIcon>
-                <Icon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={label} />
-            </ListItemButton>
-          );
-        })}
-      </List>
-    </>
-  );
-}
+const ACTIVE_ITEM = "bg-[#7f0400] text-white";
+const IDLE_ITEM = "text-gray-400 hover:bg-white/[0.06] hover:text-white";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
@@ -106,68 +39,361 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 function AdminShellBody({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const { start } = useNavigationProgress();
+  const { me } = usePermissions();
 
-  const logout = async () => {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Restore the persisted collapse preference after mount (avoids SSR mismatch).
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === "1");
+    }
+    setHydrated(true);
+  }, []);
+
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const toggleSidebar = useCallback(() => {
+    const isDesktop =
+      typeof window !== "undefined" && window.matchMedia(DESKTOP_QUERY).matches;
+    if (isDesktop) {
+      setCollapsed((prev) => {
+        const next = !prev;
+        window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+        return next;
+      });
+    } else {
+      setMobileOpen((prev) => !prev);
+    }
+  }, []);
+
+  const navigate = useCallback(
+    (route: string) => {
+      setMobileOpen(false);
+      if (route !== pathname) router.push(route);
+    },
+    [pathname, router]
+  );
+
+  const logout = useCallback(async () => {
     await fetch("/api/admin/auth/logout", { method: "POST" });
     router.replace(AdminRoutes.login);
-  };
+  }, [router]);
 
-  const navigate = (route: string) => {
-    if (route !== pathname) start();
-    router.push(route);
-    setDrawerOpen(false);
-  };
+  const activeLabel =
+    NAV_GROUPS.flatMap((g) => g.items).find((i) => isNavActive(i, pathname))?.label ??
+    "Dashboard";
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
-      {!isMobile && (
-        <Drawer
-          variant="permanent"
-          sx={{
-            width: 240,
-            flexShrink: 0,
-            [`& .MuiDrawer-paper`]: { width: 240, boxSizing: "border-box", borderRight: "1px solid", borderColor: "divider" },
-          }}
-        >
-          <SidebarNav pathname={pathname} onNavigate={navigate} />
-        </Drawer>
+    <div className="flex min-h-screen bg-surface-alt text-ink">
+      {/* Desktop sidebar */}
+      <aside
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col bg-[#0c0c10] lg:flex ${
+          hydrated ? "transition-[width] duration-300 ease-out" : ""
+        } ${collapsed ? "w-[76px]" : "w-60"}`}
+      >
+        <Sidebar
+          collapsed={collapsed}
+          pathname={pathname}
+          onNavigate={navigate}
+          onViewSite={() => window.open(PublicRoutes.home, "_blank")}
+          onLogout={logout}
+        />
+      </aside>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Close menu"
+            className="animate-fadeIn absolute inset-0 bg-black/50"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="admin-drawer-enter absolute inset-y-0 left-0 flex w-60 flex-col bg-[#0c0c10] shadow-xl">
+            <Sidebar
+              collapsed={false}
+              pathname={pathname}
+              onNavigate={navigate}
+              onViewSite={() => window.open(PublicRoutes.home, "_blank")}
+              onLogout={logout}
+            />
+          </aside>
+        </div>
       )}
 
-      {isMobile && (
-        <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-          <Box sx={{ width: 240 }}>
-            <SidebarNav pathname={pathname} onNavigate={navigate} />
-          </Box>
-        </Drawer>
-      )}
+      {/* Main column */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar
+          activeLabel={activeLabel}
+          userName={me?.name ?? me?.email ?? "Admin"}
+          userRole={me ? ROLE_LABELS[me.role] : ""}
+          onToggleSidebar={toggleSidebar}
+          onNewArticle={() => navigate(AdminRoutes.articleNew)}
+          onUpload={() => navigate(AdminRoutes.media)}
+          onSearch={(q) =>
+            router.push(`${AdminRoutes.articles}?q=${encodeURIComponent(q)}`)
+          }
+        />
+        <RouteProgress />
+        <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 md:px-6 md:py-8">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
 
-      <Box component="main" sx={{ flex: 1, minWidth: 0 }}>
-        <AppBar
-          position="static"
-          color="inherit"
-          elevation={0}
-          sx={{ position: "relative", borderBottom: "1px solid", borderColor: "divider" }}
-        >
-          <RouteProgress />
-          <Toolbar sx={{ justifyContent: "space-between", minHeight: 50 }}>
-            {isMobile ? (
-              <IconButton edge="start" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
-                <MenuIcon />
-              </IconButton>
-            ) : (
-              <Box />
+/* ─────────────────────────────────────────────────────────── Sidebar */
+
+function Sidebar({
+  collapsed,
+  pathname,
+  onNavigate,
+  onViewSite,
+  onLogout,
+}: {
+  collapsed: boolean;
+  pathname: string;
+  onNavigate: (route: string) => void;
+  onViewSite: () => void;
+  onLogout: () => void;
+}) {
+  return (
+    <>
+      <div
+        className={`flex h-16 items-center gap-2 border-b border-white/5 ${
+          collapsed ? "justify-center px-2" : "px-5"
+        }`}
+      >
+        <BrandMark height={22} tone="light" />
+        {!collapsed && (
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-gray-500">
+            CMS
+          </span>
+        )}
+      </div>
+
+      <nav className="flex-1 overflow-y-auto py-3">
+        {NAV_GROUPS.map((group, gi) => (
+          <div key={group.heading ?? gi} className={gi > 0 ? "mt-4" : ""}>
+            {group.heading && !collapsed && (
+              <div className="px-5 pb-1.5 pt-2 text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-gray-600">
+                {group.heading}
+              </div>
             )}
-            <KiribeButton startIcon={<LogoutIcon />} onClick={logout} size="small" variant="text" color="inherit">
-              Log out
-            </KiribeButton>
-          </Toolbar>
-        </AppBar>
-        <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, md: 3 }, py: { xs: 3, md: 4 } }}>{children}</Box>
-      </Box>
-    </Box>
+            {group.heading && collapsed && (
+              <div className="mx-3 mb-2 border-t border-white/5" />
+            )}
+            <ul className="space-y-0.5 px-2">
+              {group.items.map((item) => (
+                <li key={item.label}>
+                  <NavRow
+                    item={item}
+                    active={isNavActive(item, pathname)}
+                    collapsed={collapsed}
+                    onNavigate={onNavigate}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+
+      <div className="border-t border-white/5 px-2 py-3">
+        <FooterRow
+          icon={<PublicOutlined fontSize="small" />}
+          label="View Website"
+          collapsed={collapsed}
+          onClick={onViewSite}
+        />
+        <FooterRow
+          icon={<LogoutRounded fontSize="small" />}
+          label="Log Out"
+          collapsed={collapsed}
+          onClick={onLogout}
+        />
+      </div>
+    </>
+  );
+}
+
+function NavRow({
+  item,
+  active,
+  collapsed,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  collapsed: boolean;
+  onNavigate: (route: string) => void;
+}) {
+  const Icon = item.icon;
+  const base = `group flex items-center rounded-lg text-[0.8125rem] font-medium transition-colors ${
+    collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
+  }`;
+
+  if (item.soon || !item.route) {
+    return (
+      <span
+        title={collapsed ? `${item.label} — coming soon` : undefined}
+        className={`${base} cursor-not-allowed text-gray-600`}
+        aria-disabled
+      >
+        <Icon fontSize="small" />
+        {!collapsed && (
+          <>
+            <span className="flex-1 truncate">{item.label}</span>
+            <span className="rounded bg-white/5 px-1.5 py-0.5 text-[0.5625rem] font-semibold uppercase tracking-wide text-gray-500">
+              Soon
+            </span>
+          </>
+        )}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      title={collapsed ? item.label : undefined}
+      onClick={() => onNavigate(item.route as string)}
+      className={`${base} w-full ${active ? ACTIVE_ITEM : IDLE_ITEM}`}
+    >
+      <Icon fontSize="small" />
+      {!collapsed && <span className="flex-1 truncate text-left">{item.label}</span>}
+    </button>
+  );
+}
+
+function FooterRow({
+  icon,
+  label,
+  collapsed,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  collapsed: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={collapsed ? label : undefined}
+      onClick={onClick}
+      className={`flex w-full items-center rounded-lg text-[0.8125rem] font-medium text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-white ${
+        collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
+      }`}
+    >
+      {icon}
+      {!collapsed && <span className="truncate">{label}</span>}
+    </button>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────── Top bar */
+
+function TopBar({
+  activeLabel,
+  userName,
+  userRole,
+  onToggleSidebar,
+  onNewArticle,
+  onUpload,
+  onSearch,
+}: {
+  activeLabel: string;
+  userName: string;
+  userRole: string;
+  onToggleSidebar: () => void;
+  onNewArticle: () => void;
+  onUpload: () => void;
+  onSearch: (q: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur md:px-6">
+      <button
+        type="button"
+        onClick={onToggleSidebar}
+        aria-label="Toggle sidebar"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-secondary transition-colors hover:bg-surface-muted"
+      >
+        <MenuRounded fontSize="small" />
+      </button>
+
+      <nav
+        aria-label="Breadcrumb"
+        className="hidden shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] sm:flex"
+      >
+        <span className="text-muted">Kiribé CMS</span>
+        <ChevronRightRounded sx={{ fontSize: 14 }} className="text-muted-soft" />
+        <span className="text-burgundy">{activeLabel}</span>
+      </nav>
+
+      <form
+        className="ml-auto hidden min-w-0 max-w-md flex-1 items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2 md:flex lg:ml-6 lg:mr-auto"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = inputRef.current?.value.trim();
+          if (q) onSearch(q);
+        }}
+      >
+        <SearchRounded sx={{ fontSize: 18 }} className="shrink-0 text-muted-soft" />
+        <input
+          ref={inputRef}
+          type="search"
+          placeholder="Search articles, pages, media, users…"
+          className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted-soft"
+        />
+      </form>
+
+      <div className="ml-auto flex items-center gap-2 md:ml-0">
+        <button
+          type="button"
+          onClick={onNewArticle}
+          className="hidden items-center gap-1.5 rounded-lg bg-[#7f0400] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#6b0300] sm:inline-flex"
+        >
+          <AddRounded sx={{ fontSize: 16 }} />
+          New Article
+        </button>
+        <button
+          type="button"
+          onClick={onUpload}
+          className="hidden items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-secondary transition-colors hover:bg-surface-muted sm:inline-flex"
+        >
+          <FileUploadOutlined sx={{ fontSize: 16 }} />
+          Upload
+        </button>
+
+        <button
+          type="button"
+          aria-label="Notifications"
+          className="relative grid h-9 w-9 place-items-center rounded-lg text-ink-secondary transition-colors hover:bg-surface-muted"
+        >
+          <NotificationsNoneRounded fontSize="small" />
+          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#7f0400]" />
+        </button>
+
+        <div className="flex items-center gap-2 pl-1">
+          <InitialAvatar name={userName} className="h-8 w-8" />
+          <div className="hidden leading-tight lg:block">
+            <div className="max-w-[10rem] truncate text-[0.8125rem] font-semibold text-ink">
+              {userName}
+            </div>
+            {userRole && <div className="text-[0.6875rem] text-muted">{userRole}</div>}
+          </div>
+        </div>
+      </div>
+    </header>
   );
 }

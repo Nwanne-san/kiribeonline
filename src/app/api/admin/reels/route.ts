@@ -3,7 +3,7 @@ import { apiSuccess, parseBody } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
-  requireAdminWrite,
+  requireAdminWriteCapability,
 } from "@/server/auth";
 import { createReelAdmin, listReelsAdmin } from "@/server/modules/reels";
 import { z } from "zod";
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "reels:manage");
     const body = await request.json();
     const input = parseBody(reelInputSchema, body);
     return apiSuccess(await createReelAdmin(input));

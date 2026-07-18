@@ -3,7 +3,7 @@ import { apiSuccess, parseBody } from "@/lib/api";
 import {
   handleAdminRouteError,
   requireAdminUserFromRequest,
-  requireAdminWrite,
+  requireAdminWriteCapability,
 } from "@/server/auth";
 import { deleteCreatorAdmin, getCreatorAdmin, updateCreatorAdmin } from "@/server/modules/creators";
 import { z } from "zod";
@@ -37,7 +37,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "creators:manage");
     const { id } = await params;
     const body = await request.json();
     const input = parseBody(creatorPatchSchema, body);
@@ -49,7 +49,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdminWrite(request);
+    await requireAdminWriteCapability(request, "creators:manage");
     const { id } = await params;
     return apiSuccess(await deleteCreatorAdmin(id));
   } catch (error) {
