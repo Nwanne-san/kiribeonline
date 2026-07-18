@@ -16,15 +16,14 @@ export type SitemapEntry = {
 export async function getSitemapEntries(): Promise<SitemapEntry[]> {
   const baseUrl = getSiteBaseUrl();
 
-  // Only routes that actually ship. `/privacy` and `/terms` exist in the route
-  // enum but have no page yet — excluded so the public sitemap never advertises
-  // a 404. Add them back here when those pages land.
   const staticPaths = [
     PublicRoutes.home,
     PublicRoutes.articles,
     PublicRoutes.categories,
     PublicRoutes.about,
     PublicRoutes.contact,
+    PublicRoutes.privacy,
+    PublicRoutes.terms,
   ];
   const staticEntries: SitemapEntry[] = staticPaths.map((path) => ({
     url: `${baseUrl}${path}`,
