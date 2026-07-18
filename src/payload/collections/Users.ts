@@ -2,13 +2,23 @@ import type { CollectionConfig } from "payload";
 import { adminRoleOnly, denySelfFieldMutation } from "../access";
 import { USER_ROLES, USER_STATUSES } from "@/server/access/roles";
 import { auditAfterChange, auditAfterDelete } from "../hooks/audit";
+import { auditAuthAfterLogin } from "../hooks/audit-auth";
+import { DEFAULT_ADMIN_TOKEN_TTL_SECONDS } from "@/constants";
+import { positiveIntEnv } from "@/lib/env";
 
 export const Users: CollectionConfig = {
   slug: "users",
   auth: {
-    tokenExpiration: 60 * 60 * 24 * 7,
-    maxLoginAttempts: 5,
-    lockTime: 600,
+    // Short-lived sessions (default 2h) — Payload re-issues a token on each
+    // authenticated request, so active admins stay logged in while idle
+    // sessions expire quickly. AUTH-HARDENING §2.
+    tokenExpiration: positiveIntEnv(
+      "ADMIN_TOKEN_TTL_SECONDS",
+      DEFAULT_ADMIN_TOKEN_TTL_SECONDS
+    ),
+    maxLoginAttempts: positiveIntEnv("ADMIN_MAX_LOGIN_ATTEMPTS", 5),
+    // 15-minute lockout after repeated failures (was 10m). AUTH-HARDENING §3.
+    lockTime: positiveIntEnv("ADMIN_LOCK_TIME_SECONDS", 60 * 15),
   },
   admin: {
     useAsTitle: "email",
@@ -69,6 +79,7 @@ export const Users: CollectionConfig = {
     },
   ],
   hooks: {
+    afterLogin: [auditAuthAfterLogin],
     afterChange: [auditAfterChange("users")],
     afterDelete: [auditAfterDelete("users")],
   },

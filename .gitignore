@@ -45,3 +45,6 @@ next-env.d.ts
 # payload / uploads (local dev when R2 not configured)
 /media
 /public/media
+
+# local scratch
+/scratchpad

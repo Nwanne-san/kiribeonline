@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { Where } from "payload";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 import { resolveRole } from "@/server/access/roles";
+import { writeAuditLog } from "@/lib/audit";
+import { sendAdminInviteEmail } from "./invite-email";
 import type { UserInviteInput, UserUpdateInput } from "./users.dto";
 import type { AdminUserListItem } from "./users.types";
 import {
@@ -103,6 +105,12 @@ export async function updateAdminUser(id: string, input: UserUpdateInput) {
   if (input.name !== undefined) data.name = input.name;
   if (input.role !== undefined) data.role = input.role;
   if (input.status !== undefined) data.status = input.status;
+  // Suspension revokes any outstanding invite — a pending user's still-valid
+  // link must not be able to re-activate the account later.
+  if (input.status === "suspended") {
+    data.inviteTokenHash = null;
+    data.inviteTokenExpiresAt = null;
+  }
 
   const doc = (await payload.update({
     collection: "users",
@@ -121,7 +129,11 @@ export async function updateAdminUser(id: string, input: UserUpdateInput) {
  * status to `active`. Only the SHA-256 hash of the token is stored; the raw
  * token is returned once for the caller to email and is never persisted.
  */
-export async function inviteAdminUser(input: UserInviteInput) {
+export async function inviteAdminUser(
+  input: UserInviteInput,
+  invitedBy?: { name?: string; email?: string },
+) {
+  const invitedByName = invitedBy?.name;
   const payload = await getPayloadClient();
   const { raw, hash } = generateInviteToken();
   const expiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS).toISOString();
@@ -140,7 +152,33 @@ export async function inviteAdminUser(input: UserInviteInput) {
     overrideAccess: true,
   })) as UserDoc;
 
-  return { user: toListItem(doc, 0), inviteToken: raw, inviteExpiresAt: expiresAt };
+  // Deliver the invite link. Falls back to returning the raw token to the
+  // inviting admin when email isn't configured (dev). AUTH-HARDENING §5.
+  const emailSent = await sendAdminInviteEmail({
+    email: input.email,
+    token: raw,
+    role: input.role,
+    invitedByName,
+  });
+
+  await writeAuditLog(payload, {
+    action: "users.invited",
+    // Audit rows must stay queryable by actor email — the display name goes to
+    // the invite email only. Review finding N1.
+    actorEmail: invitedBy?.email ?? invitedByName,
+    targetType: "users",
+    targetId: String(doc.id),
+    metadata: { role: input.role, emailSent },
+  });
+
+  return {
+    user: toListItem(doc, 0),
+    // Only hand the raw token back when we couldn't email it — avoids exposing
+    // a live credential in the API response when delivery succeeded.
+    inviteToken: emailSent ? undefined : raw,
+    inviteExpiresAt: expiresAt,
+    emailSent,
+  };
 }
 
 /**
@@ -165,6 +203,10 @@ export async function acceptInvite(token: string, password: string) {
   const expiresAt = user.inviteTokenExpiresAt ? Date.parse(user.inviteTokenExpiresAt) : 0;
   if (!expiresAt || expiresAt < Date.now()) return null;
 
+  // A still-valid invite link must not re-activate an account an admin has
+  // since suspended (or already activated) — only pending accounts can accept.
+  if (user.status !== "pending") return null;
+
   await payload.update({
     collection: "users",
     id: user.id,
@@ -175,6 +217,15 @@ export async function acceptInvite(token: string, password: string) {
       inviteTokenExpiresAt: null,
     } as never,
     overrideAccess: true,
+  });
+
+  // Setting a new password rotates Payload's salt/hash, invalidating any token
+  // previously issued for this account (forced logout). AUTH-HARDENING §6.
+  await writeAuditLog(payload, {
+    action: "auth.invite_accepted",
+    actorEmail: user.email,
+    targetType: "users",
+    targetId: String(user.id),
   });
 
   return { id: String(user.id), email: user.email };

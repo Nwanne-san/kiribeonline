@@ -1,7 +1,9 @@
 /** Custom Kiribe admin routes — primary editor UX (not Payload Studio). */
 export enum AdminRoutes {
   login = "/admin/login",
+  acceptInvite = "/admin/accept-invite",
   dashboard = "/admin/dashboard",
+  recentActivity = "/admin/recent-activity",
   articles = "/admin/articles",
   articleNew = "/admin/articles/new",
   articleEdit = "/admin/articles/:id/edit",
@@ -12,6 +14,7 @@ export enum AdminRoutes {
   tags = "/admin/tags",
   settings = "/admin/settings",
   analytics = "/admin/analytics",
+  usersRoles = "/admin/users",
   creators = "/admin/creators",
   creatorNew = "/admin/creators/new",
   creatorEdit = "/admin/creators/:id/edit",

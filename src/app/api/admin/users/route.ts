@@ -29,10 +29,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdminWriteCapability(request, "users:manage");
+    const admin = await requireAdminWriteCapability(request, "users:manage");
     const body = await request.json();
     const input = parseBody(userInviteSchema, body);
-    const doc = await inviteAdminUser(input);
+    const actor = admin as { name?: string; email?: string };
+    const doc = await inviteAdminUser(input, {
+      name: actor.name ?? actor.email,
+      email: actor.email,
+    });
     return apiSuccess(doc);
   } catch (error) {
     return handleAdminRouteError(error);

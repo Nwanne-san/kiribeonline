@@ -10,6 +10,7 @@ import {
   RATE_LIMIT_WINDOW_1_HOUR_MS,
 } from "@/constants";
 import { peekRateLimit, rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,12 @@ export async function POST(request: NextRequest) {
         DEFAULT_ADMIN_LOGIN_EMAIL_RATE_LIMIT,
         RATE_LIMIT_WINDOW_1_HOUR_MS
       );
+      // Audit the failure (generic; no signal on whether the account exists).
+      await writeAuditLog(payload, {
+        action: "auth.login_failed",
+        actorEmail: emailKey,
+        metadata: { ip },
+      });
       return apiError("Invalid email or password.", 401);
     }
 
@@ -69,6 +76,13 @@ export async function POST(request: NextRequest) {
     // session cookie is issued.
     const status = (result.user as { status?: string }).status;
     if (status && status !== "active") {
+      await writeAuditLog(payload, {
+        action: "auth.login_rejected_status",
+        actorEmail: emailKey,
+        targetType: "users",
+        targetId: String(result.user.id),
+        metadata: { status, ip },
+      });
       return apiError("Invalid email or password.", 401);
     }
 
