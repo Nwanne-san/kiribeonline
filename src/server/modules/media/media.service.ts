@@ -1,7 +1,9 @@
+import type { Where } from "payload";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
 import { clampLimit, normalizePagination, parsePage } from "@/lib/content";
 import type { AdminListResult } from "@/server/shared/types";
+import type { MediaPatchInput } from "./media.dto";
 import type { AdminMediaItem } from "./media.types";
 
 type MediaDoc = {
@@ -35,6 +37,11 @@ function mapMedia(doc: MediaDoc): AdminMediaItem {
 export type ListMediaParams = {
   page?: number | string;
   limit?: number | string;
+  /**
+   * Case-insensitive substring match on filename or alt text. Trimmed and
+   * treated as absent when empty so the library defaults to newest-first.
+   */
+  q?: string | null;
 };
 
 export async function listMedia(
@@ -43,6 +50,19 @@ export async function listMedia(
   const payload = await getPayloadClient();
   const page = parsePage(params.page);
   const limit = clampLimit(params.limit);
+  const q = typeof params.q === "string" ? params.q.trim() : "";
+
+  // Payload's `like` is a case-insensitive substring match on Postgres. Search
+  // both the raw filename (what editors typed on upload) and the alt (what
+  // they'd remember describing).
+  const where: Where | undefined = q
+    ? {
+        or: [
+          { filename: { like: q } },
+          { alt: { like: q } },
+        ],
+      }
+    : undefined;
 
   const result = await payload.find({
     collection: "media",
@@ -50,6 +70,7 @@ export async function listMedia(
     limit,
     sort: "-updatedAt",
     depth: 0,
+    where,
     overrideAccess: true,
   });
 
@@ -57,6 +78,30 @@ export async function listMedia(
     docs: (result.docs as MediaDoc[]).map(mapMedia),
     ...normalizePagination(result.totalDocs, page, limit),
   };
+}
+
+/**
+ * Patch editable metadata (alt, caption, credit) on an uploaded asset. The
+ * DTO is already normalised (trimmed + validated); only defined keys are sent
+ * so `undefined` never clobbers an existing caption/credit.
+ */
+export async function updateMedia(
+  id: string,
+  input: MediaPatchInput,
+): Promise<AdminMediaItem> {
+  const payload = await getPayloadClient();
+  const data: Record<string, string> = {};
+  if (input.alt !== undefined) data.alt = input.alt;
+  if (input.caption !== undefined) data.caption = input.caption;
+  if (input.credit !== undefined) data.credit = input.credit;
+
+  const doc = await payload.update({
+    collection: "media",
+    id,
+    data: data as never,
+    overrideAccess: true,
+  });
+  return mapMedia(doc as MediaDoc);
 }
 
 export type CreateMediaInput = {
