@@ -68,4 +68,11 @@ export const DEFAULT_LIST_REVALIDATE_SECONDS = 60;
 /** Max size for a single admin media upload. */
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
+/**
+ * Max decoded pixel count sharp will accept (40MP ≈ 160MB RGBA). Caps decode
+ * memory on untrusted images independently of the byte-size limit — a crafted
+ * file can be small on disk but enormous decoded.
+ */
+export const MAX_IMAGE_PIXELS = 40_000_000;
+
 export const ARTICLE_LIST_SORT = "-publishedAt";

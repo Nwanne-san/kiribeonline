@@ -75,6 +75,24 @@ export function MediaLibraryPage() {
     options: {
       successTitle: "Asset deleted",
       invalidateKeys: [adminQueryKeys.media],
+      onError: (error) => {
+        // 409: the asset is still referenced. List where so the editor can
+        // detach it before retrying.
+        const references = error?.errors?.references;
+        if (error?.statusCode === 409 && references?.length) {
+          showToast({
+            message: "Can't delete — image in use",
+            description: `Referenced by: ${references.join("; ")}`,
+            severity: "warning",
+          });
+          return;
+        }
+        showToast({
+          message: "Delete failed",
+          description: error?.message ?? "Something went wrong.",
+          severity: "error",
+        });
+      },
     },
   });
 
@@ -149,12 +167,9 @@ export function MediaLibraryPage() {
   const handleDelete = useCallback(
     (item: AdminMediaItem) => {
       const label = item.filename ?? item.alt ?? "this asset";
-      if (item.usageCount > 0) {
-        const used = `${item.usageCount} place${item.usageCount === 1 ? "" : "s"}`;
-        if (!window.confirm(`"${label}" is used in ${used}. Delete it anyway?`)) return;
-      } else if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) {
-        return;
-      }
+      // Deletion is blocked server-side while the asset is referenced (409), so
+      // don't promise an override here — just confirm intent.
+      if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) return;
       deleteMutation.mutate({ id: item.id });
     },
     [deleteMutation],

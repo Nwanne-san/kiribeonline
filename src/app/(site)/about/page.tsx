@@ -5,11 +5,13 @@ export const metadata: Metadata = {
   title: "About Kiribé",
   description:
     "Premium entertainment journalism for audiences who take culture seriously. Twelve years covering African and global film, television, and the cultural conversations that matter.",
+  alternates: { canonical: "/about" },
   openGraph: {
     title: "About Kiribé",
     description:
       "Premium entertainment journalism for audiences who take culture seriously.",
     type: "website",
+    url: "/about",
   },
 };
 

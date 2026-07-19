@@ -175,6 +175,7 @@ export interface Media {
   caption?: string | null;
   credit?: string | null;
   usageCount?: number | null;
+  blurDataUrl?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
