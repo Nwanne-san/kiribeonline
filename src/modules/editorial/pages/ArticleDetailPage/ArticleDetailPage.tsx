@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Suspense } from "react";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import Box from "@mui/material/Box";
@@ -88,7 +88,23 @@ const proseSx = {
 } as const;
 
 function ArticleDetailContent({ article, relatedArticles = [] }: ArticleDetailPageProps) {
+  // Count one view per article per browser session. The ref guards against React
+  // Strict Mode's double-invoke / remounts within a render, and the
+  // sessionStorage key stops repeat counts on back-navigation to the same article.
+  const trackedSlug = useRef<string | null>(null);
   useEffect(() => {
+    if (trackedSlug.current === article.slug) return;
+    trackedSlug.current = article.slug;
+
+    const storageKey = `kiribe:viewed:${article.slug}`;
+    try {
+      if (sessionStorage.getItem(storageKey)) return;
+      sessionStorage.setItem(storageKey, "1");
+    } catch {
+      // sessionStorage unavailable (private mode / SSR guard) — fall through and
+      // still record the view; the ref alone prevents the Strict Mode double-fire.
+    }
+
     void fetch("/api/analytics/view", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -322,7 +338,10 @@ function ArticleDetailContent({ article, relatedArticles = [] }: ArticleDetailPa
               {article.tags.map((tag) => (
                 <KiribeLink
                   key={tag.id}
-                  href={`${PublicRoutes.articles}?tag=${encodeURIComponent(tag.slug)}`}
+                  // Canonical tag archive lives at /tags/[slug]. The old
+                  // ?tag= filter on /articles still works — this just prefers
+                  // the canonical URL going forward.
+                  href={publicRoute(PublicRoutes.tagDetail, { slug: tag.slug })}
                   underline="none"
                 >
                   <CategoryBadge label={tag.name} color={accent} variant="outline" />

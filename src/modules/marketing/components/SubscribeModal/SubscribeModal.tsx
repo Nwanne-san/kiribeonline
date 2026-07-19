@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import NextLink from "next/link";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CloseIcon from "@mui/icons-material/Close";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
 import Dialog from "@mui/material/Dialog";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import { KiribeTypography } from "@/modules/shared/components/ui";
+import { trackEvent } from "@/modules/shared/components/GoogleAnalytics";
+import { PublicRoutes } from "@/routes/public.routes";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import {
   subscribeService,
@@ -26,6 +31,7 @@ type SubscribeModalProps = {
 /** "Stay in the Story" newsletter modal — Figma V5 node 2044:603. */
 export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
   const [email, setEmail] = useState("");
+  const [consent, setConsent] = useState(false);
   const [touched, setTouched] = useState(false);
 
   const { mutate, isPending, isSuccess, reset } = useMutationService<
@@ -40,18 +46,21 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
   useEffect(() => {
     if (open) {
       setEmail("");
+      setConsent(false);
       setTouched(false);
       reset();
     }
   }, [open, reset]);
 
   const valid = EMAIL_RE.test(email.trim());
+  const canSubmit = valid && consent;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (!valid) return;
-    mutate({ email: email.trim(), consent: true, website: "" });
+    if (!canSubmit) return;
+    trackEvent("subscribe", { location: "modal" });
+    mutate({ email: email.trim(), consent, website: "" });
   };
 
   return (
@@ -184,7 +193,7 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
               <Box
                 component="button"
                 type="submit"
-                disabled={isPending}
+                disabled={isPending || !canSubmit}
                 sx={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -211,7 +220,36 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
               </Box>
             </Stack>
 
-            <KiribeTypography sx={{ mt: 2, fontSize: "0.75rem", lineHeight: "1rem", color: "#99A1AF" }}>
+            <FormControlLabel
+              sx={{ mt: 2, mx: 0, alignItems: "flex-start" }}
+              control={
+                <Checkbox
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  size="small"
+                  sx={{
+                    py: 0,
+                    color: "#99A1AF",
+                    "&.Mui-checked": { color: "primary.main" },
+                  }}
+                />
+              }
+              label={
+                <KiribeTypography sx={{ fontSize: "0.8125rem", lineHeight: 1.5, color: "#4A5565", textAlign: "left" }}>
+                  I agree to receive editorial updates and accept the{" "}
+                  <Box
+                    component={NextLink}
+                    href={PublicRoutes.privacy}
+                    sx={{ color: "primary.main", textDecoration: "underline" }}
+                  >
+                    privacy policy
+                  </Box>
+                  .
+                </KiribeTypography>
+              }
+            />
+
+            <KiribeTypography sx={{ mt: 1.5, fontSize: "0.75rem", lineHeight: "1rem", color: "#99A1AF" }}>
               No spam, unsubscribe anytime. Your privacy is respected.
             </KiribeTypography>
 

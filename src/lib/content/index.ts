@@ -8,6 +8,8 @@ export {
   getCategoriesIndexForPublic,
 } from "./query-categories";
 export type { PublicCategory, PublicCategorySummary } from "./query-categories";
+export { getTagBySlug } from "./query-tags";
+export { toArticleCardDoc } from "./map-article";
 export { getHomepageForPublic } from "./query-homepage";
 export { getSiteSettingsForPublic } from "./query-site-settings";
 export { mapPayloadArticle } from "./map-article";

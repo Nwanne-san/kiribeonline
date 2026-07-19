@@ -7,6 +7,7 @@ import {
   mergeWhereClauses,
 } from "./article-search";
 import { clampLimit, normalizePagination, parsePage } from "./pagination";
+import { toArticleCardDoc } from "./map-article";
 import type { ArticleCardDoc, ArticleListParams, ArticleListResult } from "./types";
 
 export async function queryArticles(
@@ -38,7 +39,10 @@ export async function queryArticles(
   const pagination = normalizePagination(result.totalDocs, page, limit);
 
   return {
-    docs: result.docs as unknown as ArticleCardDoc[],
+    // Strip the heavy Lexical body from every card and precompute reading time.
+    docs: (result.docs as unknown as Array<ArticleCardDoc & { body?: unknown }>).map(
+      toArticleCardDoc
+    ),
     ...pagination,
   };
 }

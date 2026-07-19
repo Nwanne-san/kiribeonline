@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { sql } from "@payloadcms/db-postgres";
 import { apiError, apiSuccess, handleRouteError } from "@/lib/api";
 import { getClientIp } from "@/server/auth";
 import { getPayloadClient } from "@/lib/payload/get-payload";
@@ -41,13 +42,11 @@ export async function POST(request: NextRequest) {
       return apiSuccess({ updated: false });
     }
 
-    const current = typeof article.viewCount === "number" ? article.viewCount : 0;
-    await payload.update({
-      collection: "articles",
-      id: article.id,
-      data: { viewCount: current + 1 },
-      overrideAccess: true,
-    });
+    // Atomic increment at the DB level — a read-then-write here would drop
+    // concurrent views (lost-update race). `COALESCE` seeds a null counter.
+    await payload.db.drizzle.execute(
+      sql`UPDATE articles SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ${article.id}`
+    );
 
     return apiSuccess({ updated: true });
   } catch (error) {
