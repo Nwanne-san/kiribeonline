@@ -92,4 +92,4 @@ Kiribe Online is a premium magazine-style website for film, TV, video, opinion, 
 7. **What happens when a post goes viral?** Caching and edge protection handle spikes.
 8. **How do I update the homepage featured stories?** Admin → Featured content.
 9. **Is the site mobile-friendly?** Yes, mobile-first.
-10. **What if I forget my admin password?** Use forgot password on the admin login page.
+10. **What if I forget my admin password?** Ask an admin to re-invite you (the invite flow sets a new password on accept). No self-service reset in v1 — see `docs/DECISIONS.md`.

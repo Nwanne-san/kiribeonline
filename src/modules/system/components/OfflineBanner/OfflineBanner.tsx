@@ -93,7 +93,7 @@ export function OfflineBanner() {
       <span>
         {reconnected
           ? "Back online"
-          : "You're offline — some stories may be unavailable"}
+          : "You're offline — check your connection and try again"}
       </span>
     </div>
   );

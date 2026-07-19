@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getCategoriesForPublic } from "@/lib/content";
 import { getSpotlightArchiveData } from "@/lib/content/query-creators";
 import { CategoryArchivePage } from "@/modules/editorial/pages/CategoryArchivePage";
@@ -53,5 +54,13 @@ export default async function Page({ params }: PageProps) {
     );
   }
 
-  return <CategoryArchivePage slug={slug} />;
+  // Junk slugs 404 instead of rendering an empty archive with a 200. A real
+  // category with no articles still renders (its empty state lives in the archive).
+  const categories = await getCategoriesForPublic();
+  const category = categories.find((item) => item.slug === slug);
+  if (!category) {
+    notFound();
+  }
+
+  return <CategoryArchivePage slug={slug} title={category.name} />;
 }

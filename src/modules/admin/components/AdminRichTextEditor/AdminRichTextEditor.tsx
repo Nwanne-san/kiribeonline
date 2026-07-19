@@ -13,9 +13,12 @@ import FormatQuoteIcon from "@mui/icons-material/FormatQuote";
 import FormatStrikethroughIcon from "@mui/icons-material/FormatStrikethrough";
 import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
+import CollectionsIcon from "@mui/icons-material/Collections";
+import FormatQuoteRoundedIcon from "@mui/icons-material/FormatQuoteRounded";
 import ImageIcon from "@mui/icons-material/Image";
 import LinkIcon from "@mui/icons-material/Link";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
+import OndemandVideoIcon from "@mui/icons-material/OndemandVideo";
 import RedoIcon from "@mui/icons-material/Redo";
 import UndoIcon from "@mui/icons-material/Undo";
 import Box from "@mui/material/Box";
@@ -92,6 +95,18 @@ import { MediaPicker } from "@/modules/admin/components/MediaPicker";
 import type { AdminMediaRef } from "@/server/modules";
 import { normalizeLexicalBody } from "@/server/shared/text-to-lexical";
 import { $createUploadNode, UploadNode } from "./UploadNode";
+import { $createEmbedNode, EmbedNode } from "./EmbedNode";
+import { $createPullQuoteNode, PullQuoteNode } from "./PullQuoteNode";
+import { $createGalleryNode, GalleryNode, type GalleryItem } from "./GalleryNode";
+import {
+  EmbedInsertDialog,
+  type EmbedInsertPayload,
+} from "./EmbedInsertDialog";
+import {
+  PullQuoteInsertDialog,
+  type PullQuoteInsertPayload,
+} from "./PullQuoteInsertDialog";
+import { GalleryInsertDialog } from "./GalleryInsertDialog";
 
 const theme = {
   paragraph: "kiribe-lexical-p",
@@ -175,9 +190,15 @@ const BLOCK_OPTIONS: { value: string; label: string }[] = [
 function Toolbar({
   onOpenImage,
   onOpenLink,
+  onOpenEmbed,
+  onOpenPullQuote,
+  onOpenGallery,
 }: {
   onOpenImage: () => void;
   onOpenLink: (currentUrl: string | null) => void;
+  onOpenEmbed: () => void;
+  onOpenPullQuote: () => void;
+  onOpenGallery: () => void;
 }) {
   const [editor] = useLexicalComposerContext();
   const [blockType, setBlockType] = useState("paragraph");
@@ -472,6 +493,15 @@ function Toolbar({
       <IconButton size="small" aria-label="Insert image" onClick={onOpenImage}>
         <ImageIcon fontSize="small" />
       </IconButton>
+      <IconButton size="small" aria-label="Insert gallery" onClick={onOpenGallery}>
+        <CollectionsIcon fontSize="small" />
+      </IconButton>
+      <IconButton size="small" aria-label="Insert embed" onClick={onOpenEmbed}>
+        <OndemandVideoIcon fontSize="small" />
+      </IconButton>
+      <IconButton size="small" aria-label="Insert pull quote" onClick={onOpenPullQuote}>
+        <FormatQuoteRoundedIcon fontSize="small" />
+      </IconButton>
     </Stack>
   );
 }
@@ -545,6 +575,85 @@ function InsertLinkPlugin({
   return null;
 }
 
+function InsertEmbedPlugin({
+  pending,
+  onApplied,
+}: {
+  pending: EmbedInsertPayload | null;
+  onApplied: () => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    if (!pending) return;
+    editor.update(() => {
+      const node = $createEmbedNode({
+        url: pending.url,
+        platform: pending.platform,
+        embedUrl: pending.embedUrl,
+      });
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.insertNodes([node]);
+      } else {
+        $insertNodes([node]);
+      }
+    });
+    onApplied();
+  }, [editor, pending, onApplied]);
+  return null;
+}
+
+function InsertPullQuotePlugin({
+  pending,
+  onApplied,
+}: {
+  pending: PullQuoteInsertPayload | null;
+  onApplied: () => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    if (!pending) return;
+    editor.update(() => {
+      const node = $createPullQuoteNode({
+        quote: pending.quote,
+        attribution: pending.attribution,
+      });
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.insertNodes([node]);
+      } else {
+        $insertNodes([node]);
+      }
+    });
+    onApplied();
+  }, [editor, pending, onApplied]);
+  return null;
+}
+
+function InsertGalleryPlugin({
+  pending,
+  onApplied,
+}: {
+  pending: GalleryItem[] | null;
+  onApplied: () => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    if (!pending) return;
+    editor.update(() => {
+      const node = $createGalleryNode({ items: pending });
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.insertNodes([node]);
+      } else {
+        $insertNodes([node]);
+      }
+    });
+    onApplied();
+  }, [editor, pending, onApplied]);
+  return null;
+}
+
 export type AdminRichTextEditorProps = {
   label?: string;
   value?: Record<string, unknown> | null;
@@ -565,6 +674,12 @@ export function AdminRichTextEditor({
   const [linkDialog, setLinkDialog] = useState<{ url: string } | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [pendingLink, setPendingLink] = useState<{ url: string } | null>(null);
+  const [embedDialog, setEmbedDialog] = useState(false);
+  const [pendingEmbed, setPendingEmbed] = useState<EmbedInsertPayload | null>(null);
+  const [pullQuoteDialog, setPullQuoteDialog] = useState(false);
+  const [pendingPullQuote, setPendingPullQuote] = useState<PullQuoteInsertPayload | null>(null);
+  const [galleryDialog, setGalleryDialog] = useState(false);
+  const [pendingGallery, setPendingGallery] = useState<GalleryItem[] | null>(null);
 
   const applyLink = () => {
     const raw = linkDialog?.url ?? "";
@@ -600,6 +715,9 @@ export function AdminRichTextEditor({
         CodeHighlightNode,
         HorizontalRuleNode,
         UploadNode,
+        EmbedNode,
+        PullQuoteNode,
+        GalleryNode,
       ],
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- init once
@@ -618,6 +736,9 @@ export function AdminRichTextEditor({
             setLinkError(null);
             setLinkDialog({ url: currentUrl ?? "" });
           }}
+          onOpenEmbed={() => setEmbedDialog(true)}
+          onOpenPullQuote={() => setPullQuoteDialog(true)}
+          onOpenGallery={() => setGalleryDialog(true)}
         />
         <Box
           sx={{
@@ -707,6 +828,18 @@ export function AdminRichTextEditor({
             pending={pendingLink}
             onApplied={() => setPendingLink(null)}
           />
+          <InsertEmbedPlugin
+            pending={pendingEmbed}
+            onApplied={() => setPendingEmbed(null)}
+          />
+          <InsertPullQuotePlugin
+            pending={pendingPullQuote}
+            onApplied={() => setPendingPullQuote(null)}
+          />
+          <InsertGalleryPlugin
+            pending={pendingGallery}
+            onApplied={() => setPendingGallery(null)}
+          />
         </Box>
       </LexicalComposer>
       {error && (
@@ -778,6 +911,36 @@ export function AdminRichTextEditor({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Embed insertion */}
+      <EmbedInsertDialog
+        open={embedDialog}
+        onClose={() => setEmbedDialog(false)}
+        onInsert={(payload) => {
+          setPendingEmbed(payload);
+          setEmbedDialog(false);
+        }}
+      />
+
+      {/* Pull quote insertion */}
+      <PullQuoteInsertDialog
+        open={pullQuoteDialog}
+        onClose={() => setPullQuoteDialog(false)}
+        onInsert={(payload) => {
+          setPendingPullQuote(payload);
+          setPullQuoteDialog(false);
+        }}
+      />
+
+      {/* Gallery insertion */}
+      <GalleryInsertDialog
+        open={galleryDialog}
+        onClose={() => setGalleryDialog(false)}
+        onInsert={(items) => {
+          setPendingGallery(items);
+          setGalleryDialog(false);
+        }}
+      />
     </AdminCard>
   );
 }
