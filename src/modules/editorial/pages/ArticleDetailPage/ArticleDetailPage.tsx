@@ -338,7 +338,10 @@ function ArticleDetailContent({ article, relatedArticles = [] }: ArticleDetailPa
               {article.tags.map((tag) => (
                 <KiribeLink
                   key={tag.id}
-                  href={`${PublicRoutes.articles}?tag=${encodeURIComponent(tag.slug)}`}
+                  // Canonical tag archive lives at /tags/[slug]. The old
+                  // ?tag= filter on /articles still works — this just prefers
+                  // the canonical URL going forward.
+                  href={publicRoute(PublicRoutes.tagDetail, { slug: tag.slug })}
                   underline="none"
                 >
                   <CategoryBadge label={tag.name} color={accent} variant="outline" />

@@ -8,12 +8,15 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import NextLink from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import {
   EditorialContainer,
   KiribeTypography,
 } from "@/modules/shared/components/ui";
+import { trackEvent } from "@/modules/shared/components/GoogleAnalytics";
+import { PublicRoutes } from "@/routes/public.routes";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import {
   subscribeService,
@@ -35,7 +38,9 @@ type Status = "idle" | "pending" | "confirmed";
 function SubscribeBandInner() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
-  const [consent, setConsent] = useState(true);
+  // Consent must be explicitly given per privacy guidance — default unchecked
+  // and require the box before the submit is enabled.
+  const [consent, setConsent] = useState(false);
   const [touched, setTouched] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -95,6 +100,7 @@ function SubscribeBandInner() {
     setTouched(true);
     if (!canSubmit) return;
     setMessage(null);
+    trackEvent("subscribe", { location: "band" });
     mutate({ email: trimmed, consent, website: "" });
   };
 
@@ -319,7 +325,15 @@ function SubscribeBandInner() {
             }
             label={
               <KiribeTypography variant="caption" sx={{ color: "rgba(255,255,255,0.85)", fontSize: "0.8125rem" }}>
-                I agree to receive editorial updates and accept the privacy policy.
+                I agree to receive editorial updates and accept the{" "}
+                <Box
+                  component={NextLink}
+                  href={PublicRoutes.privacy}
+                  sx={{ color: MUSTARD, textDecoration: "underline" }}
+                >
+                  privacy policy
+                </Box>
+                .
               </KiribeTypography>
             }
             sx={{ alignItems: "center", mx: 0 }}
