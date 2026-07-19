@@ -27,6 +27,8 @@ metadata:
 - [ ] Max file size enforced server-side
 - [ ] Stored in R2 with non-guessable keys
 - [ ] No SVG uploads unless sanitized
+- [ ] Server-side magic-byte check (sharp metadata), not just declared MIME
+- [ ] `next.config` `images.remotePatterns` scoped to the exact R2 host — avoid `*.r2.dev` / `*.r2.cloudflarestorage.com` wildcards; they turn the image optimizer into an open resize proxy for any bucket. `r2PublicPattern()` already whitelists the real host.
 
 ## Headers & CSRF
 

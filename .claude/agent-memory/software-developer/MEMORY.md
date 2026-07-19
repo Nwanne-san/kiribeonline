@@ -30,3 +30,4 @@
 - [Illustrations & error-boundary traps](gotcha_illustrations_error_boundaries.md) — brand-color SVGs vanish on colored bars; global-error has no CSS vars/globals
 - [useMutationService data type](gotcha_mutation_service_data_type.md) — function-form `data` is typed as full Req; omit it and let variables be the body
 - [next-svgr breaks metadata icons](gotcha_svgr_metadata_icons.md) — app-dir icon.svg needs a webpack resourceQuery exclusion in next.config.ts
+- [SEO/OG metadata gotchas](gotcha_seo_og_metadata.md) — opengraph-image.tsx overrides generateMetadata images; DB-reading sitemap must be force-dynamic to build without a DB
