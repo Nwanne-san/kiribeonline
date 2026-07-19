@@ -10,7 +10,9 @@ export function OfflinePage() {
       <EmptyState
         illustration={<OfflineAntennaIllustration />}
         title="Connection unavailable"
-        description="You're offline. Cached articles remain readable when available — retry once your connection returns."
+        // Kept intentionally generic — we don't promise any offline cache, so
+        // the copy shouldn't imply cached articles are guaranteed to load.
+        description="Check your connection and try again."
         action={{ label: "Retry", onClick: () => window.location.reload() }}
       />
     </Container>

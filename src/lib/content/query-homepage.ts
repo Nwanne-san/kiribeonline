@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { getPayloadClient } from "@/lib/payload/get-payload";
-import { mapPayloadArticle } from "@/lib/content/map-article";
+import { mapPayloadArticle, toArticleCardDoc } from "@/lib/content/map-article";
 import { mapPayloadMedia } from "@/lib/content/map-article";
 import type { ArticleCardDoc } from "@/lib/content/types";
 import type { MediaAsset } from "@/modules/shared/types/content";
@@ -180,7 +180,9 @@ async function fetchHomepageFromPayload(): Promise<HomepageData> {
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
     .map((pick) => pick.article)
     .filter((a) => a && typeof a === "object")
-    .map((a) => a as ArticleCardDoc);
+    // Strip Lexical body + derive read-time so card lists don't ship the full
+    // article payload to the browser.
+    .map((a) => toArticleCardDoc(a as ArticleCardDoc & { body?: unknown }));
 
   const modules = (homepage.categoryModules ?? [])
     .slice()
@@ -203,7 +205,8 @@ async function fetchHomepageFromPayload(): Promise<HomepageData> {
     if (mod.articleSelection === "manual" && mod.manualArticles?.length) {
       articles = mod.manualArticles
         .filter((a) => a && typeof a === "object")
-        .map((a) => a as ArticleCardDoc)
+        // Strip Lexical body + derive read-time — card grids don't render body.
+        .map((a) => toArticleCardDoc(a as ArticleCardDoc & { body?: unknown }))
         .slice(0, mod.maxItems ?? 3);
     } else if (categorySlug) {
       const result = await queryArticles({

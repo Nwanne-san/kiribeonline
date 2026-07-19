@@ -9,6 +9,7 @@ import TwitterIcon from "@mui/icons-material/Twitter";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { KiribeTypography } from "@/modules/shared/components/ui";
+import { trackEvent } from "@/modules/shared/components/GoogleAnalytics";
 
 const pillSx = {
   display: "inline-flex",
@@ -32,7 +33,8 @@ export function ArticleShareRow({ title }: { title: string }) {
 
   const shareUrl = () => (typeof window !== "undefined" ? window.location.href : "");
 
-  const openShare = (url: string) => {
+  const openShare = (method: string, url: string) => {
+    trackEvent("share", { method, content_type: "article", item_id: title });
     window.open(url, "_blank", "noopener,noreferrer,width=600,height=520");
   };
 
@@ -42,6 +44,7 @@ export function ArticleShareRow({ title }: { title: string }) {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl());
+      trackEvent("share", { method: "copy_link", content_type: "article", item_id: title });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -57,7 +60,7 @@ export function ArticleShareRow({ title }: { title: string }) {
           fontSize: "0.75rem",
           letterSpacing: "0.1em",
           textTransform: "uppercase",
-          color: "#99A1AF",
+          color: "var(--color-muted)",
           mb: 2,
         }}
       >
@@ -67,16 +70,22 @@ export function ArticleShareRow({ title }: { title: string }) {
         <Box
           component="button"
           type="button"
-          onClick={() => openShare(`https://twitter.com/intent/tweet?url=${encoded()}&text=${encodedTitle}`)}
-          sx={{ ...pillSx, bgcolor: "#00A6F4" }}
+          aria-label="Share on X"
+          onClick={() =>
+            openShare("x", `https://twitter.com/intent/tweet?url=${encoded()}&text=${encodedTitle}`)
+          }
+          sx={{ ...pillSx, bgcolor: "#000" }}
         >
           <TwitterIcon sx={{ fontSize: 16 }} />
-          Twitter
+          X
         </Box>
         <Box
           component="button"
           type="button"
-          onClick={() => openShare(`https://www.facebook.com/sharer/sharer.php?u=${encoded()}`)}
+          aria-label="Share on Facebook"
+          onClick={() =>
+            openShare("facebook", `https://www.facebook.com/sharer/sharer.php?u=${encoded()}`)
+          }
           sx={{ ...pillSx, bgcolor: "#1447E6" }}
         >
           <FacebookIcon sx={{ fontSize: 16 }} />
@@ -85,7 +94,13 @@ export function ArticleShareRow({ title }: { title: string }) {
         <Box
           component="button"
           type="button"
-          onClick={() => openShare(`https://www.linkedin.com/sharing/share-offsite/?url=${encoded()}`)}
+          aria-label="Share on LinkedIn"
+          onClick={() =>
+            openShare(
+              "linkedin",
+              `https://www.linkedin.com/sharing/share-offsite/?url=${encoded()}`
+            )
+          }
           sx={{ ...pillSx, bgcolor: "#155DFC" }}
         >
           <LinkedInIcon sx={{ fontSize: 16 }} />
