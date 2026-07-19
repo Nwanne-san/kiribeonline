@@ -1,5 +1,6 @@
 import type { CollectionBeforeChangeHook } from "payload";
 import sharp from "sharp";
+import { MAX_IMAGE_PIXELS } from "@/constants";
 
 /** Longest edge of the generated placeholder, in pixels. Kept tiny so the
  *  base64 string stays well under ~1KB and ships inline in the doc. */
@@ -24,7 +25,7 @@ export const generateBlurPlaceholder: CollectionBeforeChangeHook = async ({
   }
 
   try {
-    const buffer = await sharp(file.data)
+    const buffer = await sharp(file.data, { limitInputPixels: MAX_IMAGE_PIXELS })
       .resize(LQIP_EDGE, LQIP_EDGE, { fit: "inside", withoutEnlargement: true })
       .webp({ quality: 40 })
       .toBuffer();

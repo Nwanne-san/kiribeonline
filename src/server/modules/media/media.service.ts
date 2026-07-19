@@ -104,7 +104,11 @@ const REFERENCE_SCAN_LIMIT = 25;
  * Covers the directly-queryable upload relationships: article hero + social
  * image, reel thumbnails, and creator portraits. Body-embedded images inside
  * Lexical richtext are not columns and aren't scanned here (a known gap —
- * see PLAN-IMAGES Phase E).
+ * see PLAN-IMAGES Phase E). Queries resolve published field values only, so a
+ * reference that exists solely in an unpublished draft is also missed.
+ *
+ * Best-effort by design: treat a hit as authoritative ("in use"), but never
+ * treat a miss as proof the asset is unreferenced.
  */
 export async function findMediaReferences(id: string): Promise<MediaReference[]> {
   const payload = await getPayloadClient();

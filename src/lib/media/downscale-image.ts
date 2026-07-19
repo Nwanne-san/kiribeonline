@@ -5,8 +5,10 @@ export const CLIENT_MAX_EDGE = 2560;
 /** WebP quality used when re-encoding a downscaled image client-side. */
 const WEBP_QUALITY = 0.85;
 
-/** Formats we never re-encode: GIF (would lose animation) and WebP (already the
- *  target format — re-encoding only loses quality). */
+/** Formats we never re-encode client-side: GIF (canvas would flatten it here —
+ *  note the server's WebP conversion flattens animated GIFs to a static first
+ *  frame anyway, see Media.ts) and WebP (already the target format —
+ *  re-encoding only loses quality). */
 const SKIP_DOWNSCALE_TYPES = new Set(["image/gif", "image/webp"]);
 
 export type ImageDimensions = { width: number; height: number };

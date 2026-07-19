@@ -43,7 +43,7 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [x] All Articles — search, list/grid/feed toggle, pagination, URL state
 - [x] Category archive (`/categories/[slug]`)
 - [x] Tag archive (`/tags/[slug]`)
-- [ ] About (+ contact section)
+- [x] About (+ contact section)
 - [x] Contact form + validation
 - [x] Subscribe form
 - [x] Privacy Policy, Terms of Use
@@ -62,7 +62,7 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [x] Server-rendered article detail pages
 - [ ] Related content module
 - [x] Basic search (Payload `contains` on title/excerpt)
-- [ ] Sitemap generation
+- [x] Sitemap generation (public `/sitemap.xml` + auth-gated cron variant)
 
 ---
 
@@ -98,9 +98,9 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 
 ## Phase 4: Optimization
 
-- [ ] SEO metadata on all public routes
+- [x] SEO metadata on all public routes (openGraph/twitter + 3-tier OG image + robots)
 - [ ] Analytics (GA or equivalent)
-- [ ] Image optimization pipeline
+- [x] Image optimization pipeline (variants, WebP, LQIP blur-up, body images via next/image)
 - [ ] Lighthouse performance pass
 - [ ] Backup/restore runbook tested on Neon
 - [ ] Monitoring and logging baseline
@@ -113,9 +113,9 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [ ] Session expiration
 - [ ] CSRF on applicable forms
 - [x] Rate limiting on auth and public writes (login IP+email dimensions, contact, subscribe, confirm-token, admin writes; Redis-backed when `REDIS_URL` set)
-- [ ] Secure file upload validation
-- [ ] Env vars never in client bundle
-- [ ] Audit logging on admin mutations
+- [x] Secure file upload validation (size cap pre-buffer, MIME allowlist + magic bytes, pixel-decode cap, capability-gated)
+- [x] Env vars never in client bundle (verified in code reviews of PRs #3/#15/#16)
+- [x] Audit logging on admin mutations (+ auth events: login, lockout, invites)
 
 See `.claude/agent-memory/code-reviewer/security-review.md`.
 
