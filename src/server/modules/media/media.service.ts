@@ -91,6 +91,65 @@ export async function createMedia(
   return mapMedia(doc as MediaDoc);
 }
 
+export type MediaReference = { type: string; title: string };
+
+/** Max references we surface per collection — enough to be actionable without
+ *  scanning the whole table. */
+const REFERENCE_SCAN_LIMIT = 25;
+
+/**
+ * Find the content that still points at a media asset, so deletion can be
+ * blocked with a clear message instead of leaving broken images behind.
+ *
+ * Covers the directly-queryable upload relationships: article hero + social
+ * image, reel thumbnails, and creator portraits. Body-embedded images inside
+ * Lexical richtext are not columns and aren't scanned here (a known gap —
+ * see PLAN-IMAGES Phase E).
+ */
+export async function findMediaReferences(id: string): Promise<MediaReference[]> {
+  const payload = await getPayloadClient();
+  const numeric = Number(id);
+  const idValue: string | number = Number.isNaN(numeric) ? id : numeric;
+
+  const [articles, reels, creators] = await Promise.all([
+    payload.find({
+      collection: "articles",
+      where: {
+        or: [{ heroImage: { equals: idValue } }, { "seo.ogImage": { equals: idValue } }],
+      },
+      depth: 0,
+      limit: REFERENCE_SCAN_LIMIT,
+      overrideAccess: true,
+    }),
+    payload.find({
+      collection: "reels",
+      where: { thumbnail: { equals: idValue } },
+      depth: 0,
+      limit: REFERENCE_SCAN_LIMIT,
+      overrideAccess: true,
+    }),
+    payload.find({
+      collection: "creators",
+      where: { portrait: { equals: idValue } },
+      depth: 0,
+      limit: REFERENCE_SCAN_LIMIT,
+      overrideAccess: true,
+    }),
+  ]);
+
+  const refs: MediaReference[] = [];
+  for (const doc of articles.docs) {
+    refs.push({ type: "Article", title: (doc as { title?: string }).title ?? "Untitled" });
+  }
+  for (const doc of reels.docs) {
+    refs.push({ type: "Reel", title: (doc as { title?: string }).title ?? "Untitled" });
+  }
+  for (const doc of creators.docs) {
+    refs.push({ type: "Creator", title: (doc as { name?: string }).name ?? "Unnamed" });
+  }
+  return refs;
+}
+
 export async function deleteMedia(id: string): Promise<void> {
   const payload = await getPayloadClient();
   await payload.delete({ collection: "media", id, overrideAccess: true });

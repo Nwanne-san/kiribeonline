@@ -11,13 +11,24 @@ import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
-import { DataRenderer, EmptyState } from "@/modules/shared/components/feedback";
+import CloudUploadOutlined from "@mui/icons-material/CloudUploadOutlined";
+import { DataRenderer, EmptyState, useKiribeToast } from "@/modules/shared/components/feedback";
 import { EmptyMediaIllustration } from "@/modules/shared/components/illustrations";
 import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import { adminMediaService, adminQueryKeys } from "@/services/admin.service";
 import type { AdminListResult, AdminMediaItem, AdminMediaRef } from "@/server/modules";
+import { MAX_UPLOAD_BYTES } from "@/constants";
+import {
+  downscaleImage,
+  readImageDimensions,
+  type ImageDimensions,
+} from "@/lib/media/downscale-image";
+
+const ACCEPTED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ACCEPT_ATTR = ACCEPTED_MIME.join(",");
+const MAX_UPLOAD_MB = Math.round(MAX_UPLOAD_BYTES / (1024 * 1024));
 
 export type MediaPickerProps = {
   label: string;
@@ -101,8 +112,13 @@ function MediaLibraryGrid({ onSelect }: { onSelect: (media: AdminMediaRef) => vo
 
 function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useKiribeToast();
   const [alt, setAlt] = useState("");
-  const [fileName, setFileName] = useState("");
+  const [selected, setSelected] = useState<File | null>(null);
+  const [dimensions, setDimensions] = useState<ImageDimensions | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
 
   const { mutate, isPending } = useMutationService<FormData, AdminMediaItem>({
     service: adminMediaService.upload,
@@ -111,34 +127,167 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
       invalidateKeys: [adminQueryKeys.media],
       onSuccess: (media) => {
         onUploaded({ id: media.id, url: media.url, alt: media.alt });
+        resetFile();
         setAlt("");
-        setFileName("");
-        if (fileRef.current) fileRef.current.value = "";
       },
     },
   });
 
-  const handleUpload = () => {
-    const file = fileRef.current?.files?.[0];
-    if (!file || !alt.trim()) return;
+  function resetFile() {
+    setSelected(null);
+    setDimensions(null);
+    setPreviewUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return null;
+    });
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  const acceptFile = async (file: File) => {
+    if (!ACCEPTED_MIME.includes(file.type)) {
+      showToast({
+        message: "Unsupported file",
+        description: "Upload a JPG, PNG, WebP, or GIF image.",
+        severity: "error",
+      });
+      return;
+    }
+    // Pre-flight the raw size so oversized files get a friendly toast rather
+    // than a 413 after a long upload. (Downscaling may shrink it further below.)
+    if (file.size > MAX_UPLOAD_BYTES) {
+      showToast({
+        message: "File too large",
+        description: `${file.name} exceeds the ${MAX_UPLOAD_MB}MB limit.`,
+        severity: "error",
+      });
+      return;
+    }
+
+    setIsPreparing(true);
+    try {
+      const dims = await readImageDimensions(file);
+      setSelected(file);
+      setDimensions(dims);
+      setPreviewUrl((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return URL.createObjectURL(file);
+      });
+      if (!alt) {
+        setAlt(file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim());
+      }
+    } finally {
+      setIsPreparing(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selected || !alt.trim()) return;
+    // Downscale/re-encode in the browser to cut bytes over the wire.
+    const optimized = await downscaleImage(selected);
+    if (optimized.size > MAX_UPLOAD_BYTES) {
+      showToast({
+        message: "File too large",
+        description: `Even after optimizing, this exceeds the ${MAX_UPLOAD_MB}MB limit.`,
+        severity: "error",
+      });
+      return;
+    }
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", optimized);
     formData.append("alt", alt.trim());
     mutate(formData);
   };
 
   return (
     <Stack spacing={2} sx={{ mt: 1 }}>
-      <Button variant="outlined" component="label">
-        {fileName || "Choose file"}
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-label="Drag and drop an image here or click to choose a file"
+        onClick={() => fileRef.current?.click()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            fileRef.current?.click();
+          }
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setIsDragging(false);
+          const file = event.dataTransfer.files?.[0];
+          if (file) void acceptFile(file);
+        }}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 1,
+          px: 3,
+          py: 4,
+          textAlign: "center",
+          borderRadius: 1,
+          border: "2px dashed",
+          borderColor: isDragging ? "primary.main" : "divider",
+          bgcolor: isDragging ? "action.hover" : "background.default",
+          cursor: "pointer",
+          transition: "border-color 120ms, background-color 120ms",
+          "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" },
+        }}
+      >
+        <CloudUploadOutlined color="action" />
+        <Typography variant="body2" fontWeight={600}>
+          Drag &amp; drop or click to choose
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          JPG, PNG, WebP, GIF up to {MAX_UPLOAD_MB}MB
+        </Typography>
         <input
           ref={fileRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept={ACCEPT_ATTR}
           hidden
-          onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void acceptFile(file);
+          }}
         />
-      </Button>
+      </Box>
+
+      {selected ? (
+        <Stack direction="row" spacing={2} alignItems="center">
+          {previewUrl ? (
+            <Box
+              component="img"
+              src={previewUrl}
+              alt="Selected preview"
+              sx={{
+                width: 72,
+                height: 72,
+                objectFit: "cover",
+                borderRadius: 1,
+                border: "1px solid",
+                borderColor: "divider",
+                flexShrink: 0,
+              }}
+            />
+          ) : null}
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="body2" noWrap title={selected.name}>
+              {selected.name}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {dimensions ? `${dimensions.width}×${dimensions.height}px · ` : ""}
+              {(selected.size / (1024 * 1024)).toFixed(1)}MB
+            </Typography>
+          </Box>
+        </Stack>
+      ) : null}
+
       <KiribeTextField
         label="Alt text"
         value={alt}
@@ -149,8 +298,8 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
       />
       <KiribeButton
         onClick={handleUpload}
-        loading={isPending}
-        disabled={!fileName || !alt.trim()}
+        loading={isPending || isPreparing}
+        disabled={!selected || !alt.trim()}
       >
         Upload
       </KiribeButton>
