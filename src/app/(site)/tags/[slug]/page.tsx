@@ -7,10 +7,15 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const title = slug.replace(/-/g, " ");
+  const name = slug.replace(/-/g, " ");
+  const canonical = `/tags/${slug}`;
+  const title = `${name} — Tag`;
+  const description = `Articles tagged ${name} on Kiribé Online.`;
   return {
-    title: `${title} — Tag`,
-    description: `Articles tagged ${title} on Kiribé Online.`,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { type: "website", title, description, url: canonical },
   };
 }
 

@@ -48,3 +48,6 @@ next-env.d.ts
 
 # local scratch
 /scratchpad
+
+# agent worktrees
+.claude/worktrees/

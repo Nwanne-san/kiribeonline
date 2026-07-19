@@ -37,6 +37,14 @@ export interface Tag {
   slug: string;
 }
 
+export interface MediaVariant {
+  url: string;
+  width?: number;
+  height?: number;
+}
+
+export type MediaSizeName = "thumbnail" | "card" | "wide" | "og";
+
 export interface MediaAsset {
   id: string;
   url: string;
@@ -45,6 +53,10 @@ export interface MediaAsset {
   credit?: string;
   width?: number;
   height?: number;
+  /** Pre-generated responsive variants (see Media collection `imageSizes`). */
+  sizes?: Partial<Record<MediaSizeName, MediaVariant>>;
+  /** Base64 LQIP data URI for next/image blur-up. */
+  blurDataUrl?: string;
 }
 
 export interface SeoMetadata {

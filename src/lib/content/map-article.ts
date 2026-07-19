@@ -1,5 +1,19 @@
-import type { Article, Category, MediaAsset, Tag } from "@/modules/shared/types/content";
+import type {
+  Article,
+  Category,
+  MediaAsset,
+  MediaSizeName,
+  MediaVariant,
+  Tag,
+} from "@/modules/shared/types/content";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
+
+type PayloadMediaVariant = {
+  url?: string | null;
+  filename?: string | null;
+  width?: number | null;
+  height?: number | null;
+};
 
 type PayloadMedia = {
   id: string;
@@ -10,7 +24,34 @@ type PayloadMedia = {
   credit?: string | null;
   width?: number | null;
   height?: number | null;
+  blurDataUrl?: string | null;
+  sizes?: Partial<Record<MediaSizeName, PayloadMediaVariant | null>> | null;
 };
+
+const SIZE_NAMES: MediaSizeName[] = ["thumbnail", "card", "wide", "og"];
+
+function mapVariant(source?: PayloadMediaVariant | null): MediaVariant | undefined {
+  if (!source) return undefined;
+  const url = resolveMediaUrl(source);
+  if (!url) return undefined;
+  return {
+    url,
+    width: source.width ?? undefined,
+    height: source.height ?? undefined,
+  };
+}
+
+function mapSizes(
+  sizes?: PayloadMedia["sizes"]
+): MediaAsset["sizes"] | undefined {
+  if (!sizes) return undefined;
+  const mapped: Partial<Record<MediaSizeName, MediaVariant>> = {};
+  for (const name of SIZE_NAMES) {
+    const variant = mapVariant(sizes[name]);
+    if (variant) mapped[name] = variant;
+  }
+  return Object.keys(mapped).length > 0 ? mapped : undefined;
+}
 
 type PayloadCategory = {
   id: string;
@@ -59,6 +100,8 @@ export function mapPayloadMedia(source?: PayloadMedia | string | null): MediaAss
     credit: source.credit ?? undefined,
     width: source.width ?? undefined,
     height: source.height ?? undefined,
+    sizes: mapSizes(source.sizes),
+    blurDataUrl: source.blurDataUrl ?? undefined,
   };
 }
 
@@ -108,9 +151,14 @@ export function mapPayloadArticle(doc: PayloadArticleDoc): Article {
       ? {
           title: doc.seo.title ?? undefined,
           description: doc.seo.description ?? undefined,
-          ogImage: mapPayloadMedia(
-            typeof doc.seo.ogImage === "string" ? undefined : doc.seo.ogImage ?? undefined
-          )?.url,
+          // Prefer the purpose-built 1200×630 `og` crop for social previews,
+          // falling back to the full-size original.
+          ogImage: (() => {
+            const asset = mapPayloadMedia(
+              typeof doc.seo.ogImage === "string" ? undefined : doc.seo.ogImage ?? undefined
+            );
+            return asset?.sizes?.og?.url ?? asset?.url;
+          })(),
         }
       : undefined,
   };

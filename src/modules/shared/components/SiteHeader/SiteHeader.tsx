@@ -485,19 +485,42 @@ export function SiteFooter({
           >
             © {new Date().getFullYear()} {brandName}. All rights reserved.
           </Typography>
-          <Link
-            component={NextLink}
-            href="/admin"
-            underline="hover"
-            sx={{
-              color: "#4A5565",
-              fontSize: "0.75rem",
-              transition: "color var(--duration-fast) ease",
-              "&:hover": { color: "common.white" },
-            }}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={{ xs: 2, sm: 3 }}
+            sx={{ flexWrap: "wrap", rowGap: 1 }}
           >
-            Admin ↗
-          </Link>
+            <Link
+              component={NextLink}
+              href={PublicRoutes.privacy}
+              underline="hover"
+              sx={{ ...footerLinkSx, fontSize: "0.75rem" }}
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              component={NextLink}
+              href={PublicRoutes.terms}
+              underline="hover"
+              sx={{ ...footerLinkSx, fontSize: "0.75rem" }}
+            >
+              Terms of Use
+            </Link>
+            <Link
+              component={NextLink}
+              href="/admin"
+              underline="hover"
+              sx={{
+                color: "#4A5565",
+                fontSize: "0.75rem",
+                transition: "color var(--duration-fast) ease",
+                "&:hover": { color: "common.white" },
+              }}
+            >
+              Admin ↗
+            </Link>
+          </Stack>
         </Box>
       </Container>
     </Box>

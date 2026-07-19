@@ -14,9 +14,31 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!doc) return { title: "Article not found" };
 
   const article = mapPayloadArticle(doc as never);
+  const title = article.seo?.title ?? article.title;
+  const description = article.seo?.description ?? article.excerpt;
+  const canonical = `/articles/${article.slug}`;
+
+  // NOTE: the co-located `opengraph-image.tsx` file convention takes precedence
+  // over `openGraph.images` set here (file-based metadata wins in Next.js), so
+  // the OG image + its seo.ogImage → hero → branded-fallback chain lives there.
+  // Twitter inherits the same image via the og:image fallback.
   return {
-    title: article.seo?.title ?? article.title,
-    description: article.seo?.description ?? article.excerpt,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url: canonical,
+      publishedTime: article.publishedAt,
+      authors: article.author?.name ? [article.author.name] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
 

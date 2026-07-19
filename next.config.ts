@@ -43,11 +43,11 @@ function appOriginPattern(): RemotePattern | null {
   }
 }
 
+// Only the app's own origin (dev local-disk media) is allowed by default. The
+// exact R2 public host is added from `R2_PUBLIC_URL` below — we deliberately do
+// NOT wildcard `*.r2.dev` / `*.r2.cloudflarestorage.com`, which would turn the
+// next/image optimizer into an open resize proxy for any bucket on the internet.
 const remotePatterns: RemotePattern[] = [
-  { protocol: "https", hostname: "*.r2.cloudflarestorage.com", pathname: "/**" },
-  { protocol: "https", hostname: "*.r2.dev", pathname: "/**" },
-  { protocol: "https", hostname: "*.cloudflare.com", pathname: "/**" },
-  // Local-disk media in dev (served from this app's origin).
   { protocol: "http", hostname: "localhost", pathname: "/**" },
   { protocol: "http", hostname: "127.0.0.1", pathname: "/**" },
 ];
@@ -91,6 +91,12 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns,
+    // Serve AVIF/WebP where the browser supports it; the optimizer negotiates
+    // via the Accept header.
+    formats: ["image/avif", "image/webp"],
+    // Media is immutable once uploaded (hashed filenames), so cache optimized
+    // variants at the edge for a day minimum.
+    minimumCacheTTL: 86400,
   },
 };
 
