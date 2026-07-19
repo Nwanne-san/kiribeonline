@@ -6,6 +6,7 @@ export enum PublicRoutes {
   categoryDetail = "/categories/:slug",
   tags = "/tags",
   tagDetail = "/tags/:slug",
+  search = "/search",
   about = "/about",
   contact = "/contact",
   privacy = "/privacy",

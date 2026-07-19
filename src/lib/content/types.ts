@@ -29,7 +29,15 @@ export type ArticleCardDoc = Pick<
   tags?: Array<{ id: string; name: string; slug: string }>;
   /** Populated byline (depth ≥ 1). May arrive as a bare id string at depth 0. */
   author?: { id?: string | number; name?: string | null } | string | null;
-  /** Lexical body — present on raw Payload docs; used for read-time estimates. */
+  /**
+   * Pre-computed reading time (minutes). Card queries derive this server-side
+   * and omit the heavy Lexical `body` so list payloads stay lean.
+   */
+  readingTime?: number;
+  /**
+   * Lexical body — only present on raw Payload docs (e.g. detail queries).
+   * Card/list mappings strip it; prefer {@link readingTime} on cards.
+   */
   body?: unknown;
 };
 

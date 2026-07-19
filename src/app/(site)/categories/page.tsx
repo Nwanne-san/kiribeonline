@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getCategoriesIndexForPublic } from "@/lib/content";
 import { CategoriesPage } from "@/modules/editorial/pages/CategoriesPage";
 
 const title = "Categories";
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   openGraph: { type: "website", title, description, url: "/categories" },
 };
 
-export default function Page() {
-  return <CategoriesPage />;
+export default async function Page() {
+  const categories = await getCategoriesIndexForPublic();
+  return <CategoriesPage categories={categories} />;
 }

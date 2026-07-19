@@ -7,6 +7,8 @@ import type {
   Tag,
 } from "@/modules/shared/types/content";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
+import { estimateReadingTime } from "@/utils/helper";
+import type { ArticleCardDoc } from "@/lib/content/types";
 
 type PayloadMediaVariant = {
   url?: string | null;
@@ -122,6 +124,23 @@ function mapTag(item: PayloadTag | string): Tag | null {
     id: String(item.id),
     name: item.name,
     slug: item.slug,
+  };
+}
+
+/**
+ * Reduce a raw Payload article doc to the lean shape card grids need.
+ *
+ * Card lists (archives, homepage modules, `/api/articles`, `/api/search`) never
+ * render the article body — shipping the full Lexical tree per card bloats the
+ * payload. We derive the reading-time estimate server-side and drop `body`.
+ */
+export function toArticleCardDoc(
+  doc: ArticleCardDoc & { body?: unknown }
+): ArticleCardDoc {
+  const { body, readingTime, ...rest } = doc;
+  return {
+    ...rest,
+    readingTime: readingTime ?? estimateReadingTime(body),
   };
 }
 

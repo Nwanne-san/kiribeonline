@@ -10,6 +10,8 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import NextLink from "next/link";
+import { useRouter } from "next/navigation";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { PublicCategory } from "@/lib/content/query-categories";
 import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
@@ -35,10 +37,17 @@ function getCategoryColor(slug?: string) {
   return CATEGORY_COLORS[key]?.border ?? "#6B1D2A";
 }
 
+/** Build the /search destination href from a query, using the route enum. */
+function searchDestination(query: string) {
+  return `${PublicRoutes.search}?q=${encodeURIComponent(query)}`;
+}
+
 export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[] }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,8 +61,24 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
     }
     setTouched(false);
     setResults([]);
+    setTotal(0);
     setQ("");
   }, [open]);
+
+  // Submit the current query to the full /search destination.
+  const goToSearch = (raw: string) => {
+    const trimmed = raw.trim();
+    if (trimmed.length < MIN_QUERY) return;
+    setOpen(false);
+    router.push(searchDestination(trimmed));
+  };
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      goToSearch(q);
+    }
+  };
 
   // Esc closes.
   useEffect(() => {
@@ -71,6 +96,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
     const trimmed = q.trim();
     if (trimmed.length < MIN_QUERY) {
       setResults([]);
+      setTotal(0);
       setLoading(false);
       return;
     }
@@ -86,11 +112,15 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
           { signal: controller.signal }
         );
         if (!res.ok) throw new Error("Search failed");
-        const json = (await res.json()) as { data?: { docs?: SearchResult[] } };
+        const json = (await res.json()) as {
+          data?: { docs?: SearchResult[]; totalDocs?: number };
+        };
         setResults(json.data?.docs ?? []);
+        setTotal(json.data?.totalDocs ?? 0);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setResults([]);
+          setTotal(0);
         }
       } finally {
         setLoading(false);
@@ -158,7 +188,8 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
               autoFocus
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search articles…"
+              onKeyDown={handleKeyDown}
+              placeholder="Search articles… (press Enter for all results)"
               inputProps={{ "aria-label": "Search Kiribé articles" }}
               InputProps={{
                 startAdornment: (
@@ -259,6 +290,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
               )}
 
               {results.length > 0 && (
+                <>
                 <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />} spacing={0}>
                   {results.map((article) => {
                     const cat = article.categories?.[0];
@@ -323,6 +355,38 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
                     );
                   })}
                 </Stack>
+
+                {total > results.length && (
+                  <Box
+                    component={NextLink}
+                    href={searchDestination(q.trim())}
+                    onClick={() => setOpen(false)}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      mt: 1.5,
+                      pt: 1.5,
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                      textDecoration: "none",
+                      fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+                      fontSize: "0.8125rem",
+                      fontWeight: 600,
+                      letterSpacing: "0.03em",
+                      textTransform: "uppercase",
+                      color: "primary.main",
+                      transition: "color 120ms ease",
+                      "&:hover": { color: "secondary.main" },
+                    }}
+                  >
+                    <span>
+                      View all {total} {total === 1 ? "result" : "results"}
+                    </span>
+                    <SearchIcon fontSize="small" />
+                  </Box>
+                )}
+                </>
               )}
             </Box>
           </Box>
