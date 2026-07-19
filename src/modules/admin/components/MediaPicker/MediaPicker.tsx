@@ -11,6 +11,7 @@ import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
+import CheckIcon from "@mui/icons-material/Check";
 import CloudUploadOutlined from "@mui/icons-material/CloudUploadOutlined";
 import { DataRenderer, EmptyState, useKiribeToast } from "@/modules/shared/components/feedback";
 import { EmptyMediaIllustration } from "@/modules/shared/components/illustrations";
@@ -37,7 +38,20 @@ export type MediaPickerProps = {
   helperText?: string;
 };
 
-function MediaLibraryGrid({ onSelect }: { onSelect: (media: AdminMediaRef) => void }) {
+export type MediaLibraryGridProps = {
+  onSelect: (media: AdminMediaRef) => void;
+  /**
+   * When provided, the grid renders in multi-select mode: selected tiles show a
+   * check badge and `onSelect` acts as a toggle (the parent adds/removes).
+   */
+  selectedIds?: Set<string>;
+};
+
+/**
+ * Media library browser. Single-select by default; pass `selectedIds` to enable
+ * a multi-select toggle mode (used by the gallery insert dialog).
+ */
+export function MediaLibraryGrid({ onSelect, selectedIds }: MediaLibraryGridProps) {
   const { data, isLoading, isError, refetch } = useQueryService<
     Record<string, never>,
     AdminListResult<AdminMediaItem>
@@ -47,6 +61,7 @@ function MediaLibraryGrid({ onSelect }: { onSelect: (media: AdminMediaRef) => vo
   });
 
   const items = data?.docs ?? [];
+  const multiSelect = selectedIds !== undefined;
 
   return (
     <DataRenderer
@@ -67,43 +82,70 @@ function MediaLibraryGrid({ onSelect }: { onSelect: (media: AdminMediaRef) => vo
     >
       {() => (
         <Grid container spacing={1.5}>
-          {items.map((item) => (
-            <Grid key={item.id} size={{ xs: 4, sm: 3 }}>
-              <Box
-                role="button"
-                tabIndex={0}
-                onClick={() => onSelect({ id: item.id, url: item.url, alt: item.alt })}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    onSelect({ id: item.id, url: item.url, alt: item.alt });
-                  }
-                }}
-                sx={{
-                  cursor: "pointer",
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  overflow: "hidden",
-                  aspectRatio: "1 / 1",
-                  "&:hover": { borderColor: "primary.main" },
-                  "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" },
-                }}
-              >
-                {item.url ? (
-                  <Box
-                    component="img"
-                    src={item.url}
-                    alt={item.alt ?? item.filename ?? ""}
-                    sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                  />
-                ) : (
-                  <Box sx={{ p: 1 }}>
-                    <Typography variant="caption">{item.filename}</Typography>
-                  </Box>
-                )}
-              </Box>
-            </Grid>
-          ))}
+          {items.map((item) => {
+            const isSelected = selectedIds?.has(item.id) ?? false;
+            const select = () => onSelect({ id: item.id, url: item.url, alt: item.alt });
+            return (
+              <Grid key={item.id} size={{ xs: 4, sm: 3 }}>
+                <Box
+                  role={multiSelect ? "checkbox" : "button"}
+                  aria-checked={multiSelect ? isSelected : undefined}
+                  aria-label={item.alt ?? item.filename ?? "Media image"}
+                  tabIndex={0}
+                  onClick={select}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      select();
+                    }
+                  }}
+                  sx={{
+                    position: "relative",
+                    cursor: "pointer",
+                    border: "2px solid",
+                    borderColor: isSelected ? "primary.main" : "divider",
+                    borderRadius: 1,
+                    overflow: "hidden",
+                    aspectRatio: "1 / 1",
+                    "&:hover": { borderColor: "primary.main" },
+                    "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" },
+                  }}
+                >
+                  {item.url ? (
+                    <Box
+                      component="img"
+                      src={item.url}
+                      alt={item.alt ?? item.filename ?? ""}
+                      sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                  ) : (
+                    <Box sx={{ p: 1 }}>
+                      <Typography variant="caption">{item.filename}</Typography>
+                    </Box>
+                  )}
+                  {multiSelect && isSelected ? (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        bgcolor: "primary.main",
+                        color: "primary.contrastText",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <CheckIcon sx={{ fontSize: 16 }} />
+                    </Box>
+                  ) : null}
+                </Box>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
     </DataRenderer>
