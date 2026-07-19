@@ -146,8 +146,10 @@ export function ArticleListView({
     isSearchMode,
   } = useArticlesList({ mode, defaultCategorySlug, defaultTagSlug });
 
-  const showSearchPrompt =
-    isSearchMode && q.trim().length > 0 && q.trim().length < MIN_SEARCH_LENGTH;
+  // In search mode, prompt for input whenever the query is too short — including
+  // an empty query (e.g. landing on /search with no `q`), so the page never
+  // renders an empty "0 articles" grid as a dead end.
+  const showSearchPrompt = isSearchMode && q.trim().length < MIN_SEARCH_LENGTH;
 
   const isFiltered =
     isSearchMode || Boolean(defaultCategorySlug) || Boolean(defaultTagSlug);

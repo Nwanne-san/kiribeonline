@@ -82,8 +82,8 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [ ] Cloudflare edge rules where applicable (documented in `docs/DEPLOYMENT.md`; apply when zone is set up)
 
 ### 3.3 Offline (TRD §12)
-- [ ] Service worker / PWA shell
-- [ ] Cache critical assets + selected articles
+- [ ] Service worker / PWA shell — **deferred for v1, see `docs/DECISIONS.md`**
+- [ ] Cache critical assets + selected articles — deferred with the SW
 - [x] Global offline banner (`OfflineBanner` + `useOnlineStatus`, mounted in `SiteLayout`)
 - [x] `/offline` fallback page (branded, `OfflineAntennaIllustration`)
 - [ ] Queue or graceful fail for write actions
