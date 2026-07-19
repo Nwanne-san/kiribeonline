@@ -7,6 +7,9 @@ import {
 } from "@payloadcms/richtext-lexical/react";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import type { MediaAsset } from "@/modules/shared/types/content";
+import { ArticleEmbed } from "@/modules/editorial/components/ArticleEmbed";
+import { ArticleGallery } from "@/modules/editorial/components/ArticleGallery";
+import { PullQuote } from "@/modules/editorial/components/PullQuote";
 
 export type RichTextRendererProps = {
   // Payload Lexical serialized state
@@ -43,13 +46,50 @@ function toMediaAsset(value: UploadMediaValue): MediaAsset | null {
   };
 }
 
+/** Denormalized gallery item stored on the custom `gallery` node. */
+type GalleryNodeItem = { id?: string; url?: string; alt?: string };
+
 /**
  * Render `upload` (media) nodes through KiribeImage/next-image — lazy-loaded,
  * intrinsically sized, blur-up — instead of Lexical's default raw `<img>`.
- * This is also the seam PLAN-EMBEDS extends for other embed node types.
+ * Also renders the PLAN-EMBEDS custom nodes: `embed`, `pullquote`, `gallery`.
+ * Unknown node types render nothing (with a dev warning) so a future node kind
+ * can never crash an already-published article.
  */
-const converters: JSXConvertersFunction = ({ defaultConverters }) => ({
+export const richTextConverters: JSXConvertersFunction = ({ defaultConverters }) => ({
   ...defaultConverters,
+  embed: ({ node }) => {
+    const url = typeof (node as { url?: unknown }).url === "string"
+      ? (node as { url: string }).url
+      : "";
+    if (!url) return null;
+    // ArticleEmbed re-validates `url` server-side and ignores any stored embedUrl.
+    return <ArticleEmbed url={url} />;
+  },
+  pullquote: ({ node }) => {
+    const n = node as { quote?: unknown; attribution?: unknown };
+    const quote = typeof n.quote === "string" ? n.quote : "";
+    if (!quote) return null;
+    const attribution = typeof n.attribution === "string" ? n.attribution : undefined;
+    return <PullQuote quote={quote} attribution={attribution} />;
+  },
+  gallery: ({ node }) => {
+    const rawItems = (node as { items?: unknown }).items;
+    if (!Array.isArray(rawItems)) return null;
+    const items = (rawItems as GalleryNodeItem[])
+      .filter((it) => it && typeof it.id === "string" && typeof it.url === "string")
+      .map((it) => ({ id: it.id as string, url: it.url as string, alt: it.alt ?? "" }));
+    if (items.length === 0) return null;
+    return <ArticleGallery items={items} />;
+  },
+  unknown: ({ node }) => {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[RichTextRenderer] No converter for node type "${(node as { type?: string }).type}"; rendering nothing.`
+      );
+    }
+    return null;
+  },
   upload: ({ node }) => {
     // Only handle media uploads; defer anything else to the default renderer.
     // `node.value` is only a populated object when the article was queried at a
@@ -119,7 +159,7 @@ export function RichTextRenderer({ content, className }: RichTextRendererProps) 
         "& figure": { maxWidth: "100%" },
       }}
     >
-      <RichText data={content as never} converters={converters} />
+      <RichText data={content as never} converters={richTextConverters} />
     </Box>
   );
 }

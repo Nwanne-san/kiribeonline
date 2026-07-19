@@ -1,5 +1,8 @@
 export { ArchiveToolbar } from "./ArchiveToolbar";
 export { ArticleCard } from "./ArticleCard";
+export { ArticleEmbed } from "./ArticleEmbed";
+export { ArticleGallery } from "./ArticleGallery";
+export { PullQuote } from "./PullQuote";
 export { ArticleNewsletterCta } from "./ArticleNewsletterCta";
 export { ArticleShareRow } from "./ArticleShareRow";
 export { CategoryHero } from "./CategoryHero";
