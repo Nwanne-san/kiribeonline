@@ -1,1 +1,5 @@
-export { RichTextRenderer, type RichTextRendererProps } from "./RichTextRenderer";
+export {
+  RichTextRenderer,
+  richTextConverters,
+  type RichTextRendererProps,
+} from "./RichTextRenderer";

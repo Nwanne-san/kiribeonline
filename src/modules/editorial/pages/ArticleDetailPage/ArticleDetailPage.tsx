@@ -6,6 +6,7 @@ import ScheduleIcon from "@mui/icons-material/Schedule";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { RichText } from "@payloadcms/richtext-lexical/react";
+import { richTextConverters } from "@/modules/shared/components/feedback";
 import type { Article } from "@/modules/shared/types/content";
 import type { ArticleCardDoc } from "@/lib/content/types";
 import {
@@ -316,7 +317,7 @@ function ArticleDetailContent({ article, relatedArticles = [] }: ArticleDetailPa
         )}
 
         <Box sx={{ py: { xs: 4, md: 5 }, ...proseSx }}>
-          <RichText data={article.body as never} />
+          <RichText data={article.body as never} converters={richTextConverters} />
         </Box>
 
         {/* Tags */}
