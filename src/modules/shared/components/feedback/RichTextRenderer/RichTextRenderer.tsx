@@ -63,6 +63,10 @@ const converters: JSXConvertersFunction = ({ defaultConverters }) => ({
 
     const alt = media.alt ?? "";
     const hasDimensions = Boolean(media.width && media.height);
+    // Inline images intentionally use the (2560px-capped) original rather than
+    // a size variant: every generated variant is a fixed-aspect cover crop,
+    // which would clip arbitrary-aspect editorial photos. next/image still
+    // serves right-sized output per the `sizes` attr.
 
     return (
       <Box component="figure" sx={{ my: 3, mx: 0 }}>

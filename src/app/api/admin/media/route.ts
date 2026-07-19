@@ -6,7 +6,7 @@ import {
   requireAdminUserFromRequest,
   requireAdminWriteCapability,
 } from "@/server/auth";
-import { MAX_UPLOAD_BYTES } from "@/constants";
+import { MAX_IMAGE_PIXELS, MAX_UPLOAD_BYTES } from "@/constants";
 import { listMedia } from "@/server/modules/media";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 
@@ -66,7 +66,10 @@ export async function POST(request: NextRequest) {
     // a spoofed Content-Type. Cheap — sharp only reads metadata, not all pixels.
     let detectedMime: string | undefined;
     try {
-      const { format } = await sharp(buffer).metadata();
+      const { format } = await sharp(buffer, {
+        limitInputPixels: MAX_IMAGE_PIXELS,
+        failOn: "error",
+      }).metadata();
       detectedMime = format ? SHARP_FORMAT_TO_MIME[format] : undefined;
     } catch {
       detectedMime = undefined;
@@ -80,7 +83,8 @@ export async function POST(request: NextRequest) {
       data: { alt },
       file: {
         data: buffer,
-        mimetype: file.type,
+        // Store what the bytes actually are, not what the client claimed.
+        mimetype: detectedMime,
         name: file.name,
         size: file.size,
       },
