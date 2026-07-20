@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-import { SMOKE_ADMIN_EMAIL, SMOKE_ADMIN_PASSWORD } from "./fixtures/constants";
-
 /**
  * Smallest valid PNG we can send — a 1×1 transparent pixel. Real bytes so the
  * magic-byte + sharp decode check in `/api/admin/media` accepts it.
@@ -18,13 +16,7 @@ const OVERSIZED_BYTES = 11 * 1024 * 1024;
  * is rejected with 413. Exercises the byte-size limit and the auth guard.
  */
 test.describe("Media upload", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/admin/login");
-    await page.getByLabel("Email").fill(SMOKE_ADMIN_EMAIL);
-    await page.getByRole("textbox", { name: /^Password/ }).fill(SMOKE_ADMIN_PASSWORD);
-    await page.getByRole("button", { name: /sign in/i }).click();
-    await page.waitForURL(/\/admin\//, { timeout: 15_000 });
-  });
+  // Auth cookie is preloaded by auth.setup — no per-test login needed.
 
   test("small PNG upload succeeds and appears in the library", async ({
     page,

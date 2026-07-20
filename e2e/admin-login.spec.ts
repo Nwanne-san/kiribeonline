@@ -2,6 +2,10 @@ import { expect, test } from "@playwright/test";
 
 import { SMOKE_ADMIN_EMAIL, SMOKE_ADMIN_PASSWORD } from "./fixtures/constants";
 
+// This spec exercises the login flow itself, so it must run against a fresh
+// context — bypass the auth.setup storageState the other specs inherit.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 /**
  * Smoke: admin login form works end-to-end and error state renders.
  *
