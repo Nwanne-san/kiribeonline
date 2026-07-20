@@ -21,7 +21,7 @@ test.describe("Media upload", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(SMOKE_ADMIN_EMAIL);
-    await page.getByLabel("Password", { exact: true }).fill(SMOKE_ADMIN_PASSWORD);
+    await page.getByRole("textbox", { name: /^Password/ }).fill(SMOKE_ADMIN_PASSWORD);
     await page.getByRole("button", { name: /sign in/i }).click();
     await page.waitForURL(/\/admin\//, { timeout: 15_000 });
   });
