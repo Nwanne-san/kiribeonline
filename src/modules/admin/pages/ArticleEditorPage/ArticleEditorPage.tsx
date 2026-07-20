@@ -42,6 +42,7 @@ import { useKiribeToast } from "@/modules/shared/components/feedback/KiribeSnack
 import { usePermissions } from "@/modules/admin/hooks/usePermissions";
 import { useAutosave } from "@/modules/admin/hooks/useAutosave";
 import { useUnsavedChangesGuard } from "@/modules/admin/hooks/useUnsavedChangesGuard";
+import { useQueryClient } from "@tanstack/react-query";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import client from "@/utils/client";
 import { unwrapApiData } from "@/lib/api/unwrap";
@@ -141,6 +142,7 @@ function nowHhMm(): string {
  */
 export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isEdit = Boolean(articleId);
   const { can, me } = usePermissions();
   const { showToast } = useKiribeToast();
@@ -386,12 +388,16 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
 
       setSaving(true);
       try {
-        const res = await client.request<SavePayload, { id: string }>({
+        // Payload's Postgres adapter returns numeric ids; the route wraps in
+        // apiSuccess but the id shape stays as-is. Accept both so the
+        // hydration + redirect paths are type-safe.
+        const res = await client.request<SavePayload, { id: string | number }>({
           path,
           method,
           data: payload,
         });
-        const saved = unwrapApiData(res);
+        const raw = unwrapApiData(res);
+        const saved = { id: String(raw.id) };
         // Snapshot guard: if edits landed while the request was in flight,
         // leave `dirty` alone — otherwise the indicator would clear even
         // though the on-screen form has drifted from what's persisted.
@@ -405,13 +411,22 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
             severity: "success",
           });
         }
+        // Any successful save mutates the server's article list — invalidate
+        // so the list and dashboard tiles refetch when the user navigates
+        // back. React Query dedupes concurrent refetches so this is cheap.
+        queryClient.invalidateQueries({ queryKey: ["admin", "articles"] });
+        queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+
         if (opts?.closeAfter) {
-          router.push(AdminRoutes.articles);
+          // Use navigateSafely — dirty may still be true in state even though
+          // we called setDirty(false) synchronously above (React batches),
+          // so the router.push is likely still guarded on this tick.
+          navigateSafely(AdminRoutes.articles, "push");
         } else if (!isEdit && saved.id) {
-          // A new-article save has to hand the URL its id so subsequent saves
-          // hit PATCH. `router.replace` doesn't trigger the unsaved guard
-          // (we've just cleared dirty), so this is safe.
-          router.replace(`${AdminRoutes.articles}/${saved.id}`);
+          // Same reasoning for the new-article auto-redirect: without the
+          // bypass the user gets a "Leave without saving?" prompt on the
+          // very save that cleared the dirty flag.
+          navigateSafely(`${AdminRoutes.articles}/${saved.id}`, "replace");
         }
         return saved;
       } catch (error) {
@@ -496,7 +511,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
 
   /* ── Unsaved changes guard (beforeunload + in-app nav) ── */
 
-  useUnsavedChangesGuard(dirty && !saving);
+  const { navigateSafely } = useUnsavedChangesGuard(dirty && !saving);
 
   /* ── Status picker ── */
 
