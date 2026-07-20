@@ -1,6 +1,8 @@
 "use client";
 
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import RateReviewOutlined from "@mui/icons-material/RateReviewOutlined";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -10,7 +12,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
 import { AdminRoutes } from "@/routes/admin.routes";
 import {
@@ -23,6 +25,7 @@ import { AdminRichTextEditor } from "@/modules/admin/components/AdminRichTextEdi
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
 import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
 import { KiribeLoader } from "@/modules/shared/components/brand";
+import { usePermissions } from "@/modules/admin/hooks/usePermissions";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import client from "@/utils/client";
@@ -55,9 +58,29 @@ type ArticleDoc = {
 
 type ArticleEditorPageProps = { articleId?: string };
 
+/**
+ * Role-scoped status options. Writers/contributors (edit-only) see just Draft
+ * and "Submit for review" — the editorial-submission spine. Editors and above
+ * (publish capability) see the full lifecycle so they can move a submission
+ * through to scheduled/published/archived. Server enforces the same rule.
+ */
+const EDIT_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "draft", label: "Draft" },
+  { value: "in_review", label: "Submit for review" },
+];
+
+const PUBLISH_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "draft", label: "Draft" },
+  { value: "in_review", label: "In review" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "published", label: "Published" },
+  { value: "archived", label: "Archived" },
+];
+
 export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   const router = useRouter();
   const isEdit = Boolean(articleId);
+  const { can } = usePermissions();
 
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -142,6 +165,24 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     },
   });
 
+  const canPublish = can("articles:publish");
+
+  /**
+   * Only publish-holders may set publish/scheduled/archived. Writers/
+   * contributors get Draft ↔ In review; if the article is already in a
+   * publish-only state (e.g. an editor archived a piece before a writer
+   * reopened it), we surface the current value as disabled so the select
+   * stays honest and never silently downgrades on save.
+   */
+  const statusOptions = useMemo(() => {
+    const base = canPublish ? PUBLISH_STATUS_OPTIONS : EDIT_STATUS_OPTIONS;
+    if (base.some((o) => o.value === status)) return base;
+    return [
+      ...base,
+      { value: status, label: `${status} (locked)` },
+    ];
+  }, [canPublish, status]);
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     mutate({
@@ -192,6 +233,26 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         }
       />
 
+      {isEdit && status === "in_review" ? (
+        <Alert
+          icon={<RateReviewOutlined fontSize="small" />}
+          severity="info"
+          sx={{
+            // Kiribé brand tint (same palette as the `brand` Pill tone) so
+            // the banner reads as an editorial signal rather than a generic
+            // MUI info state.
+            bgcolor: "#FDF3EF",
+            color: "#7F0400",
+            border: "1px solid #F3D7CB",
+            "& .MuiAlert-icon": { color: "#7F0400" },
+          }}
+        >
+          {canPublish
+            ? "This article is awaiting your review. Move it to Published or Scheduled when it’s ready — or back to Draft to send it for more work."
+            : "This article has been submitted for review. An editor will take it from here."}
+        </Alert>
+      ) : null}
+
       <Grid container spacing={2.5} alignItems="flex-start">
         <Grid size={{ xs: 12, lg: 8 }}>
           <Stack spacing={2}>
@@ -238,10 +299,26 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Stack spacing={2}>
             <AdminCard sx={{ p: 2 }}>
-              <KiribeTextField select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} fullWidth required>
-                {["draft", "scheduled", "published", "archived"].map((s) => (
-                  <MenuItem key={s} value={s}>
-                    {s}
+              <KiribeTextField
+                select
+                label="Status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                fullWidth
+                required
+                helperText={
+                  !canPublish
+                    ? "Submit for review to send this piece to an editor."
+                    : undefined
+                }
+              >
+                {statusOptions.map((s) => (
+                  <MenuItem
+                    key={s.value}
+                    value={s.value}
+                    disabled={s.label.endsWith("(locked)")}
+                  >
+                    {s.label}
                   </MenuItem>
                 ))}
               </KiribeTextField>

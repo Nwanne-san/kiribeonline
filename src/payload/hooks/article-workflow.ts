@@ -19,7 +19,10 @@ export const articleBeforeChange: CollectionBeforeChangeHook = ({ data }) => {
 
   if (data.status === "published") {
     data._status = "published";
-  } else if (data.status === "draft" || data.status === "archived") {
+  } else {
+    // draft, in_review, scheduled, archived — all keep the versioned doc off
+    // the published surface. `scheduled` is later promoted by the cron
+    // publisher (which flips status → published, re-triggering this hook).
     data._status = "draft";
   }
 
