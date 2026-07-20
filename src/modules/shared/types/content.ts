@@ -1,4 +1,9 @@
-export type ArticleStatus = "draft" | "scheduled" | "published" | "archived";
+export type ArticleStatus =
+  | "draft"
+  | "in_review"
+  | "scheduled"
+  | "published"
+  | "archived";
 
 export interface Article {
   id: string;

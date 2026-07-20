@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const ARTICLE_STATUSES = [
   "draft",
+  "in_review",
   "scheduled",
   "published",
   "archived",
@@ -84,7 +85,7 @@ export type ArticleUpdateInput = z.output<typeof articleUpdateSchema>;
 
 // --- API input schemas (admin route payloads) ---
 
-export const articleStatusSchema = z.enum(["draft", "scheduled", "published", "archived"]);
+export const articleStatusSchema = z.enum(ARTICLE_STATUSES);
 
 export const articleInputSchema = z
   .object({
