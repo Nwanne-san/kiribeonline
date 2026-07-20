@@ -31,7 +31,7 @@ test.describe("Create → Publish", () => {
     // 1. Log in via UI so cookies land on the browser context.
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(SMOKE_ADMIN_EMAIL);
-    await page.getByLabel("Password").fill(SMOKE_ADMIN_PASSWORD);
+    await page.getByLabel("Password", { exact: true }).fill(SMOKE_ADMIN_PASSWORD);
     await page.getByRole("button", { name: /sign in/i }).click();
     await page.waitForURL(/\/admin\//, { timeout: 15_000 });
 

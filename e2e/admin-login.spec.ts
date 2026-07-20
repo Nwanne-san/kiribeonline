@@ -13,7 +13,7 @@ test.describe("Admin login", () => {
   test("bad password shows the generic error and stays on login", async ({ page }) => {
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(SMOKE_ADMIN_EMAIL);
-    await page.getByLabel("Password").fill("definitely-not-the-password");
+    await page.getByLabel("Password", { exact: true }).fill("definitely-not-the-password");
     await page.getByRole("button", { name: /sign in/i }).click();
 
     await expect(page.getByText(/invalid email or password/i)).toBeVisible();
@@ -24,7 +24,7 @@ test.describe("Admin login", () => {
   test("valid credentials land in the admin shell", async ({ page }) => {
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(SMOKE_ADMIN_EMAIL);
-    await page.getByLabel("Password").fill(SMOKE_ADMIN_PASSWORD);
+    await page.getByLabel("Password", { exact: true }).fill(SMOKE_ADMIN_PASSWORD);
     await page.getByRole("button", { name: /sign in/i }).click();
 
     // /admin → /admin/dashboard is the configured redirect (next.config).
