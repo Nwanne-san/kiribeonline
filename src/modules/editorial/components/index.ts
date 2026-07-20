@@ -11,4 +11,6 @@ export { FeaturedArticleCard } from "./FeaturedArticleCard";
 export { InfiniteArticleList } from "./InfiniteArticleList";
 export { ArticleListView } from "./ArticleListView";
 export { MostReadList } from "./MostReadList";
+export { PrevNextArticleNav } from "./PrevNextArticleNav";
 export { ReadingProgress } from "./ReadingProgress";
+export { ReadNextSection } from "./ReadNextSection";

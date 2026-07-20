@@ -15,8 +15,11 @@ import {
   ArticleShareRow,
   BackToTop,
   MostReadList,
+  PrevNextArticleNav,
   ReadingProgress,
+  ReadNextSection,
 } from "@/modules/editorial/components";
+import type { AdjacentArticle } from "@/lib/content/query-adjacent";
 import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import {
@@ -36,6 +39,14 @@ type ArticleDetailPageProps = {
    * omitted → the section is skipped entirely (no dangling header on cold sites).
    */
   mostReadArticles?: ArticleCardDoc[];
+  /**
+   * "Read next" — scored recommendations (tag overlap → same-category →
+   * site-wide newest). Distinct from `relatedArticles` (legacy same-category
+   * grid). For published articles this should always contain ≥1 item.
+   */
+  readNextArticles?: ArticleCardDoc[];
+  /** Chronological prev/next within the primary category (site-wide fallback). */
+  adjacentArticles?: { prev: AdjacentArticle | null; next: AdjacentArticle | null };
 };
 
 const BODY_WIDTH = 832;
@@ -100,6 +111,8 @@ function ArticleDetailContent({
   article,
   relatedArticles = [],
   mostReadArticles = [],
+  readNextArticles = [],
+  adjacentArticles = { prev: null, next: null },
 }: ArticleDetailPageProps) {
   // Count one view per article per browser session. The ref guards against React
   // Strict Mode's double-invoke / remounts within a render, and the
@@ -454,6 +467,12 @@ function ArticleDetailContent({
           </Box>
         </Box>
       )}
+
+      {/* ── Read next (tag-scored recommendations) ────────────── */}
+      <ReadNextSection articles={readNextArticles} />
+
+      {/* ── Prev / next chronological within primary category ─── */}
+      <PrevNextArticleNav prev={adjacentArticles.prev} next={adjacentArticles.next} />
 
       {/* ── Newsletter CTA ───────────────────────────────────── */}
       <ArticleNewsletterCta />
