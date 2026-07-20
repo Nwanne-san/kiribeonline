@@ -60,7 +60,11 @@ export type ArticleListViewProps = {
   activeFilter?: { label: string; clearHref: string };
 };
 
-/** GRID / LIST toggle — sharp-edged, burgundy active state (Figma V5). */
+/**
+ * GRID / LIST / FEED toggle — sharp-edged, burgundy active state (Figma V5).
+ * Feed mode drops pagination in favour of infinite scroll, useful for casual
+ * browsing sessions.
+ */
 function ViewToggle({
   view,
   onChange,
@@ -68,12 +72,15 @@ function ViewToggle({
   view: ListViewMode;
   onChange: (view: ListViewMode) => void;
 }) {
-  const options: { value: ListViewMode; label: string }[] = [
-    { value: "grid", label: "Grid" },
-    { value: "list", label: "List" },
+  const options: { value: ListViewMode; label: string; ariaLabel: string }[] = [
+    { value: "grid", label: "Grid", ariaLabel: "Grid view" },
+    { value: "list", label: "List", ariaLabel: "List view" },
+    { value: "feed", label: "Feed", ariaLabel: "Feed view (infinite scroll)" },
   ];
   return (
     <Box
+      role="group"
+      aria-label="Article view mode"
       sx={{
         display: "inline-flex",
         alignItems: "center",
@@ -91,6 +98,7 @@ function ViewToggle({
             type="button"
             onClick={() => onChange(opt.value)}
             aria-pressed={active}
+            aria-label={opt.ariaLabel}
             sx={{
               px: 1.5,
               py: 0.75,
@@ -351,6 +359,7 @@ export function ArticleListView({
                         setLimit(rowsPerPage);
                       }}
                       isCondense
+                      itemLabel="Stories per page"
                     />
                   )}
                 </>
