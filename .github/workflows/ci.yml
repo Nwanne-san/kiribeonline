@@ -48,6 +48,9 @@ jobs:
   e2e:
     # Smoke suite — separate job so a flake here doesn't gate merges yet.
     # `needs: verify` keeps CI cheap (skips if the base checks are already red).
+    # Non-blocking for now (decision 2026-07-20): suite is landed but unproven
+    # in CI; flip continue-on-error off once it runs green in the next build.
+    continue-on-error: true
     needs: verify
     runs-on: ubuntu-latest
     services:
