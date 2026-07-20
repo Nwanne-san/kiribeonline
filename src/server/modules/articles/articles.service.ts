@@ -184,3 +184,36 @@ export async function deleteAdminArticle(id: string) {
   const payload = await getPayloadClient();
   return payload.delete({ collection: "articles", id, overrideAccess: true });
 }
+
+/**
+ * Cheap uniqueness probe for the editor's inline slug validator. Returns
+ * `{ available }` — the caller keeps its own error copy so we don't leak
+ * back a stored slug or an owner. `excludeId` lets an edit-in-place check
+ * ignore the article's own row (a slug is available if no *other* article
+ * has it).
+ */
+export async function isArticleSlugAvailable(
+  slug: string,
+  excludeId?: string
+): Promise<boolean> {
+  const payload = await getPayloadClient();
+  const trimmed = slug.trim();
+  if (!trimmed) return false;
+
+  // Payload's Postgres adapter doesn't support `and` + `not_equals` cleanly on
+  // an id column across all driver versions we run; fetch matches and filter
+  // in memory (slug is unique-indexed, so this is at most one row).
+  const result = await payload.find({
+    collection: "articles",
+    where: { slug: { equals: trimmed } },
+    limit: 2,
+    depth: 0,
+    overrideAccess: true,
+    pagination: false,
+  });
+
+  const others = result.docs.filter(
+    (doc) => !excludeId || String((doc as { id: string | number }).id) !== excludeId
+  );
+  return others.length === 0;
+}

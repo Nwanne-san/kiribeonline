@@ -236,3 +236,36 @@ export async function deleteAdminUser(id: string) {
   await payload.delete({ collection: "users", id, overrideAccess: true });
   return { deleted: true };
 }
+
+/**
+ * Slim author-picker payload for the article editor: id + display name only,
+ * active users, no emails or roles. The full user list is still gated by
+ * `users:manage` (see /api/admin/users); this list is reachable to publish
+ * holders too so an editor can file for someone else without granting them
+ * team-admin visibility. Suspended and pending users are excluded — you can't
+ * assign a byline to an inactive account.
+ */
+export async function listAuthorPickerCandidates(): Promise<
+  Array<{ id: string; name: string }>
+> {
+  const payload = await getPayloadClient();
+  const result = await payload.find({
+    collection: "users",
+    where: { status: { equals: "active" } },
+    limit: 200,
+    depth: 0,
+    sort: "name",
+    overrideAccess: true,
+    pagination: false,
+  });
+
+  return (result.docs as Array<{ id: string | number; name?: string | null; email: string }>)
+    .map((doc) => ({
+      id: String(doc.id),
+      // Fall back to the email local-part when a user has no display name yet
+      // — the picker still needs a label to render, but we never return the
+      // full address (prior review flagged the leak).
+      name: doc.name?.trim() || doc.email.split("@")[0] || `User ${doc.id}`,
+    }))
+    .filter((u) => u.name);
+}
