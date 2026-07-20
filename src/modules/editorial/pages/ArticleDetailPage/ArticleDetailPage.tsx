@@ -13,6 +13,8 @@ import {
   ArticleCard,
   ArticleNewsletterCta,
   ArticleShareRow,
+  BackToTop,
+  ReadingProgress,
 } from "@/modules/editorial/components";
 import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
@@ -121,6 +123,11 @@ function ArticleDetailContent({ article, relatedArticles = [] }: ArticleDetailPa
 
   return (
     <Box component="article">
+      {/* Reading aids — measure this <article>, not the whole page, so the bar
+          hits 100% at the end of the story (before footer / CTA). */}
+      <ReadingProgress target="article" />
+      <BackToTop />
+
       {/* ── Breadcrumb ───────────────────────────────────────── */}
       <Box sx={{ bgcolor: "#F9FAFB", borderBottom: "1px solid", borderColor: "divider" }}>
         <Box sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 4 } }}>
