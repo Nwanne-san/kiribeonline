@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
+  getAdjacentArticles,
   getMostReadArticles,
+  getRelatedArticles,
   mapPayloadArticle,
   queryArticleBySlug,
   queryArticles,
@@ -75,11 +77,32 @@ export default async function Page({ params }: PageProps) {
     .filter((doc) => doc.id !== article.id)
     .slice(0, 5);
 
+  // Discovery: "Read next" scored by tag overlap (fallback: same-category
+  // newest → site-wide newest), plus chronological prev/next within the
+  // primary category. Both run in parallel — neither depends on the other.
+  const [readNextArticles, adjacentArticles] = await Promise.all([
+    getRelatedArticles(
+      {
+        id: article.id,
+        categories: article.categories?.map((c) => ({ id: c.id, slug: c.slug })),
+        tags: article.tags?.map((t) => ({ id: t.id, slug: t.slug })),
+      },
+      3
+    ),
+    getAdjacentArticles({
+      id: article.id,
+      publishedAt: article.publishedAt,
+      categories: article.categories?.map((c) => ({ slug: c.slug })),
+    }),
+  ]);
+
   return (
     <ArticleDetailPage
       article={article}
       relatedArticles={relatedArticles}
       mostReadArticles={mostReadArticles}
+      readNextArticles={readNextArticles}
+      adjacentArticles={adjacentArticles}
     />
   );
 }
