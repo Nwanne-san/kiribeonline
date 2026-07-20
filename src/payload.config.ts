@@ -38,9 +38,14 @@ const useR2 =
 // Skipped during `next build` (env is injected at deploy/runtime, not build) so
 // a build box without R2 secrets can still compile — the guard fires on boot.
 const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+// Test-only escape hatch: CI e2e boots `next start` (production mode) against
+// local-disk storage on a throwaway runner, where losing uploads is fine.
+// Never set this on a real deployment.
+const allowLocalMediaStorage = process.env.ALLOW_LOCAL_MEDIA_STORAGE === "true";
 if (
   process.env.NODE_ENV === "production" &&
   !isBuildPhase &&
+  !allowLocalMediaStorage &&
   (!useR2 || !process.env.R2_PUBLIC_URL)
 ) {
   throw new Error(

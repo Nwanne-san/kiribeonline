@@ -24,6 +24,8 @@ export type DashboardStats = {
     total: number;
     published: number;
     draft: number;
+    /** Submitted-for-review count — surfaced as an editorial-queue tile. */
+    inReview: number;
     scheduled: number;
     archived: number;
     /** Articles created in the last 7 days (trend delta for tiles). */

@@ -1,6 +1,11 @@
 "use client";
 
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import CheckOutlined from "@mui/icons-material/CheckOutlined";
+import LockOutlined from "@mui/icons-material/LockOutlined";
+import RateReviewOutlined from "@mui/icons-material/RateReviewOutlined";
+import RefreshOutlined from "@mui/icons-material/RefreshOutlined";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -10,7 +15,13 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ApiMethods } from "../../../../../types/service";
 import { AdminRoutes } from "@/routes/admin.routes";
 import {
@@ -21,17 +32,31 @@ import {
 } from "@/modules/admin/components/AdminUi";
 import { AdminRichTextEditor } from "@/modules/admin/components/AdminRichTextEditor";
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
+import {
+  PublishChecklistDialog,
+  type ChecklistItem,
+} from "@/modules/admin/components/PublishChecklist";
 import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
 import { KiribeLoader } from "@/modules/shared/components/brand";
-import { useMutationService } from "@/utils/hooks/useMutationService";
+import { useKiribeToast } from "@/modules/shared/components/feedback/KiribeSnackbar";
+import { usePermissions } from "@/modules/admin/hooks/usePermissions";
+import { useAutosave } from "@/modules/admin/hooks/useAutosave";
+import { useUnsavedChangesGuard } from "@/modules/admin/hooks/useUnsavedChangesGuard";
+import { useQueryClient } from "@tanstack/react-query";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import client from "@/utils/client";
 import { unwrapApiData } from "@/lib/api/unwrap";
+import { slugify } from "@/utils/helper";
+import { ARTICLE_AUTOSAVE_DEBOUNCE_MS, DEFAULT_DEBOUNCE_MS } from "@/constants";
 import type { AdminMediaRef } from "@/server/modules";
-import { normalizeLexicalBody, textToLexical } from "@/server/shared/text-to-lexical";
+import {
+  normalizeLexicalBody,
+  textToLexical,
+} from "@/server/shared/text-to-lexical";
 
 type Category = { id: string; name: string; brandColor?: string | null };
 type Tag = { id: string; name: string; brandColor?: string | null };
+type MediaRef = { id: string; url?: string; alt?: string };
 type ArticleDoc = {
   id: string;
   title: string;
@@ -44,22 +69,93 @@ type ArticleDoc = {
   featuredPriority?: number;
   categories?: Category[];
   tags?: Tag[];
-  heroImage?: { id: string; url?: string; alt?: string } | string;
+  heroImage?: MediaRef | string;
+  author?: { id: string | number; name?: string | null } | string | null;
   seo?: {
     title?: string;
     description?: string;
-    ogImage?: { id: string; url?: string; alt?: string } | string;
+    ogImage?: MediaRef | string;
   };
   viewCount?: number;
 };
 
 type ArticleEditorPageProps = { articleId?: string };
 
+/**
+ * Role-scoped status options. Writers/contributors (edit-only) see just Draft
+ * and "Submit for review" — the editorial-submission spine. Editors and above
+ * (publish capability) see the full lifecycle so they can move a submission
+ * through to scheduled/published/archived. Server enforces the same rule.
+ */
+const EDIT_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "draft", label: "Draft" },
+  { value: "in_review", label: "Submit for review" },
+];
+
+const PUBLISH_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "draft", label: "Draft" },
+  { value: "in_review", label: "In review" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "published", label: "Published" },
+  { value: "archived", label: "Archived" },
+];
+
+/** Statuses safe to autosave — anything else is a publish-adjacent write. */
+const AUTOSAVE_STATUSES = new Set(["draft", "in_review"]);
+
+/** Statuses that gate the publish-checklist dialog. */
+const PUBLISH_STATUSES = new Set(["published", "scheduled"]);
+
+/** Shape of the outgoing save payload — matches `articleInputSchema`. */
+type SavePayload = {
+  title: string;
+  slug?: string;
+  excerpt: string;
+  body: Record<string, unknown>;
+  status: string;
+  publishedAt: string | null;
+  featured: boolean;
+  featuredPriority: number;
+  categoryIds: string[];
+  tagIds: string[];
+  heroImageId: string | null;
+  authorId?: string | null;
+  seo: {
+    title?: string;
+    description?: string;
+    ogImageId: string | null;
+  };
+};
+
+function nowHhMm(): string {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+/**
+ * The editor is a big form; splitting the state into sub-components would
+ * fight React Query's cache eviction and MediaPicker's parent-controlled
+ * shape. Individual helpers are extracted where they earn their keep
+ * (checklist, hooks); orchestration lives here.
+ */
 export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isEdit = Boolean(articleId);
+  const { can, me } = usePermissions();
+  const { showToast } = useKiribeToast();
+
+  const canPublish = can("articles:publish");
+  const canManageUsers = can("users:manage");
+  const canPickAuthor = canPublish || canManageUsers;
+
+  /* ── Form state ── */
 
   const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState<Record<string, unknown>>(() => textToLexical(""));
   const [editorReady, setEditorReady] = useState(!articleId);
@@ -71,13 +167,39 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [heroImage, setHeroImage] = useState<AdminMediaRef | null>(null);
+  const [authorId, setAuthorId] = useState<string>("");
   const [seoOpen, setSeoOpen] = useState(false);
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
   const [seoOgImage, setSeoOgImage] = useState<AdminMediaRef | null>(null);
   const [viewCount, setViewCount] = useState<number | null>(null);
 
-  const { data: categories } = useQueryService<Record<string, never>, { docs: Category[] }>({
+  /* ── Save orchestration state ── */
+
+  const [saving, setSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [pendingPublish, setPendingPublish] = useState<
+    { targetStatus: "published" | "scheduled"; closeAfter: boolean } | null
+  >(null);
+
+  // Dirty tracking. `dirtyCount` increments on every edit — the save flow
+  // snapshots it before the await and only clears `dirty` when the snapshot
+  // still matches on return, so a save that lands mid-edit doesn't drop the
+  // "unsaved" indicator.
+  const [dirty, setDirty] = useState(false);
+  const dirtyCount = useRef(0);
+  const bumpDirty = useCallback(() => {
+    dirtyCount.current += 1;
+    setDirty(true);
+  }, []);
+
+  /* ── Load taxonomies ── */
+
+  const { data: categories } = useQueryService<
+    Record<string, never>,
+    { docs: Category[] }
+  >({
     service: { path: "/api/admin/categories", method: ApiMethods.GET },
     options: { keys: ["admin", "categories"] },
   });
@@ -86,6 +208,20 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     service: { path: "/api/admin/tags", method: ApiMethods.GET },
     options: { keys: ["admin", "tags"] },
   });
+
+  const { data: authorList } = useQueryService<
+    Record<string, never>,
+    { docs: Array<{ id: string; name: string }> }
+  >({
+    service: { path: "/api/admin/articles/authors", method: ApiMethods.GET },
+    options: {
+      keys: ["admin", "articles", "authors"],
+      // Only fetch when the picker will render — avoids a 403 for writers.
+      enabled: canPickAuthor,
+    },
+  });
+
+  /* ── Hydrate existing doc ── */
 
   useEffect(() => {
     if (!articleId) return;
@@ -97,6 +233,10 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         });
         const doc = unwrapApiData(res);
         setTitle(doc.title);
+        setSlug(doc.slug);
+        // Hydrating from an existing slug counts as user-authored — don't
+        // let the auto-from-title reformat it on the next title keystroke.
+        setSlugTouched(true);
         setExcerpt(doc.excerpt ?? "");
         setBody(normalizeLexicalBody(doc.body));
         setEditorReady(true);
@@ -110,10 +250,14 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         if (hero && typeof hero === "object") {
           setHeroImage({ id: String(hero.id), url: hero.url, alt: hero.alt });
         }
+        const author = doc.author;
+        if (author && typeof author === "object") {
+          setAuthorId(String(author.id));
+        } else if (typeof author === "string") {
+          setAuthorId(author);
+        }
         setSeoTitle(doc.seo?.title ?? "");
         setSeoDescription(doc.seo?.description ?? "");
-        // Rehydrate the stored OG image so it survives an edit that doesn't
-        // touch SEO — otherwise `seoOgImage` stays null and save strips it.
         const og = doc.seo?.ogImage;
         if (og && typeof og === "object") {
           setSeoOgImage({ id: String(og.id), url: og.url, alt: og.alt });
@@ -125,42 +269,343 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     })();
   }, [articleId]);
 
-  const { mutate, isPending } = useMutationService({
-    service: (payload) => ({
-      path: isEdit ? `/api/admin/articles/${articleId}` : "/api/admin/articles",
-      method: isEdit ? ApiMethods.PATCH : ApiMethods.POST,
-      data: payload,
-    }),
-    options: {
-      keys: ["admin", "articles"],
-      successTitle: "Article saved",
-      // Surfaces server rejections (e.g. a 403 when a writer/contributor tries
-      // to publish or feature without articles:publish) as an error toast
-      // rather than a silent no-op.
-      errorTitle: "Could not save article",
-      onSuccess: () => router.push(AdminRoutes.articles),
-    },
-  });
+  // On a new article, default authorId to the current user once /me loads.
+  useEffect(() => {
+    if (isEdit) return;
+    if (authorId) return;
+    if (me?.id) setAuthorId(String(me.id));
+  }, [isEdit, authorId, me?.id]);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    mutate({
+  // Keep slug in sync with title until the user touches it manually.
+  useEffect(() => {
+    if (slugTouched) return;
+    setSlug(slugify(title));
+  }, [title, slugTouched]);
+
+  /* ── Slug rules & uniqueness check ── */
+
+  // Once published, the slug is a live URL — locking it in the UI prevents
+  // silent link rot. Editors can still manually change the DB row via the
+  // Payload studio if they truly need to, but the custom admin won't do it.
+  const slugReadOnly = status === "published";
+
+  useEffect(() => {
+    setSlugError(null);
+    if (slugReadOnly) return;
+    const candidate = slug.trim();
+    if (!candidate) return;
+    if (!/^[a-z0-9-]+$/.test(candidate)) {
+      setSlugError(
+        "Slug may only contain lowercase letters, numbers, and dashes."
+      );
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const qs = new URLSearchParams({ slug: candidate });
+        if (articleId) qs.set("excludeId", articleId);
+        const res = await client.request<never, { available: boolean }>({
+          path: `/api/admin/articles/slug-check?${qs.toString()}`,
+          method: ApiMethods.GET,
+        });
+        if (cancelled) return;
+        const available = unwrapApiData(res).available;
+        setSlugError(available ? null : "This slug is already taken.");
+      } catch {
+        // Silent fail — the server's unique constraint will catch it on save,
+        // and a transient network hiccup shouldn't block editing.
+      }
+    }, DEFAULT_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [slug, articleId, slugReadOnly]);
+
+  /* ── Payload builder ── */
+
+  const buildPayload = useCallback((): SavePayload => ({
+    title,
+    // Only send slug when the user has authored it (or it was hydrated on
+    // edit). New articles without a touched slug let the server derive
+    // one from the title via `slugField`.
+    slug: slug.trim() || undefined,
+    excerpt,
+    body,
+    status,
+    publishedAt: publishedAt || null,
+    featured,
+    featuredPriority,
+    categoryIds,
+    tagIds,
+    heroImageId: heroImage?.id ?? null,
+    // Only include authorId when the picker was rendered — a writer's editor
+    // never sends the field, so their save can't overwrite an editor-assigned
+    // byline. New articles fall through to the server default (the actor).
+    authorId: canPickAuthor && authorId ? authorId : undefined,
+    seo: {
+      title: seoTitle || undefined,
+      description: seoDescription || undefined,
+      ogImageId: seoOgImage?.id ?? null,
+    },
+  }), [
+    title,
+    slug,
+    excerpt,
+    body,
+    status,
+    publishedAt,
+    featured,
+    featuredPriority,
+    categoryIds,
+    tagIds,
+    heroImage?.id,
+    authorId,
+    canPickAuthor,
+    seoTitle,
+    seoDescription,
+    seoOgImage?.id,
+  ]);
+
+  /* ── Core save routine ── */
+
+  const persist = useCallback(
+    async (
+      overrideStatus?: string,
+      opts?: { silent?: boolean; closeAfter?: boolean }
+    ): Promise<{ id: string } | null> => {
+      const snapshot = dirtyCount.current;
+      const basePayload = buildPayload();
+      const payload = overrideStatus
+        ? { ...basePayload, status: overrideStatus }
+        : basePayload;
+
+      const path = isEdit
+        ? `/api/admin/articles/${articleId}`
+        : "/api/admin/articles";
+      const method = isEdit ? ApiMethods.PATCH : ApiMethods.POST;
+
+      setSaving(true);
+      try {
+        // Payload's Postgres adapter returns numeric ids; the route wraps in
+        // apiSuccess but the id shape stays as-is. Accept both so the
+        // hydration + redirect paths are type-safe.
+        const res = await client.request<SavePayload, { id: string | number }>({
+          path,
+          method,
+          data: payload,
+        });
+        const raw = unwrapApiData(res);
+        const saved = { id: String(raw.id) };
+        // Snapshot guard: if edits landed while the request was in flight,
+        // leave `dirty` alone — otherwise the indicator would clear even
+        // though the on-screen form has drifted from what's persisted.
+        if (dirtyCount.current === snapshot) {
+          setDirty(false);
+        }
+        setLastSavedAt(nowHhMm());
+        if (!opts?.silent) {
+          showToast({
+            message: "Article saved",
+            severity: "success",
+          });
+        }
+        // Any successful save mutates the server's article list — invalidate
+        // so the list and dashboard tiles refetch when the user navigates
+        // back. React Query dedupes concurrent refetches so this is cheap.
+        queryClient.invalidateQueries({ queryKey: ["admin", "articles"] });
+        queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+
+        if (opts?.closeAfter) {
+          // Use navigateSafely — dirty may still be true in state even though
+          // we called setDirty(false) synchronously above (React batches),
+          // so the router.push is likely still guarded on this tick.
+          navigateSafely(AdminRoutes.articles, "push");
+        } else if (!isEdit && saved.id) {
+          // Same reasoning for the new-article auto-redirect: without the
+          // bypass the user gets a "Leave without saving?" prompt on the
+          // very save that cleared the dirty flag.
+          navigateSafely(`${AdminRoutes.articles}/${saved.id}`, "replace");
+        }
+        return saved;
+      } catch (error) {
+        const err = error as { message?: string; status?: number };
+        if (!opts?.silent) {
+          showToast({
+            message: "Could not save article",
+            description: err?.message ?? "Please try again.",
+            severity: "error",
+          });
+        }
+        return null;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [articleId, buildPayload, isEdit, router, showToast]
+  );
+
+  /* ── Autosave ── */
+
+  const autosaveSignature = useMemo(
+    () =>
+      JSON.stringify({
+        title,
+        slug,
+        excerpt,
+        status,
+        publishedAt,
+        featured,
+        featuredPriority,
+        categoryIds,
+        tagIds,
+        heroId: heroImage?.id ?? null,
+        authorId,
+        seoTitle,
+        seoDescription,
+        ogId: seoOgImage?.id ?? null,
+        // Cheap surrogate for body changes — the Lexical tree can be large;
+        // stringifying it every keystroke would be wasteful. Length of the
+        // root children array plus JSON size gives us a debounce trigger
+        // without the full stringify cost.
+        bodyKey:
+          (body as { root?: { children?: unknown[] } })?.root?.children?.length ??
+          0,
+      }),
+    [
       title,
+      slug,
       excerpt,
-      body,
       status,
-      publishedAt: publishedAt || null,
+      publishedAt,
       featured,
       featuredPriority,
       categoryIds,
       tagIds,
-      heroImageId: heroImage?.id ?? null,
-      seo: {
-        title: seoTitle || undefined,
-        description: seoDescription || undefined,
-        ogImageId: seoOgImage?.id ?? null,
+      heroImage?.id,
+      authorId,
+      seoTitle,
+      seoDescription,
+      seoOgImage?.id,
+      body,
+    ]
+  );
+
+  // Autosave only fires when: (a) editing an existing article (POST needs a
+  // deliberate first save), (b) status is draft or in_review (never publish),
+  // (c) form is dirty, (d) not currently saving, (e) no slug error.
+  const autosaveEnabled =
+    isEdit && AUTOSAVE_STATUSES.has(status) && dirty && !saving && !slugError;
+
+  useAutosave(
+    autosaveEnabled,
+    autosaveSignature,
+    () => {
+      // Fire-and-forget — the persist call updates its own state; we don't
+      // want to hold the timer's caller open.
+      void persist(undefined, { silent: true });
+    },
+    ARTICLE_AUTOSAVE_DEBOUNCE_MS
+  );
+
+  /* ── Unsaved changes guard (beforeunload + in-app nav) ── */
+
+  const { navigateSafely } = useUnsavedChangesGuard(dirty && !saving);
+
+  /* ── Status picker ── */
+
+  const statusOptions = useMemo(() => {
+    const base = canPublish ? PUBLISH_STATUS_OPTIONS : EDIT_STATUS_OPTIONS;
+    if (base.some((o) => o.value === status)) return base;
+    return [...base, { value: status, label: `${status} (locked)` }];
+  }, [canPublish, status]);
+
+  /* ── Publish checklist ── */
+
+  const checklistItems = useMemo<ChecklistItem[]>(() => {
+    return [
+      { key: "hero", label: "Hero image", ok: Boolean(heroImage), hard: true },
+      {
+        key: "heroAlt",
+        label: "Hero image alt text",
+        ok: Boolean(heroImage && heroImage.alt?.trim()),
+        hard: true,
       },
-    });
+      {
+        key: "excerpt",
+        label: "Excerpt",
+        ok: excerpt.trim().length > 0,
+        hard: true,
+      },
+      {
+        key: "category",
+        label: "At least one category",
+        ok: categoryIds.length > 0,
+        hard: true,
+      },
+      {
+        key: "seoTitle",
+        label: "SEO title (recommended)",
+        ok: seoTitle.trim().length > 0,
+        hard: false,
+      },
+      {
+        key: "seoDescription",
+        label: "SEO description (recommended)",
+        ok: seoDescription.trim().length > 0,
+        hard: false,
+      },
+    ];
+  }, [heroImage, excerpt, categoryIds.length, seoTitle, seoDescription]);
+
+  const publishBlocked = checklistItems.some((item) => item.hard && !item.ok);
+
+  /* ── Submit handlers ── */
+
+  const commonSaveGuards = (): boolean => {
+    if (slugError) {
+      showToast({
+        message: "Fix the slug before saving",
+        severity: "error",
+      });
+      return false;
+    }
+    if (!title.trim()) {
+      showToast({ message: "Title is required", severity: "error" });
+      return false;
+    }
+    return true;
+  };
+
+  const handleSave = async (closeAfter: boolean) => {
+    if (!commonSaveGuards()) return;
+
+    // Publishing/scheduling goes through the checklist first so the editor
+    // can't ship a piece missing a hero or excerpt in one click.
+    if (PUBLISH_STATUSES.has(status)) {
+      setPendingPublish({
+        targetStatus: status as "published" | "scheduled",
+        closeAfter,
+      });
+      return;
+    }
+    await persist(undefined, { closeAfter });
+  };
+
+  const handleConfirmPublish = async () => {
+    if (!pendingPublish) return;
+    const { targetStatus, closeAfter } = pendingPublish;
+    const result = await persist(targetStatus, { closeAfter });
+    if (result) {
+      setPendingPublish(null);
+    }
+  };
+
+  const handleCancel = () => {
+    // The unsaved-changes guard handles the confirm on dirty state; a clean
+    // form goes straight back to the list.
+    router.push(AdminRoutes.articles);
   };
 
   if (loading) {
@@ -172,37 +617,104 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   }
 
   return (
-    <Stack component="form" onSubmit={onSubmit} spacing={2}>
+    <Stack
+      component="form"
+      onSubmit={(e: React.FormEvent) => {
+        e.preventDefault();
+        void handleSave(false);
+      }}
+      spacing={2}
+    >
       <Stack direction="row" alignItems="center" spacing={0.5}>
-        <Typography component={NextLink} href={AdminRoutes.articles} variant="caption" color="text.secondary" sx={{ textDecoration: "none" }}>
+        <Typography
+          component={NextLink}
+          href={AdminRoutes.articles}
+          variant="caption"
+          color="text.secondary"
+          sx={{ textDecoration: "none" }}
+        >
           Articles
         </Typography>
         <ChevronRightIcon sx={{ fontSize: 14, color: "text.disabled" }} />
-        <Typography variant="caption">{isEdit ? "Edit article" : "New article"}</Typography>
+        <Typography variant="caption">
+          {isEdit ? "Edit article" : "New article"}
+        </Typography>
       </Stack>
 
       <AdminPageHeader
         title={isEdit ? "Edit article" : "New article"}
         action={
-          isEdit && viewCount !== null ? (
-            <Typography variant="caption" color="text.secondary">
-              {viewCount.toLocaleString()} views
-            </Typography>
-          ) : undefined
+          <Stack direction="row" spacing={2} alignItems="center">
+            {isEdit && viewCount !== null ? (
+              <Typography variant="caption" color="text.secondary">
+                {viewCount.toLocaleString()} views
+              </Typography>
+            ) : null}
+            <SavedIndicator
+              saving={saving}
+              dirty={dirty}
+              lastSavedAt={lastSavedAt}
+            />
+          </Stack>
         }
       />
+
+      {isEdit && status === "in_review" ? (
+        <Alert
+          icon={<RateReviewOutlined fontSize="small" />}
+          severity="info"
+          sx={{
+            bgcolor: "#FDF3EF",
+            color: "#7F0400",
+            border: "1px solid #F3D7CB",
+            "& .MuiAlert-icon": { color: "#7F0400" },
+          }}
+        >
+          {canPublish
+            ? "This article is awaiting your review. Move it to Published or Scheduled when it’s ready — or back to Draft to send it for more work."
+            : "This article has been submitted for review. An editor will take it from here."}
+        </Alert>
+      ) : null}
 
       <Grid container spacing={2.5} alignItems="flex-start">
         <Grid size={{ xs: 12, lg: 8 }}>
           <Stack spacing={2}>
             <AdminCard sx={{ p: 2.5 }}>
-              <KiribeTextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required fullWidth />
+              <KiribeTextField
+                label="Title"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  bumpDirty();
+                }}
+                required
+                fullWidth
+              />
             </AdminCard>
             <AdminCard sx={{ p: 2.5 }}>
-              <KiribeTextField label="Excerpt" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} fullWidth multiline rows={2} />
+              <KiribeTextField
+                label="Excerpt"
+                value={excerpt}
+                onChange={(e) => {
+                  setExcerpt(e.target.value);
+                  bumpDirty();
+                }}
+                fullWidth
+                multiline
+                rows={2}
+              />
             </AdminCard>
             {editorReady ? (
-              <AdminRichTextEditor key={articleId ?? "new"} label="Body" value={body} onChange={setBody} required />
+              <AdminRichTextEditor
+                key={articleId ?? "new"}
+                label="Body"
+                value={body}
+                onChange={(next) => {
+                  setBody(next);
+                  bumpDirty();
+                }}
+                required
+              />
             ) : null}
             <AdminCard sx={{ p: 0 }}>
               <Box
@@ -225,10 +737,44 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                 </Typography>
               </Box>
               {seoOpen && (
-                <Stack spacing={2} sx={{ px: 2.5, pb: 2.5, borderTop: "1px solid", borderColor: "divider", pt: 2 }}>
-                  <KiribeTextField label="SEO title" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} fullWidth />
-                  <KiribeTextField label="SEO description" value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} fullWidth multiline rows={3} />
-                  <MediaPicker label="OG image" value={seoOgImage} onChange={setSeoOgImage} />
+                <Stack
+                  spacing={2}
+                  sx={{
+                    px: 2.5,
+                    pb: 2.5,
+                    borderTop: "1px solid",
+                    borderColor: "divider",
+                    pt: 2,
+                  }}
+                >
+                  <KiribeTextField
+                    label="SEO title"
+                    value={seoTitle}
+                    onChange={(e) => {
+                      setSeoTitle(e.target.value);
+                      bumpDirty();
+                    }}
+                    fullWidth
+                  />
+                  <KiribeTextField
+                    label="SEO description"
+                    value={seoDescription}
+                    onChange={(e) => {
+                      setSeoDescription(e.target.value);
+                      bumpDirty();
+                    }}
+                    fullWidth
+                    multiline
+                    rows={3}
+                  />
+                  <MediaPicker
+                    label="OG image"
+                    value={seoOgImage}
+                    onChange={(next) => {
+                      setSeoOgImage(next);
+                      bumpDirty();
+                    }}
+                  />
                 </Stack>
               )}
             </AdminCard>
@@ -238,10 +784,29 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Stack spacing={2}>
             <AdminCard sx={{ p: 2 }}>
-              <KiribeTextField select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} fullWidth required>
-                {["draft", "scheduled", "published", "archived"].map((s) => (
-                  <MenuItem key={s} value={s}>
-                    {s}
+              <KiribeTextField
+                select
+                label="Status"
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  bumpDirty();
+                }}
+                fullWidth
+                required
+                helperText={
+                  !canPublish
+                    ? "Submit for review to send this piece to an editor."
+                    : undefined
+                }
+              >
+                {statusOptions.map((s) => (
+                  <MenuItem
+                    key={s.value}
+                    value={s.value}
+                    disabled={s.label.endsWith("(locked)")}
+                  >
+                    {s.label}
                   </MenuItem>
                 ))}
               </KiribeTextField>
@@ -250,16 +815,86 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                 <KiribeTextField
                   type="datetime-local"
                   value={publishedAt}
-                  onChange={(e) => setPublishedAt(e.target.value)}
+                  onChange={(e) => {
+                    setPublishedAt(e.target.value);
+                    bumpDirty();
+                  }}
                   fullWidth
                   InputLabelProps={{ shrink: true }}
                 />
               </Box>
+              <Box sx={{ mt: 2 }}>
+                <KiribeTextField
+                  label="URL slug"
+                  value={slug}
+                  onChange={(e) => {
+                    setSlug(e.target.value);
+                    setSlugTouched(true);
+                    bumpDirty();
+                  }}
+                  fullWidth
+                  disabled={slugReadOnly}
+                  error={Boolean(slugError)}
+                  helperText={
+                    slugReadOnly
+                      ? "The slug is locked once an article is published."
+                      : slugError ??
+                        (slugTouched
+                          ? "Lowercase letters, numbers, and dashes."
+                          : "Autofilled from the title until you edit it.")
+                  }
+                  InputProps={{
+                    endAdornment: slugReadOnly ? (
+                      <LockOutlined
+                        fontSize="small"
+                        sx={{ color: "text.disabled" }}
+                      />
+                    ) : null,
+                  }}
+                />
+              </Box>
+              {canPickAuthor ? (
+                <Box sx={{ mt: 2 }}>
+                  <KiribeTextField
+                    select
+                    label="Author"
+                    value={authorId}
+                    onChange={(e) => {
+                      setAuthorId(e.target.value);
+                      bumpDirty();
+                    }}
+                    fullWidth
+                    helperText="Byline shown on the article and used for author stats."
+                  >
+                    {(authorList?.docs ?? []).map((u) => (
+                      <MenuItem key={u.id} value={u.id}>
+                        {u.name}
+                      </MenuItem>
+                    ))}
+                    {/* Keep the current selection visible even if it's not in
+                        the picker list (e.g. an inactive user still bylined) */}
+                    {authorId &&
+                    !(authorList?.docs ?? []).some((u) => u.id === authorId) ? (
+                      <MenuItem value={authorId}>
+                        (current author)
+                      </MenuItem>
+                    ) : null}
+                  </KiribeTextField>
+                </Box>
+              ) : null}
             </AdminCard>
 
             <AdminCard sx={{ p: 2 }}>
               <FormControlLabel
-                control={<Checkbox checked={featured} onChange={(e) => setFeatured(e.target.checked)} />}
+                control={
+                  <Checkbox
+                    checked={featured}
+                    onChange={(e) => {
+                      setFeatured(e.target.checked);
+                      bumpDirty();
+                    }}
+                  />
+                }
                 label={
                   <Box>
                     <Typography variant="body2" fontWeight={500}>
@@ -277,7 +912,10 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                     label="Featured priority"
                     type="number"
                     value={featuredPriority}
-                    onChange={(e) => setFeaturedPriority(Number(e.target.value))}
+                    onChange={(e) => {
+                      setFeaturedPriority(Number(e.target.value));
+                      bumpDirty();
+                    }}
                     fullWidth
                   />
                 </Box>
@@ -285,14 +923,24 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
             </AdminCard>
 
             <AdminCard sx={{ p: 2 }}>
-              <MediaPicker label="Hero image" value={heroImage} onChange={setHeroImage} />
+              <MediaPicker
+                label="Hero image"
+                value={heroImage}
+                onChange={(next) => {
+                  setHeroImage(next);
+                  bumpDirty();
+                }}
+              />
             </AdminCard>
 
             <AdminChipSelect
               label="Categories"
               options={categories?.docs ?? []}
               value={categoryIds}
-              onChange={setCategoryIds}
+              onChange={(next) => {
+                setCategoryIds(next);
+                bumpDirty();
+              }}
               getColor={(o) => o.brandColor ?? "#6B1D2A"}
             />
 
@@ -300,21 +948,104 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
               label="Tags"
               options={tags?.docs ?? []}
               value={tagIds}
-              onChange={setTagIds}
+              onChange={(next) => {
+                setTagIds(next);
+                bumpDirty();
+              }}
               getColor={(o) => o.brandColor ?? "#C9A227"}
             />
           </Stack>
         </Grid>
       </Grid>
 
-      <Stack direction="row" spacing={2} sx={{ pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
-        <KiribeButton type="submit" disabled={isPending}>
-          {isPending ? "Saving..." : "Save"}
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{ pt: 2, borderTop: "1px solid", borderColor: "divider" }}
+      >
+        <KiribeButton type="submit" disabled={saving}>
+          {saving ? "Saving..." : "Save"}
         </KiribeButton>
-        <KiribeButton variant="outlined" onClick={() => router.push(AdminRoutes.articles)}>
+        <KiribeButton
+          type="button"
+          variant="outlined"
+          onClick={() => void handleSave(true)}
+          disabled={saving}
+        >
+          Save and close
+        </KiribeButton>
+        <KiribeButton
+          type="button"
+          variant="outlined"
+          onClick={handleCancel}
+        >
           Cancel
         </KiribeButton>
       </Stack>
+
+      <PublishChecklistDialog
+        open={Boolean(pendingPublish)}
+        items={checklistItems}
+        targetStatus={pendingPublish?.targetStatus ?? "published"}
+        onCancel={() => setPendingPublish(null)}
+        onConfirm={() => void handleConfirmPublish()}
+        isPending={saving}
+      />
+
+      {publishBlocked && PUBLISH_STATUSES.has(status) ? (
+        // Inline hint so the editor knows why the publish button is going to
+        // pop a blocked checklist — surfaced before they click.
+        <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
+          A few required fields are missing for publish (see checklist).
+        </Typography>
+      ) : null}
     </Stack>
   );
+}
+
+/**
+ * Compact "unsaved / saving / saved · HH:MM" indicator for the editor header.
+ * Kept as an internal helper so it can read directly off the parent state
+ * without the churn of a full props contract.
+ */
+function SavedIndicator({
+  saving,
+  dirty,
+  lastSavedAt,
+}: {
+  saving: boolean;
+  dirty: boolean;
+  lastSavedAt: string | null;
+}) {
+  if (saving) {
+    return (
+      <Stack direction="row" spacing={0.75} alignItems="center">
+        <RefreshOutlined
+          fontSize="small"
+          sx={{ color: "text.secondary", animation: "spin 1s linear infinite" }}
+        />
+        <Typography variant="caption" color="text.secondary">
+          Saving…
+        </Typography>
+      </Stack>
+    );
+  }
+  if (dirty) {
+    return (
+      <Typography variant="caption" color="text.secondary">
+        Unsaved changes
+      </Typography>
+    );
+  }
+  if (lastSavedAt) {
+    return (
+      <Stack direction="row" spacing={0.5} alignItems="center">
+        <CheckOutlined fontSize="small" sx={{ color: "#15803d" }} />
+        <Typography variant="caption" color="text.secondary">
+          Saved · {lastSavedAt}
+        </Typography>
+      </Stack>
+    );
+  }
+  return null;
 }

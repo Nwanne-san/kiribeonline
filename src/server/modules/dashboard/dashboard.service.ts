@@ -117,6 +117,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     total,
     published,
     draft,
+    inReview,
     scheduled,
     archived,
     publishedThisWeek,
@@ -132,6 +133,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     countArticles(),
     countArticles({ status: { equals: "published" } }),
     countArticles({ status: { equals: "draft" } }),
+    countArticles({ status: { equals: "in_review" } }),
     countArticles({ status: { equals: "scheduled" } }),
     countArticles({ status: { equals: "archived" } }),
     countArticles({ status: { equals: "published" }, createdAt: { greater_than: weekAgo } }),
@@ -146,7 +148,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   ]);
 
   return {
-    articles: { total, published, draft, scheduled, archived, publishedThisWeek },
+    articles: { total, published, draft, inReview, scheduled, archived, publishedThisWeek },
     categories,
     tags,
     media,

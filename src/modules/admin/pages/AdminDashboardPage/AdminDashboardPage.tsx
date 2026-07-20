@@ -2,6 +2,7 @@
 
 import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
 import EditOutlined from "@mui/icons-material/EditOutlined";
+import RateReviewOutlined from "@mui/icons-material/RateReviewOutlined";
 import ScheduleOutlined from "@mui/icons-material/ScheduleOutlined";
 import PermMediaOutlined from "@mui/icons-material/PermMediaOutlined";
 import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
@@ -44,6 +45,7 @@ type DashboardData = {
     total: number;
     published: number;
     draft: number;
+    inReview: number;
     scheduled: number;
     archived: number;
     publishedThisWeek: number;
@@ -129,6 +131,10 @@ export function AdminDashboardPage() {
       Icon: CheckCircleOutlined,
     },
     { label: "Drafts", value: a?.draft ?? 0, accent: "warning" as const, Icon: EditOutlined },
+    // Editorial-queue tile — clicking should ideally deep-link to the In-review
+    // filter; wiring the tile navigation up is left to a UX pass once we
+    // confirm the click target with product.
+    { label: "In Review", value: a?.inReview ?? 0, accent: "brand" as const, Icon: RateReviewOutlined },
     { label: "Scheduled", value: a?.scheduled ?? 0, accent: "info" as const, Icon: ScheduleOutlined },
     { label: "Media Assets", value: data?.media ?? 0, accent: "teal" as const, Icon: PermMediaOutlined },
     {
