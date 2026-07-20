@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     const result = await listMedia({
       page: searchParams.get("page") ?? undefined,
       limit: searchParams.get("limit") ?? undefined,
+      q: searchParams.get("q"),
     });
     return apiSuccess(result);
   } catch (error) {

@@ -17,6 +17,7 @@ export type PillTone =
   | "purple"
   | "teal"
   | "indigo"
+  | "brand"
   | "neutral";
 
 const SOFT_TONE: Record<PillTone, string> = {
@@ -27,6 +28,9 @@ const SOFT_TONE: Record<PillTone, string> = {
   purple: "bg-[#f3e8ff] text-[#7c3aed]",
   teal: "bg-[#ccfbf1] text-[#0d766e]",
   indigo: "bg-[#e0e7ff] text-[#4f46e5]",
+  // Kiribé burgundy on a soft cream tint — reserved for editorial-workflow
+  // states (`in_review`) so they read as brand-owned, not generic status.
+  brand: "bg-[#fdf3ef] text-[#7f0400]",
   neutral: "bg-[#f3f4f6] text-[#4b5563]",
 };
 
@@ -173,6 +177,8 @@ const STAT_ACCENT: Record<StatAccent, { bar: string; icon: string; value: string
   purple: { bar: "bg-[#7c3aed]", icon: "bg-[#f3e8ff] text-[#7c3aed]", value: "text-[#7c3aed]" },
   teal: { bar: "bg-[#0d766e]", icon: "bg-[#ccfbf1] text-[#0d766e]", value: "text-[#0d766e]" },
   indigo: { bar: "bg-[#4f46e5]", icon: "bg-[#e0e7ff] text-[#4f46e5]", value: "text-[#4f46e5]" },
+  // Kiribé burgundy — pairs with the `brand` Pill tone for editorial-workflow states.
+  brand: { bar: "bg-[#7f0400]", icon: "bg-[#fdf3ef] text-[#7f0400]", value: "text-[#7f0400]" },
   neutral: { bar: "bg-[#4b5563]", icon: "bg-[#f3f4f6] text-[#4b5563]", value: "text-[#374151]" },
 };
 

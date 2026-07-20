@@ -12,11 +12,17 @@ export function auditGlobalAfterChange(globalSlug: string): GlobalAfterChangeHoo
       metadata: { previousId: previousDoc?.id },
     });
 
-    if (globalSlug === "homepage") {
-      revalidateTag("homepage");
-    }
-    if (globalSlug === "site-settings") {
-      revalidateTag("site-settings");
+    // Never let cache invalidation break the write — revalidateTag throws
+    // outside a Next request context (scripts, seed, cron via local API).
+    try {
+      if (globalSlug === "homepage") {
+        revalidateTag("homepage");
+      }
+      if (globalSlug === "site-settings") {
+        revalidateTag("site-settings");
+      }
+    } catch (error) {
+      console.warn("[audit-global] revalidateTag failed", error);
     }
   };
 }

@@ -46,7 +46,7 @@ type MediaRef = { url?: string | null; alt?: string | null };
 type AuthorRef = { id: string; name?: string | null; email?: string | null };
 type TermRef = { id: string; name: string; slug: string };
 
-type ArticleStatus = "draft" | "published" | "scheduled" | "archived";
+type ArticleStatus = "draft" | "in_review" | "published" | "scheduled" | "archived";
 
 type ArticleDoc = {
   id: string;
@@ -85,12 +85,16 @@ const PARAM = {
 const STATUS_TABS: { label: string; value: string }[] = [
   { label: "All", value: "" },
   { label: "Published", value: "published" },
+  { label: "In review", value: "in_review" },
   { label: "Draft", value: "draft" },
   { label: "Scheduled", value: "scheduled" },
 ];
 
+// `in_review` uses the same brand accent as the "In review" banner in the
+// editor (see ArticleEditorPage) so the two surfaces read as the same state.
 const STATUS_TONE: Record<string, PillTone> = {
   draft: "warning",
+  in_review: "brand",
   published: "success",
   scheduled: "info",
   archived: "neutral",
@@ -98,6 +102,7 @@ const STATUS_TONE: Record<string, PillTone> = {
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
+  in_review: "In review",
   published: "Published",
   scheduled: "Scheduled",
   archived: "Archived",
