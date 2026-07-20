@@ -5,6 +5,7 @@ import { mapPayloadMedia } from "@/lib/content/map-article";
 import type { ArticleCardDoc } from "@/lib/content/types";
 import type { MediaAsset } from "@/modules/shared/types/content";
 import { queryArticles } from "@/lib/content/query-articles";
+import { getMostReadArticles } from "@/lib/content/query-most-read";
 
 export type HomepageCategoryModule = {
   enabled: boolean;
@@ -49,6 +50,11 @@ export type HomepageData = {
   reels: PublicReel[];
   reelsEnabled: boolean;
   archiveCtaEnabled: boolean;
+  /**
+   * "Most Read" leaderboard — top articles by viewCount. Fixed module (not
+   * builder-configurable). Empty array on cold sites or on fetch failure.
+   */
+  mostReadArticles: ArticleCardDoc[];
 };
 
 const HEAD_SLOT_SIZE = 3;
@@ -144,6 +150,7 @@ async function fetchHomepageUncached(): Promise<HomepageData> {
       reels: [],
       reelsEnabled: true,
       archiveCtaEnabled: true,
+      mostReadArticles: [],
     };
   }
 }
@@ -249,6 +256,11 @@ async function fetchHomepageFromPayload(): Promise<HomepageData> {
     .filter((r) => r && typeof r === "object")
     .map((r) => mapReel(r as Record<string, unknown>));
 
+  // Fixed homepage "Most Read" module — top 5 by viewCount. Fetched inside the
+  // homepage cache so a homepage revalidation refreshes it in one shot rather
+  // than making the module cache the source of truth on the public page.
+  const mostReadArticles = await getMostReadArticles(5);
+
   return {
     heroArticle,
     editorsPicks,
@@ -259,6 +271,7 @@ async function fetchHomepageFromPayload(): Promise<HomepageData> {
     reels,
     reelsEnabled: homepage.reelsEnabled !== false,
     archiveCtaEnabled: homepage.archiveCtaEnabled !== false,
+    mostReadArticles,
   };
 }
 

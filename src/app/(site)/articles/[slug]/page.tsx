@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { mapPayloadArticle, queryArticleBySlug, queryArticles } from "@/lib/content";
+import {
+  getAdjacentArticles,
+  getMostReadArticles,
+  getRelatedArticles,
+  mapPayloadArticle,
+  queryArticleBySlug,
+  queryArticles,
+} from "@/lib/content";
 import type { ArticleCardDoc } from "@/lib/content/types";
 import { ArticleDetailPage } from "@/modules/editorial/pages/ArticleDetailPage";
 
@@ -62,5 +69,40 @@ export default async function Page({ params }: PageProps) {
     relatedArticles = related.docs.filter((doc) => doc.id !== article.id).slice(0, 3);
   }
 
-  return <ArticleDetailPage article={article} relatedArticles={relatedArticles} />;
+  // Fetch the most-read leaderboard for the sidebar module. Ask for 6 so we
+  // can drop the current article (if it happens to be trending) and still show
+  // a clean 5.
+  const mostReadRaw = await getMostReadArticles(6);
+  const mostReadArticles = mostReadRaw
+    .filter((doc) => doc.id !== article.id)
+    .slice(0, 5);
+
+  // Discovery: "Read next" scored by tag overlap (fallback: same-category
+  // newest → site-wide newest), plus chronological prev/next within the
+  // primary category. Both run in parallel — neither depends on the other.
+  const [readNextArticles, adjacentArticles] = await Promise.all([
+    getRelatedArticles(
+      {
+        id: article.id,
+        categories: article.categories?.map((c) => ({ id: c.id, slug: c.slug })),
+        tags: article.tags?.map((t) => ({ id: t.id, slug: t.slug })),
+      },
+      3
+    ),
+    getAdjacentArticles({
+      id: article.id,
+      publishedAt: article.publishedAt,
+      categories: article.categories?.map((c) => ({ slug: c.slug })),
+    }),
+  ]);
+
+  return (
+    <ArticleDetailPage
+      article={article}
+      relatedArticles={relatedArticles}
+      mostReadArticles={mostReadArticles}
+      readNextArticles={readNextArticles}
+      adjacentArticles={adjacentArticles}
+    />
+  );
 }
