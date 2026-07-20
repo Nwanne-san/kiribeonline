@@ -13,7 +13,13 @@ import {
   ArticleCard,
   ArticleNewsletterCta,
   ArticleShareRow,
+  BackToTop,
+  MostReadList,
+  PrevNextArticleNav,
+  ReadingProgress,
+  ReadNextSection,
 } from "@/modules/editorial/components";
+import type { AdjacentArticle } from "@/lib/content/query-adjacent";
 import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import {
@@ -28,6 +34,19 @@ import { CATEGORY_COLORS } from "@/theme/category-colors";
 type ArticleDetailPageProps = {
   article: Article;
   relatedArticles?: ArticleCardDoc[];
+  /**
+   * Optional "Most Read" leaderboard rendered below the article body. Empty or
+   * omitted → the section is skipped entirely (no dangling header on cold sites).
+   */
+  mostReadArticles?: ArticleCardDoc[];
+  /**
+   * "Read next" — scored recommendations (tag overlap → same-category →
+   * site-wide newest). Distinct from `relatedArticles` (legacy same-category
+   * grid). For published articles this should always contain ≥1 item.
+   */
+  readNextArticles?: ArticleCardDoc[];
+  /** Chronological prev/next within the primary category (site-wide fallback). */
+  adjacentArticles?: { prev: AdjacentArticle | null; next: AdjacentArticle | null };
 };
 
 const BODY_WIDTH = 832;
@@ -88,7 +107,13 @@ const proseSx = {
   "& figcaption": { fontSize: "0.875rem", fontStyle: "italic", color: "#6A7282", mt: 1 },
 } as const;
 
-function ArticleDetailContent({ article, relatedArticles = [] }: ArticleDetailPageProps) {
+function ArticleDetailContent({
+  article,
+  relatedArticles = [],
+  mostReadArticles = [],
+  readNextArticles = [],
+  adjacentArticles = { prev: null, next: null },
+}: ArticleDetailPageProps) {
   // Count one view per article per browser session. The ref guards against React
   // Strict Mode's double-invoke / remounts within a render, and the
   // sessionStorage key stops repeat counts on back-navigation to the same article.
@@ -121,6 +146,11 @@ function ArticleDetailContent({ article, relatedArticles = [] }: ArticleDetailPa
 
   return (
     <Box component="article">
+      {/* Reading aids — measure this <article>, not the whole page, so the bar
+          hits 100% at the end of the story (before footer / CTA). */}
+      <ReadingProgress target="article" />
+      <BackToTop />
+
       {/* ── Breadcrumb ───────────────────────────────────────── */}
       <Box sx={{ bgcolor: "#F9FAFB", borderBottom: "1px solid", borderColor: "divider" }}>
         <Box sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 4 } }}>
@@ -399,6 +429,13 @@ function ArticleDetailContent({ article, relatedArticles = [] }: ArticleDetailPa
         </Box>
       </Box>
 
+      {/* ── Most read (below body, sidebar variant) ──────────── */}
+      {mostReadArticles.length > 0 && (
+        <Box sx={{ maxWidth: BODY_WIDTH, mx: "auto", px: { xs: 3, md: 4 }, mt: { xs: 4, md: 6 } }}>
+          <MostReadList articles={mostReadArticles} variant="sidebar" />
+        </Box>
+      )}
+
       {/* ── Related articles ─────────────────────────────────── */}
       {relatedArticles.length > 0 && (
         <Box component="section" sx={{ bgcolor: "#F9FAFB", py: { xs: 8, md: 8 }, mt: { xs: 4, md: 4 } }}>
@@ -431,6 +468,12 @@ function ArticleDetailContent({ article, relatedArticles = [] }: ArticleDetailPa
         </Box>
       )}
 
+      {/* ── Read next (tag-scored recommendations) ────────────── */}
+      <ReadNextSection articles={readNextArticles} />
+
+      {/* ── Prev / next chronological within primary category ─── */}
+      <PrevNextArticleNav prev={adjacentArticles.prev} next={adjacentArticles.next} />
+
       {/* ── Newsletter CTA ───────────────────────────────────── */}
       <ArticleNewsletterCta />
     </Box>
@@ -444,3 +487,5 @@ export function ArticleDetailPage(props: ArticleDetailPageProps) {
     </Suspense>
   );
 }
+
+export type { ArticleDetailPageProps };

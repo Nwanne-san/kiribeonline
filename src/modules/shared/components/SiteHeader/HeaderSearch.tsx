@@ -15,6 +15,7 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { PublicCategory } from "@/lib/content/query-categories";
 import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
+import { trackEvent } from "@/modules/shared/components/GoogleAnalytics";
 import { KiribeTypography, publicRoute } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
@@ -69,6 +70,10 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
   const goToSearch = (raw: string) => {
     const trimmed = raw.trim();
     if (trimmed.length < MIN_QUERY) return;
+    // Fire the GA4 `search` event on explicit intent (Enter / view-all).
+    // The /search page fires the same event on its own settled `q` so
+    // deep-links and shared URLs are also counted.
+    trackEvent("search", { search_term: trimmed });
     setOpen(false);
     router.push(searchDestination(trimmed));
   };
