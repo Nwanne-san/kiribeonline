@@ -31,3 +31,8 @@
 - [useMutationService data type](gotcha_mutation_service_data_type.md) — function-form `data` is typed as full Req; omit it and let variables be the body
 - [next-svgr breaks metadata icons](gotcha_svgr_metadata_icons.md) — app-dir icon.svg needs a webpack resourceQuery exclusion in next.config.ts
 - [SEO/OG metadata gotchas](gotcha_seo_og_metadata.md) — opengraph-image.tsx overrides generateMetadata images; DB-reading sitemap must be force-dynamic to build without a DB
+- [Unsaved-changes guard redirect trap](gotcha_unsaved_changes_guard_redirect.md) — a monkey-patched router.push nav guard will prompt on the caller's own post-save redirect until React re-renders; expose a navigateSafely bypass
+
+## Testing
+
+- [Playwright smoke pattern](playwright-smoke-pattern.md) — E2E lives in `e2e/`, globalSetup shells out to migrate+seed, seed reuses existing scripts + Payload local API, admin users need `role: "admin", status: "active"`
