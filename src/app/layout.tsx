@@ -53,6 +53,15 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${SITE_NAME}`,
     },
     description,
+    alternates: {
+      // Root-level RSS advertisement — feed readers and browsers with reader
+      // integrations pick this up from every public page. The route is served
+      // at `/feed.xml` and always exists (falls back to an empty channel on
+      // DB failure, mirroring the sitemap).
+      types: {
+        "application/rss+xml": [{ url: "/feed.xml", title: `${SITE_NAME} — RSS` }],
+      },
+    },
     openGraph: {
       type: "website",
       siteName: SITE_NAME,

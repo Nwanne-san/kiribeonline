@@ -437,6 +437,14 @@ export function SiteFooter({
               <Link component={NextLink} href={PublicRoutes.contact} underline="hover" sx={footerLinkSx}>
                 Contact
               </Link>
+              {/*
+                RSS feed link — plain `<a>` (not NextLink) because /feed.xml is
+                an app-route that returns XML, not a page. Aggregators pick up
+                the same feed via the `<link rel="alternate">` in root layout.
+              */}
+              <Link href="/feed.xml" underline="hover" sx={footerLinkSx}>
+                RSS Feed
+              </Link>
             </Stack>
           </Grid>
 
