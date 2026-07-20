@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -13,14 +13,21 @@ import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
 import CheckIcon from "@mui/icons-material/Check";
 import CloudUploadOutlined from "@mui/icons-material/CloudUploadOutlined";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import SearchRounded from "@mui/icons-material/SearchRounded";
 import { DataRenderer, EmptyState, useKiribeToast } from "@/modules/shared/components/feedback";
 import { EmptyMediaIllustration } from "@/modules/shared/components/illustrations";
 import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
+import { ApiMethods } from "../../../../../types/service";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import { adminMediaService, adminQueryKeys } from "@/services/admin.service";
 import type { AdminListResult, AdminMediaItem, AdminMediaRef } from "@/server/modules";
-import { MAX_UPLOAD_BYTES } from "@/constants";
+import {
+  ADMIN_DEFAULT_PAGE_LIMIT,
+  DEFAULT_DEBOUNCE_MS,
+  MAX_UPLOAD_BYTES,
+} from "@/constants";
 import {
   downscaleImage,
   readImageDimensions,
@@ -45,110 +52,419 @@ export type MediaLibraryGridProps = {
    * check badge and `onSelect` acts as a toggle (the parent adds/removes).
    */
   selectedIds?: Set<string>;
+  /**
+   * When true, each tile exposes an inline "edit" affordance that opens a
+   * compact metadata dialog (alt required, caption/credit optional). Off by
+   * default so external consumers (e.g. gallery builder) keep the plain grid.
+   */
+  editable?: boolean;
 };
 
 /**
- * Media library browser. Single-select by default; pass `selectedIds` to enable
- * a multi-select toggle mode (used by the gallery insert dialog).
+ * Debounced local text state — used inside the picker dialog where routing to
+ * a URL param would fight `useModalRoute` and pollute the parent editor's URL.
+ * The full Media Library page owns its own URL-synced search via
+ * `useDebouncedUrlParam`.
  */
-export function MediaLibraryGrid({ onSelect, selectedIds }: MediaLibraryGridProps) {
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(value), delayMs);
+    return () => window.clearTimeout(timer);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+/**
+ * Media library browser. Single-select by default; pass `selectedIds` to enable
+ * a multi-select toggle mode (used by the gallery insert dialog). Supports
+ * debounced filename/alt search and page-based pagination so older assets are
+ * reachable — the previous implementation only ever loaded the first page.
+ */
+export function MediaLibraryGrid({
+  onSelect,
+  selectedIds,
+  editable = false,
+}: MediaLibraryGridProps) {
+  const [rawQuery, setRawQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(rawQuery, DEFAULT_DEBOUNCE_MS).trim();
+  const [page, setPage] = useState(1);
+  const [editing, setEditing] = useState<AdminMediaItem | null>(null);
+
+  // Reset to page 1 when the query changes so the visible page always matches
+  // what the user searched for.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery]);
+
+  const listPath = useMemo(() => {
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(ADMIN_DEFAULT_PAGE_LIMIT));
+    if (debouncedQuery) qs.set("q", debouncedQuery);
+    return `/api/admin/media?${qs.toString()}`;
+  }, [debouncedQuery, page]);
+
   const { data, isLoading, isError, refetch } = useQueryService<
     Record<string, never>,
     AdminListResult<AdminMediaItem>
   >({
-    service: { ...adminMediaService.list, data: {} },
-    options: { keys: [adminQueryKeys.media] },
+    service: { path: listPath, method: ApiMethods.GET },
+    options: {
+      keys: [adminQueryKeys.media, "picker"],
+      keepPreviousData: true,
+      searchQuery: debouncedQuery,
+    },
   });
 
   const items = data?.docs ?? [];
+  const totalPages = data?.totalPages ?? 1;
+  const totalDocs = data?.totalDocs ?? 0;
   const multiSelect = selectedIds !== undefined;
+  const searching = rawQuery.trim() !== debouncedQuery;
 
   return (
-    <DataRenderer
-      isLoading={isLoading}
-      isError={isError}
-      isEmpty={!isLoading && items.length === 0}
-      showRetry
-      onRetry={refetch}
-      size="compact"
-      renderEmpty={
-        <EmptyState
-          size="compact"
-          illustration={<EmptyMediaIllustration />}
-          title="No images yet"
-          description="Upload an image from the Upload tab to build your media library."
+    <Stack spacing={1.5}>
+      <Box sx={{ position: "relative" }}>
+        <SearchRounded
+          sx={{
+            position: "absolute",
+            left: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: 18,
+            color: "text.secondary",
+            pointerEvents: "none",
+          }}
         />
-      }
-    >
-      {() => (
-        <Grid container spacing={1.5}>
-          {items.map((item) => {
-            const isSelected = selectedIds?.has(item.id) ?? false;
-            const select = () => onSelect({ id: item.id, url: item.url, alt: item.alt });
-            return (
-              <Grid key={item.id} size={{ xs: 4, sm: 3 }}>
-                <Box
-                  role={multiSelect ? "checkbox" : "button"}
-                  aria-checked={multiSelect ? isSelected : undefined}
-                  aria-label={item.alt ?? item.filename ?? "Media image"}
-                  tabIndex={0}
-                  onClick={select}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      select();
-                    }
-                  }}
-                  sx={{
-                    position: "relative",
-                    cursor: "pointer",
-                    border: "2px solid",
-                    borderColor: isSelected ? "primary.main" : "divider",
-                    borderRadius: 1,
-                    overflow: "hidden",
-                    aspectRatio: "1 / 1",
-                    "&:hover": { borderColor: "primary.main" },
-                    "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" },
-                  }}
-                >
-                  {item.url ? (
+        <Box
+          component="input"
+          type="search"
+          value={rawQuery}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            setRawQuery(event.target.value)
+          }
+          placeholder="Search by filename or alt text"
+          aria-label="Search media"
+          sx={{
+            width: "100%",
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 1,
+            py: 1,
+            pl: 4.5,
+            pr: 1.5,
+            font: "inherit",
+            fontSize: "0.875rem",
+            outline: "none",
+            "&:focus": {
+              borderColor: "primary.main",
+              boxShadow: (theme) => `0 0 0 2px ${theme.palette.primary.main}20`,
+            },
+          }}
+        />
+      </Box>
+
+      <DataRenderer
+        isLoading={isLoading && !data}
+        isError={isError}
+        isEmpty={!isLoading && items.length === 0}
+        showRetry
+        onRetry={refetch}
+        size="compact"
+        renderEmpty={
+          debouncedQuery ? (
+            <EmptyState
+              size="compact"
+              illustration={<EmptyMediaIllustration />}
+              title="No matches"
+              description={`Nothing matches “${debouncedQuery}”. Try a different word or clear the search.`}
+            />
+          ) : (
+            <EmptyState
+              size="compact"
+              illustration={<EmptyMediaIllustration />}
+              title="No images yet"
+              description="Upload an image from the Upload tab to build your media library."
+            />
+          )
+        }
+      >
+        {() => (
+          <>
+            <Grid container spacing={1.5}>
+              {items.map((item) => {
+                const isSelected = selectedIds?.has(item.id) ?? false;
+                const select = () => onSelect({ id: item.id, url: item.url, alt: item.alt });
+                return (
+                  <Grid key={item.id} size={{ xs: 4, sm: 3 }}>
                     <Box
-                      component="img"
-                      src={item.url}
-                      alt={item.alt ?? item.filename ?? ""}
-                      sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                    />
-                  ) : (
-                    <Box sx={{ p: 1 }}>
-                      <Typography variant="caption">{item.filename}</Typography>
-                    </Box>
-                  )}
-                  {multiSelect && isSelected ? (
-                    <Box
+                      role={multiSelect ? "checkbox" : "button"}
+                      aria-checked={multiSelect ? isSelected : undefined}
+                      aria-label={item.alt ?? item.filename ?? "Media image"}
+                      tabIndex={0}
+                      onClick={select}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          select();
+                        }
+                      }}
                       sx={{
-                        position: "absolute",
-                        top: 4,
-                        right: 4,
-                        width: 22,
-                        height: 22,
-                        borderRadius: "50%",
-                        bgcolor: "primary.main",
-                        color: "primary.contrastText",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        position: "relative",
+                        cursor: "pointer",
+                        border: "2px solid",
+                        borderColor: isSelected ? "primary.main" : "divider",
+                        borderRadius: 1,
+                        overflow: "hidden",
+                        aspectRatio: "1 / 1",
+                        "&:hover": { borderColor: "primary.main" },
+                        "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" },
                       }}
                     >
-                      <CheckIcon sx={{ fontSize: 16 }} />
+                      {item.url ? (
+                        <Box
+                          component="img"
+                          src={item.url}
+                          alt={item.alt ?? item.filename ?? ""}
+                          sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        />
+                      ) : (
+                        <Box sx={{ p: 1 }}>
+                          <Typography variant="caption">{item.filename}</Typography>
+                        </Box>
+                      )}
+                      {multiSelect && isSelected ? (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 4,
+                            right: 4,
+                            width: 22,
+                            height: 22,
+                            borderRadius: "50%",
+                            bgcolor: "primary.main",
+                            color: "primary.contrastText",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <CheckIcon sx={{ fontSize: 16 }} />
+                        </Box>
+                      ) : null}
+                      {editable ? (
+                        <Box
+                          component="button"
+                          type="button"
+                          aria-label={`Edit metadata for ${item.filename ?? item.alt ?? "image"}`}
+                          onClick={(event: React.MouseEvent) => {
+                            event.stopPropagation();
+                            setEditing(item);
+                          }}
+                          sx={{
+                            position: "absolute",
+                            bottom: 4,
+                            right: 4,
+                            width: 24,
+                            height: 24,
+                            borderRadius: "50%",
+                            border: "none",
+                            bgcolor: "rgba(255,255,255,0.92)",
+                            color: "text.primary",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                            "&:hover": { bgcolor: "#fff" },
+                          }}
+                        >
+                          <EditOutlined sx={{ fontSize: 14 }} />
+                        </Box>
+                      ) : null}
                     </Box>
-                  ) : null}
-                </Box>
-              </Grid>
-            );
-          })}
-        </Grid>
-      )}
-    </DataRenderer>
+                  </Grid>
+                );
+              })}
+            </Grid>
+
+            {totalPages > 1 ? (
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mt: 2, pt: 1.5, borderTop: "1px solid", borderColor: "divider" }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  Page {page} of {totalPages} · {totalDocs} image{totalDocs === 1 ? "" : "s"}
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={page <= 1 || searching}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={page >= totalPages || searching}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </Button>
+                </Stack>
+              </Stack>
+            ) : null}
+          </>
+        )}
+      </DataRenderer>
+
+      {editing ? (
+        <MediaMetadataDialog
+          item={editing}
+          open={Boolean(editing)}
+          onClose={() => setEditing(null)}
+        />
+      ) : null}
+    </Stack>
+  );
+}
+
+/**
+ * Compact metadata editor — reusable between the picker's tile affordance and
+ * the full Media Library page. Alt stays required so blind-user experience
+ * can't regress silently.
+ */
+export function MediaMetadataDialog({
+  item,
+  open,
+  onClose,
+  onSaved,
+}: {
+  item: AdminMediaItem;
+  open: boolean;
+  onClose: () => void;
+  onSaved?: (updated: AdminMediaItem) => void;
+}) {
+  const [alt, setAlt] = useState(item.alt ?? "");
+  const [caption, setCaption] = useState(item.caption ?? "");
+  const [credit, setCredit] = useState(item.credit ?? "");
+  const { showToast } = useKiribeToast();
+
+  // Reset when the dialog re-opens on a different item (mount-only state
+  // would carry the previous item's edits into the new one).
+  useEffect(() => {
+    if (open) {
+      setAlt(item.alt ?? "");
+      setCaption(item.caption ?? "");
+      setCredit(item.credit ?? "");
+    }
+  }, [open, item.id, item.alt, item.caption, item.credit]);
+
+  const { mutate, isPending } = useMutationService<
+    { alt: string; caption?: string; credit?: string },
+    AdminMediaItem
+  >({
+    service: adminMediaService.update(item.id),
+    options: {
+      successTitle: "Image updated",
+      invalidateKeys: [adminQueryKeys.media],
+      onSuccess: (updated) => {
+        onSaved?.(updated);
+        onClose();
+      },
+      onError: (error) => {
+        showToast({
+          message: "Update failed",
+          description: error?.message ?? "Something went wrong.",
+          severity: "error",
+        });
+      },
+    },
+  });
+
+  const trimmedAlt = alt.trim();
+  const canSave = trimmedAlt.length > 0 && !isPending;
+
+  const handleSave = () => {
+    if (!canSave) return;
+    mutate({
+      alt: trimmedAlt,
+      caption: caption.trim(),
+      credit: credit.trim(),
+    });
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Edit image details</DialogTitle>
+      <DialogContent dividers>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          {item.url ? (
+            <Box
+              component="img"
+              src={item.url}
+              alt={item.alt ?? item.filename ?? ""}
+              sx={{
+                width: { xs: "100%", sm: 160 },
+                height: { xs: 180, sm: 160 },
+                objectFit: "cover",
+                borderRadius: 1,
+                border: "1px solid",
+                borderColor: "divider",
+                flexShrink: 0,
+              }}
+            />
+          ) : null}
+          <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
+            {item.filename ? (
+              <Typography variant="caption" color="text.secondary" noWrap title={item.filename}>
+                {item.filename}
+              </Typography>
+            ) : null}
+            <KiribeTextField
+              label="Alt text"
+              value={alt}
+              onChange={(event) => setAlt(event.target.value)}
+              fullWidth
+              required
+              error={alt.length > 0 && !trimmedAlt}
+              helperText={
+                !trimmedAlt
+                  ? "Describe the image for screen readers."
+                  : "Describe the image for screen readers."
+              }
+            />
+            <KiribeTextField
+              label="Caption"
+              value={caption}
+              onChange={(event) => setCaption(event.target.value)}
+              fullWidth
+              helperText="Shown under the image where the design surfaces one."
+            />
+            <KiribeTextField
+              label="Credit"
+              value={credit}
+              onChange={(event) => setCredit(event.target.value)}
+              fullWidth
+              helperText="Photographer / illustrator attribution."
+            />
+          </Stack>
+        </Stack>
+      </DialogContent>
+      <Stack direction="row" spacing={1} sx={{ px: 3, py: 2, justifyContent: "flex-end" }}>
+        <Button onClick={onClose} disabled={isPending}>
+          Cancel
+        </Button>
+        <KiribeButton onClick={handleSave} loading={isPending} disabled={!canSave}>
+          Save changes
+        </KiribeButton>
+      </Stack>
+    </Dialog>
   );
 }
 
@@ -417,7 +733,7 @@ export function MediaPicker({ label, value, onChange, helperText }: MediaPickerP
             <Tab label="Upload" />
           </Tabs>
           {tab === 0 ? (
-            <MediaLibraryGrid onSelect={handleSelect} />
+            <MediaLibraryGrid onSelect={handleSelect} editable />
           ) : (
             <MediaUploadForm onUploaded={handleSelect} />
           )}

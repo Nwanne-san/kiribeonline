@@ -58,6 +58,7 @@ export const adminMediaService = {
     method: ApiMethods.POST,
     options: { isFormData: true },
   },
+  update: (id: string) => ({ path: `${ADMIN_API}/media/${id}`, method: ApiMethods.PATCH }),
   remove: (id: string) => ({ path: `${ADMIN_API}/media/${id}`, method: ApiMethods.DELETE }),
 };
 
