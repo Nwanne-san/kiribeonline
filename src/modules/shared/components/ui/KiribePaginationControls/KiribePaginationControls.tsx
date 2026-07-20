@@ -18,6 +18,12 @@ export type KiribePaginationControlsProps = {
   rowsPerPageList?: readonly number[];
   onPageChange?: (args: { page: number; rowsPerPage: number }) => void;
   isCondense?: boolean;
+  /**
+   * Label shown next to the page-size selector. Defaults to the admin-table
+   * phrasing "Rows per page" so existing callers keep their copy; editorial
+   * callers should pass "Stories per page" (or a domain-appropriate noun).
+   */
+  itemLabel?: string;
 };
 
 export function KiribePaginationControls({
@@ -27,6 +33,7 @@ export function KiribePaginationControls({
   rowsPerPageList = PAGE_LIMIT_OPTIONS,
   onPageChange,
   isCondense = true,
+  itemLabel = "Rows per page",
 }: KiribePaginationControlsProps) {
   const pageCount = Math.ceil(totalItems / rowsPerPage);
 
@@ -64,7 +71,7 @@ export function KiribePaginationControls({
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
         <Typography variant="body2" color="text.secondary">
-          Rows per page
+          {itemLabel}
         </Typography>
         <Select
           value={rowsPerPage}
