@@ -54,6 +54,13 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${SITE_NAME}`,
     },
     description,
+    // Advertise the RSS feed so feed readers and RSS discovery UI in
+    // browsers can auto-detect it on every page.
+    alternates: {
+      types: {
+        "application/rss+xml": [{ url: "/feed.xml", title: `${SITE_NAME} RSS Feed` }],
+      },
+    },
     openGraph: {
       type: "website",
       siteName: SITE_NAME,
