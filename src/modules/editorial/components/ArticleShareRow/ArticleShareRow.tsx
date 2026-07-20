@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CheckIcon from "@mui/icons-material/Check";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import FacebookIcon from "@mui/icons-material/Facebook";
+import IosShareIcon from "@mui/icons-material/IosShare";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import TwitterIcon from "@mui/icons-material/Twitter";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { KiribeTypography } from "@/modules/shared/components/ui";
@@ -30,6 +32,16 @@ const pillSx = {
 
 export function ArticleShareRow({ title }: { title: string }) {
   const [copied, setCopied] = useState(false);
+  // `navigator.share` is client-only and may be missing (desktop Firefox, older
+  // browsers). Detect after mount to keep SSR output stable and avoid a
+  // hydration mismatch.
+  const [canNativeShare, setCanNativeShare] = useState(false);
+
+  useEffect(() => {
+    setCanNativeShare(
+      typeof navigator !== "undefined" && typeof navigator.share === "function"
+    );
+  }, []);
 
   const shareUrl = () => (typeof window !== "undefined" ? window.location.href : "");
 
@@ -52,6 +64,16 @@ export function ArticleShareRow({ title }: { title: string }) {
     }
   };
 
+  const handleNativeShare = async () => {
+    try {
+      await navigator.share({ title, url: shareUrl() });
+      // Track only on successful invocation — a user cancel throws AbortError.
+      trackEvent("share", { method: "native", content_type: "article", item_id: title });
+    } catch {
+      /* user cancelled or share unavailable — no-op */
+    }
+  };
+
   return (
     <Box sx={{ py: 4, borderTop: "1px solid", borderColor: "divider" }}>
       <KiribeTypography
@@ -67,6 +89,23 @@ export function ArticleShareRow({ title }: { title: string }) {
         Share
       </KiribeTypography>
       <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
+        {/*
+          WhatsApp first — primary sharing channel for this audience. The
+          `wa.me` universal link routes to the native app on mobile and to
+          WhatsApp Web on desktop; `text` carries the title + URL.
+        */}
+        <Box
+          component="button"
+          type="button"
+          aria-label="Share on WhatsApp"
+          onClick={() =>
+            openShare("whatsapp", `https://wa.me/?text=${encodedTitle}%20${encoded()}`)
+          }
+          sx={{ ...pillSx, bgcolor: "#25D366" }}
+        >
+          <WhatsAppIcon sx={{ fontSize: 16 }} />
+          WhatsApp
+        </Box>
         <Box
           component="button"
           type="button"
@@ -121,6 +160,29 @@ export function ArticleShareRow({ title }: { title: string }) {
           {copied ? <CheckIcon sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
           {copied ? "Copied" : "Copy Link"}
         </Box>
+        {/*
+          Native share (Web Share API) — mobile-first UX. Feature-detected
+          after mount; hidden entirely on unsupported browsers (desktop
+          Firefox, older Safari) rather than showing a dead button.
+        */}
+        {canNativeShare && (
+          <Box
+            component="button"
+            type="button"
+            aria-label="Share via device"
+            onClick={handleNativeShare}
+            sx={{
+              ...pillSx,
+              bgcolor: "transparent",
+              color: "#4A5565",
+              border: "1px solid",
+              borderColor: "#D1D5DC",
+            }}
+          >
+            <IosShareIcon sx={{ fontSize: 16 }} />
+            Share
+          </Box>
+        )}
       </Stack>
     </Box>
   );

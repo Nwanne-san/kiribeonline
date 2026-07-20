@@ -437,6 +437,19 @@ export function SiteFooter({
               <Link component={NextLink} href={PublicRoutes.contact} underline="hover" sx={footerLinkSx}>
                 Contact
               </Link>
+              {/*
+                RSS feed link — a plain anchor (not NextLink) so the browser
+                treats `/feed.xml` as a document navigation and hands it off
+                to the OS or feed reader instead of trying to render it in-app.
+              */}
+              <Link
+                href="/feed.xml"
+                underline="hover"
+                sx={footerLinkSx}
+                aria-label="Subscribe to the Kiribé Online RSS feed"
+              >
+                RSS Feed
+              </Link>
             </Stack>
           </Grid>
 
