@@ -3,6 +3,8 @@ export { buildSearchWhere, isSearchQueryValid, mergeWhereClauses } from "./artic
 export { mergeInfinitePages } from "./merge-pages";
 export { clampLimit, normalizePagination, parsePage } from "./pagination";
 export { queryArticles, queryArticleBySlug } from "./query-articles";
+export { queryArticlesForFeed } from "./query-feed";
+export type { FeedArticle } from "./query-feed";
 export {
   getCategoriesForPublic,
   getCategoriesIndexForPublic,
