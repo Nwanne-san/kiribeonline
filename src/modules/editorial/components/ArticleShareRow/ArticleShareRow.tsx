@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CheckIcon from "@mui/icons-material/Check";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import FacebookIcon from "@mui/icons-material/Facebook";
+import IosShareIcon from "@mui/icons-material/IosShare";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import TwitterIcon from "@mui/icons-material/Twitter";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { KiribeTypography } from "@/modules/shared/components/ui";
@@ -30,6 +32,16 @@ const pillSx = {
 
 export function ArticleShareRow({ title }: { title: string }) {
   const [copied, setCopied] = useState(false);
+  // Feature-detect native share on the client only. Guarding with a mounted
+  // flag keeps SSR + hydration deterministic — the button paints on first
+  // client render on devices that support Web Share (mostly iOS, Android,
+  // some macOS Safari) and stays hidden everywhere else.
+  const [canNativeShare, setCanNativeShare] = useState(false);
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      setCanNativeShare(true);
+    }
+  }, []);
 
   const shareUrl = () => (typeof window !== "undefined" ? window.location.href : "");
 
@@ -52,6 +64,19 @@ export function ArticleShareRow({ title }: { title: string }) {
     }
   };
 
+  const handleNativeShare = async () => {
+    const url = shareUrl();
+    if (!url) return;
+    try {
+      await navigator.share({ title, text: title, url });
+      trackEvent("share", { method: "native", content_type: "article", item_id: title });
+    } catch {
+      // User cancelled the OS share sheet (AbortError) or the API rejected —
+      // native share is a best-effort enhancement, so we swallow silently and
+      // never surface an error toast.
+    }
+  };
+
   return (
     <Box sx={{ py: 4, borderTop: "1px solid", borderColor: "divider" }}>
       <KiribeTypography
@@ -67,6 +92,39 @@ export function ArticleShareRow({ title }: { title: string }) {
         Share
       </KiribeTypography>
       <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
+        {/*
+          Order (spec): copy-link first, then WhatsApp (primary channel for
+          this audience), then X / Facebook / LinkedIn. The native "Share…"
+          button, when available, sits last as a catch-all that surfaces the
+          OS sheet (Messages, Mail, other installed apps).
+        */}
+        <Box
+          component="button"
+          type="button"
+          onClick={handleCopy}
+          sx={{
+            ...pillSx,
+            bgcolor: "transparent",
+            color: copied ? "primary.main" : "#4A5565",
+            border: "1px solid",
+            borderColor: copied ? "primary.main" : "#D1D5DC",
+          }}
+        >
+          {copied ? <CheckIcon sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
+          {copied ? "Copied" : "Copy Link"}
+        </Box>
+        <Box
+          component="button"
+          type="button"
+          aria-label="Share on WhatsApp"
+          onClick={() =>
+            openShare("whatsapp", `https://wa.me/?text=${encodedTitle}%20${encoded()}`)
+          }
+          sx={{ ...pillSx, bgcolor: "#25D366" }}
+        >
+          <WhatsAppIcon sx={{ fontSize: 16 }} />
+          WhatsApp
+        </Box>
         <Box
           component="button"
           type="button"
@@ -106,21 +164,24 @@ export function ArticleShareRow({ title }: { title: string }) {
           <LinkedInIcon sx={{ fontSize: 16 }} />
           LinkedIn
         </Box>
-        <Box
-          component="button"
-          type="button"
-          onClick={handleCopy}
-          sx={{
-            ...pillSx,
-            bgcolor: "transparent",
-            color: copied ? "primary.main" : "#4A5565",
-            border: "1px solid",
-            borderColor: copied ? "primary.main" : "#D1D5DC",
-          }}
-        >
-          {copied ? <CheckIcon sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
-          {copied ? "Copied" : "Copy Link"}
-        </Box>
+        {canNativeShare && (
+          <Box
+            component="button"
+            type="button"
+            aria-label="Share via device"
+            onClick={handleNativeShare}
+            sx={{
+              ...pillSx,
+              bgcolor: "transparent",
+              color: "#4A5565",
+              border: "1px solid",
+              borderColor: "#D1D5DC",
+            }}
+          >
+            <IosShareIcon sx={{ fontSize: 16 }} />
+            Share…
+          </Box>
+        )}
       </Stack>
     </Box>
   );
