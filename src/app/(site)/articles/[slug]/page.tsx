@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { mapPayloadArticle, queryArticleBySlug, queryArticles } from "@/lib/content";
+import {
+  getMostReadArticles,
+  mapPayloadArticle,
+  queryArticleBySlug,
+  queryArticles,
+} from "@/lib/content";
 import type { ArticleCardDoc } from "@/lib/content/types";
 import { ArticleDetailPage } from "@/modules/editorial/pages/ArticleDetailPage";
 
@@ -62,5 +67,19 @@ export default async function Page({ params }: PageProps) {
     relatedArticles = related.docs.filter((doc) => doc.id !== article.id).slice(0, 3);
   }
 
-  return <ArticleDetailPage article={article} relatedArticles={relatedArticles} />;
+  // Fetch the most-read leaderboard for the sidebar module. Ask for 6 so we
+  // can drop the current article (if it happens to be trending) and still show
+  // a clean 5.
+  const mostReadRaw = await getMostReadArticles(6);
+  const mostReadArticles = mostReadRaw
+    .filter((doc) => doc.id !== article.id)
+    .slice(0, 5);
+
+  return (
+    <ArticleDetailPage
+      article={article}
+      relatedArticles={relatedArticles}
+      mostReadArticles={mostReadArticles}
+    />
+  );
 }

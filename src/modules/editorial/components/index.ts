@@ -9,3 +9,4 @@ export { CategoryHero } from "./CategoryHero";
 export { FeaturedArticleCard } from "./FeaturedArticleCard";
 export { InfiniteArticleList } from "./InfiniteArticleList";
 export { ArticleListView } from "./ArticleListView";
+export { MostReadList } from "./MostReadList";

@@ -3,6 +3,7 @@ export { buildSearchWhere, isSearchQueryValid, mergeWhereClauses } from "./artic
 export { mergeInfinitePages } from "./merge-pages";
 export { clampLimit, normalizePagination, parsePage } from "./pagination";
 export { queryArticles, queryArticleBySlug } from "./query-articles";
+export { getMostReadArticles } from "./query-most-read";
 export {
   getCategoriesForPublic,
   getCategoriesIndexForPublic,

@@ -3,6 +3,7 @@ import { BrowseArchiveCta } from "@/modules/editorial/components/BrowseArchiveCt
 import { CategoryModuleSection } from "@/modules/editorial/components/CategoryModuleSection";
 import { HomeHero } from "@/modules/editorial/components/HomeHero";
 import { MoreCreatorsGrid } from "@/modules/editorial/components/MoreCreatorsGrid";
+import { MostReadList } from "@/modules/editorial/components/MostReadList";
 import { ReelsSection } from "@/modules/editorial/components/ReelsSection";
 import { SpotlightProfile } from "@/modules/editorial/components/SpotlightProfile";
 import { SubscribeBand } from "@/modules/marketing/components/SubscribeBand";
@@ -43,6 +44,8 @@ export function HomePage({ data }: HomePageProps) {
           />
         );
       })}
+
+      <MostReadList articles={data.mostReadArticles} variant="homepage" />
 
       {data.archiveCtaEnabled && <BrowseArchiveCta />}
       <SubscribeBand />
