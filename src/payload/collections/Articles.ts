@@ -84,6 +84,7 @@ export const Articles: CollectionConfig = {
       },
       options: [
         { label: "Draft", value: "draft" },
+        { label: "In review", value: "in_review" },
         { label: "Scheduled", value: "scheduled" },
         { label: "Published", value: "published" },
         { label: "Archived", value: "archived" },

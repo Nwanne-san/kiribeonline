@@ -11,6 +11,14 @@ export const ADMIN_PAGE_LIMIT_OPTIONS = [10, 20, 50] as const;
 export const MIN_SEARCH_LENGTH = 2;
 export const DEFAULT_DEBOUNCE_MS = 300;
 
+/**
+ * Article-editor autosave interval. Long enough that a typing editor doesn't
+ * fire a request on every pause; short enough that a browser crash costs at
+ * most half a minute. Only applies to drafts and in_review — never to
+ * published/scheduled/archived, where writes should be intentional.
+ */
+export const ARTICLE_AUTOSAVE_DEBOUNCE_MS = 30_000;
+
 export const URL_PARAMS = {
   page: "page",
   limit: "limit",

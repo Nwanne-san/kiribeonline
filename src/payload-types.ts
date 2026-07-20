@@ -253,7 +253,7 @@ export interface Article {
    * Byline shown on the article and used for author stats
    */
   author?: (number | null) | User;
-  status?: ('draft' | 'scheduled' | 'published' | 'archived') | null;
+  status?: ('draft' | 'in_review' | 'scheduled' | 'published' | 'archived') | null;
   publishedAt?: string | null;
   /**
    * Show on homepage featured modules
