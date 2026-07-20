@@ -44,3 +44,56 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
+
+  e2e:
+    # Smoke suite — separate job so a flake here doesn't gate merges yet.
+    # `needs: verify` keeps CI cheap (skips if the base checks are already red).
+    # Non-blocking for now (decision 2026-07-20): suite is landed but unproven
+    # in CI; flip continue-on-error off once it runs green in the next build.
+    continue-on-error: true
+    needs: verify
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PAYLOAD_SECRET: ci-build-secret-min-32-characters-long
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+      DISABLE_PAYLOAD_STUDIO: "true"
+      # e2e boots `next start` (production mode) with no R2 on the runner; the
+      # payload.config fail-loud guard allows local-disk storage only with this.
+      ALLOW_LOCAL_MEDIA_STORAGE: "true"
+      # `webServer` reads this to build/start once per CI run.
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - run: npm run migrate
+      - name: Run E2E smoke suite
+        run: npm run test:e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

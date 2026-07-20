@@ -18,7 +18,9 @@
     "create-admin": "tsx scripts/create-admin.mjs",
     "seed:taxonomy": "tsx scripts/seed-taxonomy.mjs",
     "seed:demo": "tsx scripts/seed-demo-content.mjs",
-    "seed": "npm run seed:taxonomy && npm run seed:demo"
+    "seed": "npm run seed:taxonomy && npm run seed:demo",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -52,6 +54,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.1",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
