@@ -51,10 +51,20 @@ export const DEFAULT_ADMIN_LOGIN_RATE_LIMIT = 5;
 export const DEFAULT_ADMIN_LOGIN_EMAIL_RATE_LIMIT = 10;
 
 /**
- * Sensitive credential mutations (accept-invite, password reset) — tight tier,
- * matching BrandDrive's sensitive-route posture (~5/min). See AUTH-HARDENING §3.
+ * Sensitive credential mutations (accept-invite, forgot-password) — tight
+ * tier, matching BrandDrive's sensitive-route posture (~5/min). See
+ * AUTH-HARDENING §3.
  */
 export const DEFAULT_ADMIN_SENSITIVE_RATE_LIMIT = 5;
+
+/**
+ * The reset-password submit tier is looser than the send-email tier — the
+ * request body must include a 32-byte reset token (~10^76 keyspace) so per-IP
+ * volume is not the primary defense, and a real user retrying a stale link
+ * (browser prefill, back-button) can chew through five attempts fast. A shared
+ * office/VPN IP would otherwise lock the whole team out of their own resets.
+ */
+export const DEFAULT_ADMIN_RESET_SUBMIT_RATE_LIMIT = 20;
 
 /** Shared bucket for all admin write routes, keyed on the session user id. */
 export const DEFAULT_ADMIN_WRITE_RATE_LIMIT = 60;

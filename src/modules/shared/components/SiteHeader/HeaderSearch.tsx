@@ -181,7 +181,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
         >
           <Box
             sx={{
-              maxWidth: 1280,
+              maxWidth: "var(--container-editorial)",
               mx: "auto",
               px: { xs: 2, md: 4 },
               py: { xs: 2.5, md: 3 },

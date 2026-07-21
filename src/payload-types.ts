@@ -147,6 +147,8 @@ export interface User {
   avatar?: (number | null) | Media;
   inviteTokenHash?: string | null;
   inviteTokenExpiresAt?: string | null;
+  resetTokenHash?: string | null;
+  resetTokenExpiresAt?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -521,6 +523,8 @@ export interface UsersSelect<T extends boolean = true> {
   avatar?: T;
   inviteTokenHash?: T;
   inviteTokenExpiresAt?: T;
+  resetTokenHash?: T;
+  resetTokenExpiresAt?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -603,6 +607,7 @@ export interface MediaSelect<T extends boolean = true> {
   caption?: T;
   credit?: T;
   usageCount?: T;
+  blurDataUrl?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

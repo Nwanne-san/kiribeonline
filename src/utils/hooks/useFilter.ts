@@ -47,7 +47,10 @@ export function useFilter(defaultFilters: FilterState = {}) {
       }
 
       const query = params.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname);
+      // scroll: false — filter controls live mid-page; keep the user's place.
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
     },
     [pathname, router, searchParams]
   );

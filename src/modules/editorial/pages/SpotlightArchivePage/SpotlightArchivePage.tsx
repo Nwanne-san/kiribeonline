@@ -11,7 +11,7 @@ import Stack from "@mui/material/Stack";
 import type { PublicCreator } from "@/lib/content/query-homepage";
 import { CategoryHero } from "@/modules/editorial/components";
 import { EmptyState } from "@/modules/shared/components/feedback";
-import { EmptyShelfIllustration } from "@/modules/shared/components/illustrations";
+import { SpotlightLampIllustration } from "@/modules/shared/components/illustrations";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import {
   EditorialContainer,
@@ -105,13 +105,13 @@ function FeaturedCreatorPanel({ creator }: { creator: PublicCreator }) {
         sx={{
           mt: 2.5,
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+          gridTemplateColumns: { xs: "1fr", base: "1fr 1fr" },
         }}
       >
         <Box
           sx={{
             position: "relative",
-            minHeight: { xs: 320, sm: 440, lg: "auto" },
+            minHeight: { xs: 320, sm: 440, base: "auto" },
             bgcolor: "#F3F4F6",
           }}
         >
@@ -167,7 +167,7 @@ function FeaturedCreatorPanel({ creator }: { creator: PublicCreator }) {
           {creator.achievements && creator.achievements.length > 0 && (
             <Grid container spacing={2} sx={{ mt: 3.5 }}>
               {creator.achievements.slice(0, 4).map((achievement) => (
-                <Grid key={achievement.label} size={{ xs: 12, sm: 6 }}>
+                <Grid key={achievement.label} size={{ xs: 12, md: 6 }}>
                   <AchievementStat achievement={achievement} />
                 </Grid>
               ))}
@@ -261,7 +261,7 @@ export function SpotlightArchivePage({
       <EditorialContainer sx={{ py: { xs: 6, md: 6 } }}>
         {isEmpty ? (
           <EmptyState
-            illustration={<EmptyShelfIllustration />}
+            illustration={<SpotlightLampIllustration />}
             title="Spotlight profiles are coming soon"
             description="Creator profiles will appear here once the editors publish them."
             action={{ label: "Browse all articles", href: PublicRoutes.articles }}
@@ -295,7 +295,7 @@ export function SpotlightArchivePage({
 
                 <Grid container spacing={4} sx={{ mt: 2 }}>
                   {moreCreators.map((creator) => (
-                    <Grid key={creator.id} size={{ xs: 6, sm: 4, lg: 3 }}>
+                    <Grid key={creator.id} size={{ xs: 6, md: 4, base: 3 }}>
                       <SpotlightCreatorCard creator={creator} />
                     </Grid>
                   ))}

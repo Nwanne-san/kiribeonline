@@ -8,3 +8,10 @@ export { useDebouncedUrlParam } from "./useDebouncedUrlParam";
 export { useModalRoute, type ModalRouteValue } from "./useModalRoute";
 export { useListViewMode } from "./useListViewMode";
 export { useOnlineStatus } from "./useOnlineStatus";
+export {
+  useMediaQuery,
+  useBreakpointUp,
+  useBreakpointDown,
+  BREAKPOINTS,
+  type Breakpoint,
+} from "./useBreakpoint";

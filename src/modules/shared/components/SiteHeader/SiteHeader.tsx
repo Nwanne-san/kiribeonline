@@ -11,7 +11,6 @@ import YouTubeIcon from "@mui/icons-material/YouTube";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
-import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
@@ -70,7 +69,7 @@ function SocialRail({ socialLinks }: { socialLinks?: SiteSettings["socialLinks"]
       direction="row"
       alignItems="center"
       sx={{
-        display: { xs: "none", xl: "flex" },
+        display: { xs: "none", lg: "flex" },
         pr: 1.5,
         mr: 0.5,
         borderRight: "1px solid",
@@ -143,7 +142,7 @@ export function SiteHeader({
           borderColor: "divider",
         }}
       >
-        <Container maxWidth={false} sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 4 } }}>
+        <Container maxWidth={false} sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
           <Toolbar
             disableGutters
             sx={{
@@ -272,54 +271,86 @@ export function SiteHeader({
           </Stack>
 
           <Stack spacing={0} sx={{ py: 1, flex: 1, overflowY: "auto" }}>
-            {nav.map(({ label, href }) => (
-              <Link
-                key={label}
-                component={NextLink}
-                href={href}
-                underline="none"
-                onClick={() => setDrawerOpen(false)}
-                sx={{
-                  px: 2.5,
-                  py: 1.5,
-                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  color: "text.primary",
-                  "&:hover": { bgcolor: "action.hover", color: "primary.main" },
-                }}
-              >
-                {label}
-              </Link>
-            ))}
+            {nav.map(({ label, href }) => {
+              const active = pathname === href;
+              return (
+                <Link
+                  key={label}
+                  component={NextLink}
+                  href={href}
+                  underline="none"
+                  onClick={() => setDrawerOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  sx={{
+                    position: "relative",
+                    pl: 2.5,
+                    pr: 2.5,
+                    py: 1.5,
+                    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    color: active ? "primary.main" : "text.primary",
+                    /* 3px burgundy rail on the active row — same signal as the
+                       admin sidebar so the two chromes stay coherent. */
+                    borderLeft: "3px solid",
+                    borderLeftColor: active ? "primary.main" : "transparent",
+                    "&:hover": { bgcolor: "action.hover", color: "primary.main" },
+                  }}
+                >
+                  {label}
+                </Link>
+              );
+            })}
 
-            <Divider sx={{ my: 1 }} />
+            <Box
+              sx={{
+                px: 2.5,
+                pt: 2,
+                pb: 0.5,
+                fontFamily: "var(--font-body), 'Open Sans', sans-serif",
+                fontSize: "0.6875rem",
+                fontWeight: 600,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                color: "text.secondary",
+              }}
+            >
+              More
+            </Box>
 
             {[
               { label: "All Articles", href: PublicRoutes.articles },
               { label: "About", href: PublicRoutes.about },
               { label: "Contact", href: PublicRoutes.contact },
-            ].map(({ label, href }) => (
-              <Link
-                key={label}
-                component={NextLink}
-                href={href}
-                underline="none"
-                onClick={() => setDrawerOpen(false)}
-                sx={{
-                  px: 2.5,
-                  py: 1.5,
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  color: "text.primary",
-                  "&:hover": { bgcolor: "action.hover" },
-                }}
-              >
-                {label}
-              </Link>
-            ))}
+            ].map(({ label, href }) => {
+              const active = pathname === href;
+              return (
+                <Link
+                  key={label}
+                  component={NextLink}
+                  href={href}
+                  underline="none"
+                  onClick={() => setDrawerOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  sx={{
+                    position: "relative",
+                    pl: 2.5,
+                    pr: 2.5,
+                    py: 1.5,
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    color: active ? "primary.main" : "text.primary",
+                    borderLeft: "3px solid",
+                    borderLeftColor: active ? "primary.main" : "transparent",
+                    "&:hover": { bgcolor: "action.hover" },
+                  }}
+                >
+                  {label}
+                </Link>
+              );
+            })}
           </Stack>
 
           <Box sx={{ p: 2.5, borderTop: "1px solid", borderColor: "divider" }}>
@@ -394,9 +425,9 @@ export function SiteFooter({
 
   return (
     <Box component="footer" sx={{ bgcolor: "#101828", color: "common.white" }}>
-      <Container maxWidth={false} sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 4 }, py: { xs: 6, md: 8 } }}>
+      <Container maxWidth={false} sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 }, py: { xs: 6, md: 8 } }}>
         <Grid container spacing={{ xs: 4, md: 4 }}>
-          <Grid size={{ xs: 12, md: 3 }}>
+          <Grid size={{ xs: 12, base: 3 }}>
             <Box sx={{ mb: 2 }}>
               <BrandMark height={48} tone="light" />
             </Box>
@@ -408,7 +439,7 @@ export function SiteFooter({
             </Typography>
           </Grid>
 
-          <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <Grid size={{ xs: 6, md: 4, base: 3 }}>
             <Typography sx={colHeadingSx}>Sections</Typography>
             <Stack spacing={1.25}>
               {sections.map((item) => (
@@ -425,7 +456,7 @@ export function SiteFooter({
             </Stack>
           </Grid>
 
-          <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <Grid size={{ xs: 6, md: 4, base: 3 }}>
             <Typography sx={colHeadingSx}>About</Typography>
             <Stack spacing={1.25}>
               <Link component={NextLink} href={PublicRoutes.about} underline="hover" sx={footerLinkSx}>
@@ -453,7 +484,7 @@ export function SiteFooter({
             </Stack>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4, md: 3 }}>
+          <Grid size={{ xs: 12, md: 4, base: 3 }}>
             <Typography sx={colHeadingSx}>Follow</Typography>
             <Stack spacing={1.25}>
               {(socialLinks.length > 0

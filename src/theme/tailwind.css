@@ -68,8 +68,28 @@
   --color-kiribe-white: var(--color-surface);
 
   /* ── Layout primitives ───────────────────────────────────── */
-  --container-editorial: 1216px;
+  /* Canonical max content width — mirrored by MUI `Container maxWidth="lg"`
+     (pinned in muiTheme.ts) so Tailwind and MUI surfaces line up exactly. */
+  --container-editorial: 1200px;
+  /* The admin is a workbench, not a reading column — it stays wider so tables
+     and the editor's body+sidebar split keep their room. Deliberately separate
+     from --container-editorial so tuning reading measure can't resize the app. */
+  --container-admin: 1280px;
   --container-narrow: 720px;
+
+  /* ── Fluid type scale (DESIGN.md §2) ─────────────────────── */
+  /* Each token interpolates between its mobile floor and desktop ceiling, so
+     call sites never need `fontSize: { xs, md }` overrides. Mirrored into
+     muiTheme.ts typography variants so both stacks render the same sizes. */
+  --text-display: clamp(2rem, 1.4rem + 3vw, 3.5rem); /* 32 → 56 */
+  --text-section-title: clamp(1.5rem, 1.2rem + 1.5vw, 2rem); /* 24 → 32 */
+  --text-card-title: clamp(1.125rem, 1rem + 0.6vw, 1.5rem); /* 18 → 24 */
+  --text-body: clamp(0.9375rem, 0.9rem + 0.2vw, 1rem); /* 15 → 16 */
+  --text-body-sm: 0.875rem; /* 14 — metadata stays fixed */
+  /* Fixed, not fluid: labels are uppercase with 0.2em tracking — already the
+     hardest-to-read treatment in the system. Shrinking them on small screens is
+     the wrong direction, so this holds the 12px floor everywhere. */
+  --text-label: 0.75rem; /* 12 */
 
   /* ── Radii ───────────────────────────────────────────────── */
   --radius-card: 8px;
@@ -106,6 +126,17 @@ body {
   background: var(--color-cream);
 }
 
+/* Tailwind v4 Preflight sets `button { cursor: default }`. Restore the classic
+   pointer on interactive elements so admin buttons, tags, and role="button"
+   surfaces feel clickable. Disabled buttons stay with the default arrow. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
+}
+
 /* Hide scrollbar utility */
 .hide-scrollbar {
   scrollbar-width: none;
@@ -130,7 +161,7 @@ body {
 
   .kicker {
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: var(--text-label);
     font-weight: 600;
     letter-spacing: 0.2em;
     text-transform: uppercase;
@@ -164,14 +195,16 @@ body {
 }
 
 /* ── Motion presets ────────────────────────────────────────── */
+/* Opacity-only on purpose: `.animate-fadeIn` runs with fill-mode `forwards`
+   on containers like <main>, and a persisted `transform` would turn that
+   container into the containing block for `position: fixed` descendants
+   (BackToTop, ReadingProgress), un-pinning them from the viewport. */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

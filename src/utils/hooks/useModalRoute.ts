@@ -22,7 +22,8 @@ export function useModalRoute() {
           params.set(key, value);
         });
       }
-      router.replace(`${pathname}?${params.toString()}`);
+      // scroll: false — opening a modal must not move the page underneath it.
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [pathname, router, searchParams]
   );
@@ -31,7 +32,10 @@ export function useModalRoute() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete(URL_PARAMS.modal);
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
+    // scroll: false — closing a modal returns to the page exactly as it was.
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
   }, [pathname, router, searchParams]);
 
   const navigateBack = useCallback(() => {

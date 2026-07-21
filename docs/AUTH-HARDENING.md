@@ -70,7 +70,19 @@ Legend: ✅ done · 🔨 in progress · ⬜ planned
 - ✅ `AuditLogs` collection + hooks record admin mutations; dashboard surfaces recent activity.
 - ⬜ Also log auth events: login success/fail, lockout, invite accept, role/status change (via Payload `afterLogin`/collection hooks).
 - ⬜ Use `crypto.randomInt` / `randomBytes` for any token or OTP (never `Math.random`).
-- ⬜ Password reset: generic messaging, short-lived reset token, trial cap (BrandDrive `MAXIMUM_FORGET_PASSWORD_TRIAL_COUNT`).
+- ✅ Password reset (2026-07-21): single-use 32-byte token stored as SHA-256
+  hash with a 30-min TTL (`src/server/modules/users/reset-token.ts`); generic
+  200 on every branch of `POST /api/admin/auth/forgot-password` (hit, miss,
+  suspended, rate-limit) so the endpoint cannot enumerate accounts; hit-branch
+  DB write + email send are fire-and-forget so hit/miss response times match
+  (`requestPasswordReset` in `users.service.ts`); IP rate limit 5/min on
+  forgot, 20/min on reset submit (looser because the token itself is the
+  primary defense), plus a per-email 3/hr cap on forgot. `?next=` on the login
+  page URL-parses against origin and requires the resulting path to stay under
+  `/admin/`. **Session invalidation is honored** — both `completePasswordReset`
+  and `acceptInvite` clear `sessions: []`, and `/api/admin/auth/logout` now
+  removes the current `_sid` from the user's sessions array so a stolen cookie
+  stops authenticating server-side, not just locally. See §6.
 
 ---
 
