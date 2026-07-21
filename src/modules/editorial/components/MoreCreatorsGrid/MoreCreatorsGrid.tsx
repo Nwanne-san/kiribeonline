@@ -27,7 +27,7 @@ export function MoreCreatorsGrid({ creators }: MoreCreatorsGridProps) {
         {hasCreators ? (
           <Grid container spacing={{ xs: 2, md: 3 }}>
             {creators.slice(0, 8).map((creator) => (
-              <Grid key={creator.id} size={{ xs: 6, sm: 4, md: 3 }}>
+              <Grid key={creator.id} size={{ xs: 6, md: 4, base: 3 }}>
                 <CreatorCard creator={creator} />
               </Grid>
             ))}

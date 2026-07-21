@@ -16,7 +16,7 @@ import {
 } from "@/modules/shared/components/skeleton";
 import { DataRenderer, EmptyState } from "@/modules/shared/components/feedback";
 import {
-  EmptyShelfIllustration,
+  CategoryEmptyIllustration,
   NoResultsIllustration,
 } from "@/modules/shared/components/illustrations";
 import CloseIcon from "@mui/icons-material/Close";
@@ -240,7 +240,7 @@ export function ArticleListView({
             renderLoading={
               <Grid container spacing={4}>
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <Grid key={i} size={{ xs: 12, sm: 6, lg: 4 }}>
+                  <Grid key={i} size={{ xs: 12, md: 6, base: 4 }}>
                     {view === "list" ? <ArticleCardListSkeleton /> : <ArticleCardGridSkeleton />}
                   </Grid>
                 ))}
@@ -249,7 +249,13 @@ export function ArticleListView({
             renderEmpty={
               <EmptyState
                 illustration={
-                  isSearchMode ? <NoResultsIllustration /> : <EmptyShelfIllustration />
+                  isSearchMode ? (
+                    <NoResultsIllustration />
+                  ) : (
+                    // Themed per category (film reel, TV set, …); archives
+                    // without a category fall back to the generic shelf.
+                    <CategoryEmptyIllustration slug={defaultCategorySlug} />
+                  )
                 }
                 title={
                   isSearchMode && q.trim().length >= MIN_SEARCH_LENGTH
@@ -276,8 +282,11 @@ export function ArticleListView({
                 page === 1 &&
                 view !== "feed" &&
                 articles.length > 0;
+              // The featured card is a highlight, not a replacement — the
+              // "All … Articles" grid/list below still shows every article
+              // (otherwise a one-article category renders an empty list).
               const featuredArticle = showFeatured ? articles[0] : undefined;
-              const listArticles = showFeatured ? articles.slice(1) : articles;
+              const listArticles = articles;
 
               return (
                 <>
@@ -342,7 +351,7 @@ export function ArticleListView({
                   ) : (
                     <Grid container spacing={4}>
                       {listArticles.map((article) => (
-                        <Grid key={article.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+                        <Grid key={article.id} size={{ xs: 12, md: 6, base: 4 }}>
                           <ArticleCard article={article} variant="grid" />
                         </Grid>
                       ))}

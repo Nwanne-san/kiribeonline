@@ -21,7 +21,7 @@ export function SectionGridSkeleton({ columns = 3, count = 3 }: SectionGridSkele
       </Stack>
       <Grid container spacing={3}>
         {Array.from({ length: count }).map((_, i) => (
-          <Grid key={i} size={{ xs: 12, sm: columns === 3 ? 6 : 6, lg: columns === 3 ? 4 : 6 }}>
+          <Grid key={i} size={{ xs: 12, md: 6, base: columns === 3 ? 4 : 6 }}>
             <ArticleCardGridSkeleton />
           </Grid>
         ))}

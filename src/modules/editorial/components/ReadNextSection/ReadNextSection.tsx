@@ -27,7 +27,7 @@ export function ReadNextSection({ articles, title = "Read next" }: ReadNextSecti
       aria-labelledby="read-next-heading"
       sx={{ bgcolor: "background.paper", py: { xs: 6, md: 8 } }}
     >
-      <Box sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 4 } }}>
+      <Box sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
         <KiribeTypography
           id="read-next-heading"
           sx={{
@@ -46,7 +46,7 @@ export function ReadNextSection({ articles, title = "Read next" }: ReadNextSecti
           sx={{
             display: "grid",
             gap: 4,
-            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "1fr 1fr 1fr" },
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", base: "1fr 1fr 1fr" },
           }}
         >
           {articles.slice(0, 3).map((article) => (

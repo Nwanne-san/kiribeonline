@@ -4,6 +4,7 @@ import { getPayloadClient } from "@/lib/payload/get-payload";
 import { resolveRole } from "@/server/access/roles";
 import { writeAuditLog } from "@/lib/audit";
 import { sendAdminInviteEmail } from "./invite-email";
+import { sendAdminPasswordResetEmail } from "./reset-email";
 import type { UserInviteInput, UserUpdateInput } from "./users.dto";
 import type { AdminUserListItem } from "./users.types";
 import {
@@ -11,6 +12,11 @@ import {
   generateInviteToken,
   hashInviteToken,
 } from "./invite-token";
+import {
+  RESET_TOKEN_TTL_MS,
+  generateResetToken,
+  hashResetToken,
+} from "./reset-token";
 
 type UserDoc = {
   id: string | number;
@@ -215,14 +221,143 @@ export async function acceptInvite(token: string, password: string) {
       status: "active",
       inviteTokenHash: null,
       inviteTokenExpiresAt: null,
+      // Payload's JWT strategy verifies `sid` against `user.sessions`
+      // (jwt.js:73-79). Clearing the array invalidates every outstanding token
+      // for this account — required so an invite that lands after a suspicious
+      // signup can't be replayed. AUTH-HARDENING §6.
+      sessions: [],
     } as never,
     overrideAccess: true,
   });
 
-  // Setting a new password rotates Payload's salt/hash, invalidating any token
-  // previously issued for this account (forced logout). AUTH-HARDENING §6.
   await writeAuditLog(payload, {
     action: "auth.invite_accepted",
+    actorEmail: user.email,
+    targetType: "users",
+    targetId: String(user.id),
+  });
+
+  return { id: String(user.id), email: user.email };
+}
+
+/**
+ * Kick off a password reset. The public route is always generic (200 OK) —
+ * this function returns `true` regardless of outcome, but only actually issues
+ * a token and sends an email when an `active` account is found. Silence on the
+ * miss case is what prevents this from being a user-enumeration oracle.
+ *
+ * `pending` accounts are excluded on purpose (they set a password via the
+ * invite flow, not the reset flow), and `suspended` accounts must not be able
+ * to reactivate themselves. AUTH-HARDENING §8.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const payload = await getPayloadClient();
+  const normalized = email.trim().toLowerCase();
+
+  const match = await payload.find({
+    collection: "users",
+    where: { email: { equals: normalized } },
+    limit: 1,
+    overrideAccess: true,
+  });
+  const user = match.docs[0] as UserDoc | undefined;
+
+  // Audit the request either way so we can spot reset-token spray. The audit
+  // trail records the *requested* email, not user existence — read it with
+  // that in mind. AUTH-HARDENING §8b.
+  await writeAuditLog(payload, {
+    action: "auth.password_reset_requested",
+    actorEmail: normalized,
+    targetType: user ? "users" : undefined,
+    targetId: user ? String(user.id) : undefined,
+    metadata: { emailDelivered: false },
+  });
+
+  if (!user || user.status !== "active") return;
+
+  const { raw, hash } = generateResetToken();
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString();
+
+  // Fire-and-forget the DB write + email so hit-branch response time matches
+  // the miss branch. `await`-ing here would leak a timing oracle (extra ms
+  // measurable across many probes even under the 5/min + 3/hour caps),
+  // defeating the generic-200 defense the route relies on. Errors are logged;
+  // the token expires in 30 min regardless.
+  void (async () => {
+    try {
+      await payload.update({
+        collection: "users",
+        id: user.id,
+        data: {
+          resetTokenHash: hash,
+          resetTokenExpiresAt: expiresAt,
+        } as never,
+        overrideAccess: true,
+      });
+      await sendAdminPasswordResetEmail({ email: user.email, token: raw });
+    } catch (err) {
+      console.error("[users] password reset delivery failed", err);
+    }
+  })();
+}
+
+/**
+ * Complete a reset: verify token + expiry, set the new password, clear the
+ * one-time token. Returns null when the token is unknown, expired, or already
+ * consumed — the caller returns a generic error either way.
+ *
+ * Setting a new password rotates Payload's salt/hash, which invalidates any
+ * outstanding session cookies for the account (forced logout everywhere).
+ * AUTH-HARDENING §6.
+ */
+export async function completePasswordReset(
+  token: string,
+  password: string
+): Promise<{ id: string; email: string } | null> {
+  const payload = await getPayloadClient();
+  const hash = hashResetToken(token);
+
+  const match = await payload.find({
+    collection: "users",
+    where: { resetTokenHash: { equals: hash } },
+    limit: 1,
+    overrideAccess: true,
+  });
+
+  const user = match.docs[0] as
+    | (UserDoc & { resetTokenExpiresAt?: string })
+    | undefined;
+  if (!user) return null;
+
+  const expiresAt = user.resetTokenExpiresAt
+    ? Date.parse(user.resetTokenExpiresAt)
+    : 0;
+  if (!expiresAt || expiresAt < Date.now()) return null;
+
+  // A suspended account must not be able to reset back into active — but we
+  // don't distinguish "expired token" from "suspended account" in the error
+  // response either way, so this is a silent guard.
+  if (user.status !== "active") return null;
+
+  await payload.update({
+    collection: "users",
+    id: user.id,
+    data: {
+      password,
+      resetTokenHash: null,
+      resetTokenExpiresAt: null,
+      // Every outstanding session for this account is invalidated — Payload's
+      // JWT strategy verifies `sid` against `user.sessions` (jwt.js:73-79), so
+      // wiping the array honors the "you're signed out everywhere" promise the
+      // reset UI makes. This is the primary security value of a password reset
+      // in a compromised-account scenario. AUTH-HARDENING §6.
+      sessions: [],
+    } as never,
+    overrideAccess: true,
+  });
+
+  await writeAuditLog(payload, {
+    action: "auth.password_reset_completed",
     actorEmail: user.email,
     targetType: "users",
     targetId: String(user.id),

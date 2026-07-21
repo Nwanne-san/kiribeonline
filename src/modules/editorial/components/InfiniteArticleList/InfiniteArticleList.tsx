@@ -53,7 +53,7 @@ export function InfiniteArticleList({
     ) : (
       <Grid container spacing={4}>
         {articles.map((article) => (
-          <Grid key={article.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+          <Grid key={article.id} size={{ xs: 12, md: 6, base: 4 }}>
             <ArticleCard article={article} variant="grid" />
           </Grid>
         ))}

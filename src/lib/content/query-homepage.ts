@@ -179,10 +179,12 @@ async function fetchHomepageFromPayload(): Promise<HomepageData> {
   };
 
   const heroRaw = homepage.heroArticle;
-  const heroArticle =
+  let heroArticle =
     heroRaw && typeof heroRaw === "object" ? mapPayloadArticle(heroRaw as never) : null;
 
-  const editorsPicks = (homepage.editorsPicks ?? [])
+  // Editor's Picks come exclusively from the homepage builder's own section —
+  // featured articles never spill into this sidebar.
+  let editorsPicks = (homepage.editorsPicks ?? [])
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
     .map((pick) => pick.article)
@@ -190,6 +192,62 @@ async function fetchHomepageFromPayload(): Promise<HomepageData> {
     // Strip Lexical body + derive read-time so card lists don't ship the full
     // article payload to the browser.
     .map((a) => toArticleCardDoc(a as ArticleCardDoc & { body?: unknown }));
+
+  // The article editor's "Featured" section (checkbox + priority) is the
+  // source of truth for the Featured Story slot: the highest-priority
+  // featured article takes the hero, and the builder's pinned hero article is
+  // only the fallback when no published article is currently flagged.
+  const featured = await payload.find({
+    collection: "articles",
+    where: {
+      and: [
+        { featured: { equals: true } },
+        { status: { equals: "published" } },
+      ],
+    },
+    sort: ["-featuredPriority", "-publishedAt"],
+    limit: 1,
+    depth: 2,
+  });
+  if (featured.docs.length > 0) {
+    heroArticle = mapPayloadArticle(featured.docs[0] as never);
+  }
+
+  // Final hero fallback: newest published article. Same "auto" spirit as the
+  // reels/creators sections — as soon as there's *any* content, the hero slot
+  // fills without the admin having to visit the builder.
+  if (!heroArticle) {
+    const latest = await payload.find({
+      collection: "articles",
+      where: { status: { equals: "published" } },
+      sort: "-publishedAt",
+      limit: 1,
+      depth: 2,
+    });
+    if (latest.docs.length > 0) {
+      heroArticle = mapPayloadArticle(latest.docs[0] as never);
+    }
+  }
+
+  // Editor's picks fallback: latest published articles (skip the hero) so the
+  // sidebar has something to show before the admin curates its own list.
+  if (editorsPicks.length === 0) {
+    const latest = await payload.find({
+      collection: "articles",
+      where: {
+        and: [
+          { status: { equals: "published" } },
+          ...(heroArticle ? [{ id: { not_equals: heroArticle.id } }] : []),
+        ],
+      },
+      sort: "-publishedAt",
+      limit: 5,
+      depth: 2,
+    });
+    editorsPicks = latest.docs.map((a) =>
+      toArticleCardDoc(a as unknown as ArticleCardDoc & { body?: unknown })
+    );
+  }
 
   const modules = (homepage.categoryModules ?? [])
     .slice()
@@ -234,27 +292,99 @@ async function fetchHomepageFromPayload(): Promise<HomepageData> {
     });
   }
 
-  const effectiveModules =
-    categoryModules.length > 0 ? categoryModules : DEFAULT_CATEGORY_MODULES;
+  // Default modules ship with empty `articles` arrays — fill them from the
+  // category so the homepage isn't blank when the admin hasn't opened the
+  // builder yet. Drop any default section that comes back empty, and if
+  // nothing at all matches the default slugs, show a single "Latest" module
+  // built from the newest published articles.
+  let effectiveModules: HomepageCategoryModule[];
+  if (categoryModules.length > 0) {
+    effectiveModules = categoryModules;
+  } else {
+    const filled = await Promise.all(
+      DEFAULT_CATEGORY_MODULES.map(async (mod) => {
+        if (!mod.categorySlug) return mod;
+        const result = await queryArticles({
+          categorySlug: mod.categorySlug,
+          limit: mod.maxItems,
+        });
+        return { ...mod, articles: result.docs };
+      })
+    );
+    effectiveModules = filled.filter((mod) => mod.articles.length > 0);
+    if (effectiveModules.length === 0) {
+      const latest = await queryArticles({ limit: 6 });
+      if (latest.docs.length > 0) {
+        effectiveModules = [
+          {
+            enabled: true,
+            sectionTitle: "Latest",
+            layout: "grid-3",
+            maxItems: 6,
+            articles: latest.docs,
+          },
+        ];
+      }
+    }
+  }
   const categoryModulesTop = effectiveModules.slice(0, HEAD_SLOT_SIZE);
   const categoryModulesBottom = effectiveModules.slice(HEAD_SLOT_SIZE);
 
   const spotlightRaw = homepage.spotlightCreator;
-  const spotlightCreator =
+  let spotlightCreator =
     spotlightRaw && typeof spotlightRaw === "object"
       ? mapCreator(spotlightRaw as Record<string, unknown>)
       : null;
 
-  const featuredCreators = (homepage.featuredCreators ?? [])
+  let featuredCreators = (homepage.featuredCreators ?? [])
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
     .map((row) => row.creator)
     .filter((c) => c && typeof c === "object")
     .map((c) => mapCreator(c as Record<string, unknown>));
 
-  const reels = (homepage.reels ?? [])
+  // Creator fallbacks — spotlight uses the first featured creator (or any
+  // creator if none flagged); the More Creators grid fills from all creators
+  // by sortOrder, excluding whoever is in the spotlight. Same auto-fallback
+  // pattern as reels + articles above.
+  if (!spotlightCreator || featuredCreators.length === 0) {
+    const allCreators = await payload.find({
+      collection: "creators",
+      sort: ["-featuredOnHomepage", "sortOrder", "-updatedAt"],
+      limit: 8,
+      depth: 1,
+    });
+    const mapped = allCreators.docs.map((c) =>
+      mapCreator(c as unknown as Record<string, unknown>)
+    );
+    if (!spotlightCreator && mapped.length > 0) {
+      spotlightCreator = mapped[0];
+    }
+    if (featuredCreators.length === 0) {
+      const spotlightId = spotlightCreator?.id;
+      featuredCreators = mapped
+        .filter((c) => c.id !== spotlightId)
+        .slice(0, 4);
+    }
+  }
+
+  // The builder's `homepage.reels` list is the source of truth once an admin
+  // picks reels there. Until then, fall back to all published reels sorted by
+  // sortOrder so creating a reel is enough to see it on the homepage — matches
+  // the "auto" pattern used for category modules.
+  let reels = (homepage.reels ?? [])
     .filter((r) => r && typeof r === "object")
     .map((r) => mapReel(r as Record<string, unknown>));
+  if (reels.length === 0) {
+    const fallback = await payload.find({
+      collection: "reels",
+      where: { published: { equals: true } },
+      sort: ["sortOrder", "-updatedAt"],
+      limit: 8,
+      depth: 1,
+    });
+    reels = fallback.docs.map((r) => mapReel(r as unknown as Record<string, unknown>));
+  }
 
   // Fixed homepage "Most Read" module — top 5 by viewCount. Fetched inside the
   // homepage cache so a homepage revalidation refreshes it in one shot rather

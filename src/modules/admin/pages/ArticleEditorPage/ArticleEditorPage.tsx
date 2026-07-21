@@ -677,7 +677,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
       ) : null}
 
       <Grid container spacing={2.5} alignItems="flex-start">
-        <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid size={{ xs: 12, base: 8 }}>
           <Stack spacing={2}>
             <AdminCard sx={{ p: 2.5 }}>
               <KiribeTextField
@@ -781,7 +781,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
           </Stack>
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 4 }}>
+        <Grid size={{ xs: 12, base: 4 }}>
           <Stack spacing={2}>
             <AdminCard sx={{ p: 2 }}>
               <KiribeTextField

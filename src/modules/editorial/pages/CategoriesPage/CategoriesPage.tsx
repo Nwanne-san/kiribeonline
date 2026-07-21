@@ -108,7 +108,7 @@ export function CategoriesPage({ categories }: CategoriesPageProps) {
             action={{ label: "Browse all articles", href: PublicRoutes.articles }}
           />
         ) : (
-          <ul className="grid list-none grid-cols-1 gap-5 p-0 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid list-none grid-cols-1 gap-5 p-0 md:grid-cols-2 base:grid-cols-3">
             {categories.map((category) => (
               <li key={category.id} className="flex">
                 <CategoryCard category={category} />

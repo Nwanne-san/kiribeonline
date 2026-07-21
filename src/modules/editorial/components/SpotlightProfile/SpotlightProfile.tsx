@@ -71,14 +71,14 @@ export function SpotlightProfile({ creator }: SpotlightProfileProps) {
       </Stack>
 
       <EditorialContainer sx={{ pb: { xs: 6, md: 10 } }}>
-        <Grid container spacing={{ xs: 4, md: 0 }} alignItems="stretch">
-          <Grid size={{ xs: 12, md: 6 }}>
+        <Grid container spacing={{ xs: 4, base: 0 }} alignItems="stretch">
+          <Grid size={{ xs: 12, base: 6 }}>
             <Box
               sx={{
                 position: "relative",
                 width: "100%",
                 aspectRatio: "4 / 5",
-                borderRadius: { xs: 2, md: "8px 0 0 8px" },
+                borderRadius: { xs: 2, base: "8px 0 0 8px" },
                 overflow: "hidden",
                 bgcolor: "#1A1A1A",
               }}
@@ -87,7 +87,7 @@ export function SpotlightProfile({ creator }: SpotlightProfileProps) {
                 src={creator.portrait}
                 alt={creator.portrait?.alt ?? creator.name}
                 fill
-                sizes="(max-width: 900px) 100vw, 50vw"
+                sizes="(max-width: 1023px) 100vw, 50vw"
               />
               {creator.quote && (
                 <>
@@ -129,13 +129,13 @@ export function SpotlightProfile({ creator }: SpotlightProfileProps) {
             </Box>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, base: 6 }}>
             <Stack
               spacing={2.5}
               sx={{
                 bgcolor: "background.paper",
                 p: { xs: 3, md: 5 },
-                borderRadius: { xs: 2, md: "0 8px 8px 0" },
+                borderRadius: { xs: 2, base: "0 8px 8px 0" },
                 height: "100%",
                 justifyContent: "center",
               }}
@@ -145,7 +145,7 @@ export function SpotlightProfile({ creator }: SpotlightProfileProps) {
                   variant="h2"
                   sx={{
                     color: "primary.main",
-                    fontSize: { xs: "2rem", md: "2.5rem", lg: "3rem" },
+                    fontSize: "clamp(2rem, 1.6rem + 1.8vw, 3rem)",
                     lineHeight: 1.1,
                     letterSpacing: "-0.01em",
                   }}

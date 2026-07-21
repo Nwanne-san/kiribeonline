@@ -1,0 +1,1 @@
+export { AdminResetPasswordPage } from "./AdminResetPasswordPage";

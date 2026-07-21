@@ -86,8 +86,12 @@ export function KiribeImage({
       <Box
         sx={{
           bgcolor: "action.hover",
-          width: "100%",
-          ...(aspect && !fill ? { pt: aspectRatios[aspect] } : { minHeight: 120 }),
+          ...(fill
+            ? { position: "absolute", inset: 0 }
+            : {
+                width: "100%",
+                ...(aspect ? { pt: aspectRatios[aspect] } : { minHeight: 120 }),
+              }),
         }}
         aria-label={alt}
       />
@@ -105,20 +109,41 @@ export function KiribeImage({
         ? { placeholder }
         : {};
 
-  if (fill || aspect) {
+  if (fill) {
+    // Fill mode relies on the caller's positioned, sized container — adding a
+    // wrapper here would have `height: auto` (0px) and collapse the image.
+    return (
+      <Image
+        src={resolved}
+        alt={alt}
+        fill
+        sizes={sizes ?? (aspect === "hero" ? "100vw" : "(max-width: 768px) 100vw, 33vw")}
+        priority={priority}
+        style={{
+          objectFit: "cover",
+          ...style,
+        }}
+        className={className}
+        {...placeholderProps}
+        {...props}
+      />
+    );
+  }
+
+  if (aspect) {
     return (
       <Box
         sx={{
           position: "relative",
           width: "100%",
-          ...(aspect && !fill ? { pt: aspectRatios[aspect] } : {}),
+          pt: aspectRatios[aspect],
           overflow: "hidden",
         }}
       >
         <Image
           src={resolved}
           alt={alt}
-          fill={fill ?? Boolean(aspect)}
+          fill
           sizes={sizes ?? (aspect === "hero" ? "100vw" : "(max-width: 768px) 100vw, 33vw")}
           priority={priority}
           style={{

@@ -36,14 +36,14 @@ export function FeaturedArticleCard({ article }: { article: ArticleCardDoc }) {
       underline="none"
       sx={{
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+        gridTemplateColumns: { xs: "1fr", base: "1fr 1fr" },
         "&:hover .featured-title": { color: "var(--color-mustard)" },
       }}
     >
       <Box
         sx={{
           position: "relative",
-          minHeight: { xs: 260, sm: 360, lg: "auto" },
+          minHeight: { xs: 260, sm: 360, base: "auto" },
           bgcolor: "#F3F4F6",
         }}
       >
