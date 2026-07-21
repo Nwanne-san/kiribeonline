@@ -3,7 +3,7 @@ import { cn } from "./cn";
 
 type ContainerProps = React.HTMLAttributes<HTMLDivElement>;
 
-/** Editorial max-width wrapper (1216 px) with responsive horizontal padding. */
+/** Editorial max-width wrapper (`--container-editorial`) with responsive horizontal padding. */
 export const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
   function Container({ className, children, ...props }, ref) {
     return (

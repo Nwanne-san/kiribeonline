@@ -16,8 +16,41 @@ const mustard = {
   contrastText: "#1A1A1A",
 };
 
+/**
+ * Canonical max content width. MUI derives `Container maxWidth="lg"` from the
+ * `lg` breakpoint (1280px), which is wider than the editorial column should be,
+ * so containers are pinned to this value below instead.
+ * Keep in sync with `--container-editorial` in `src/theme/tailwind.css`.
+ */
+const CONTAINER_EDITORIAL = 1200;
+
+/**
+ * Breakpoint values are the Tailwind `@theme` tokens from `tailwind.css`, so a
+ * given name collapses at the same width whether a component is written in MUI
+ * `sx` or Tailwind utilities. `xs` is MUI's zero-floor rather than Tailwind's
+ * 24rem min-width query — everything else matches exactly.
+ *
+ * Values are in **rem**, matching Tailwind v4. This matters: a `rem` media
+ * query keys off the browser's default font size, so a reader who bumps theirs
+ * gets the roomier layout earlier. Declaring these in px would silently
+ * reintroduce the very split this theme exists to close.
+ */
+const breakpointValues = {
+  xs: 0,
+  sm: 30, // 480px
+  md: 48, // 768px
+  base: 64, // 1024px
+  lg: 80, // 1280px
+  xl: 90, // 1440px
+  "2xl": 100, // 1600px
+  "3xl": 120, // 1920px
+};
+
 export const muiTheme = createTheme({
   cssVariables: true,
+  /* `step: 0.02` matches Tailwind's max-width epsilon so `down()` queries from
+     either stack land on the same boundary (MUI's default is 5). */
+  breakpoints: { unit: "rem", step: 0.02, values: breakpointValues },
   palette: {
     primary: burgundy,
     secondary: mustard,
@@ -39,16 +72,24 @@ export const muiTheme = createTheme({
   },
   typography: {
     fontFamily: "var(--font-body), 'Open Sans', sans-serif",
+    /* Sizes reference the fluid `--text-*` tokens defined in tailwind.css so
+       both stacks scale identically — no per-call-site `fontSize: { xs, md }`. */
     h1: {
       fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+      fontSize: "var(--text-display)",
+      lineHeight: 1.1,
       fontWeight: 700,
     },
     h2: {
       fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+      fontSize: "var(--text-section-title)",
+      lineHeight: 1.2,
       fontWeight: 700,
     },
     h3: {
       fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+      fontSize: "var(--text-card-title)",
+      lineHeight: 1.3,
       fontWeight: 600,
     },
     h4: {
@@ -69,14 +110,14 @@ export const muiTheme = createTheme({
     },
     kicker: {
       fontFamily: "var(--font-body), 'Open Sans', sans-serif",
-      fontSize: "0.75rem",
+      fontSize: "var(--text-label)",
       fontWeight: 600,
       letterSpacing: "0.2em",
       textTransform: "uppercase",
     },
     sectionTitle: {
       fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-      fontSize: "1.75rem",
+      fontSize: "var(--text-section-title)",
       fontWeight: 700,
       letterSpacing: "0.02em",
       textTransform: "uppercase",
@@ -90,7 +131,7 @@ export const muiTheme = createTheme({
     },
     cardTitle: {
       fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-      fontSize: "1.25rem",
+      fontSize: "var(--text-card-title)",
       fontWeight: 700,
       lineHeight: 1.3,
     },
@@ -151,7 +192,28 @@ export const muiTheme = createTheme({
     },
     MuiContainer: {
       defaultProps: {
-        maxWidth: "lg",
+        /* `maxWidth: false` makes MUI emit no breakpoint-derived max-width at
+           all, so the root override below is the only rule in play — the
+           editorial column stays 1200 no matter where `lg` sits. */
+        maxWidth: false,
+      },
+      styleOverrides: {
+        root: {
+          maxWidth: CONTAINER_EDITORIAL,
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        /* Dialog widths are derived from breakpoint values too, so the remap
+           would shrink every modal (sm 600→480, md 900→768). styleOverrides are
+           applied after the component's own variants, so these win. */
+        paperWidthSm: {
+          maxWidth: 600,
+        },
+        paperWidthMd: {
+          maxWidth: 900,
+        },
       },
     },
   },

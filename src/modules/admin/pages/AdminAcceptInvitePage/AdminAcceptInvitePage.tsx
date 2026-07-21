@@ -1,18 +1,17 @@
 "use client";
 
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
-import Stack from "@mui/material/Stack";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AdminRoutes } from "@/routes/admin.routes";
-import { KiribeButton, KiribeTextField, KiribeTypography } from "@/modules/shared/components/ui";
+import {
+  AdminAuthShell,
+  AuthPasswordField,
+} from "@/modules/admin/components/AdminAuthShell";
+import { AdminButton } from "@/modules/admin/components/ui/AdminPrimitives";
 
 const MIN_PASSWORD = 10;
 const PASSWORD_RE = /^(?=.*[A-Za-z])(?=.*\d).{10,}$/;
+const PASSWORD_HINT = `At least ${MIN_PASSWORD} characters, with a letter and a number.`;
 
 function AcceptInviteForm() {
   const router = useRouter();
@@ -21,7 +20,6 @@ function AcceptInviteForm() {
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -35,7 +33,7 @@ function AcceptInviteForm() {
       return;
     }
     if (!PASSWORD_RE.test(password)) {
-      setError(`Password must be at least ${MIN_PASSWORD} characters and include a letter and a number.`);
+      setError(PASSWORD_HINT);
       return;
     }
     if (password !== confirm) {
@@ -64,94 +62,57 @@ function AcceptInviteForm() {
     }
   };
 
-  return (
-    <Box
-      component="form"
-      onSubmit={onSubmit}
-      sx={{
-        width: "100%",
-        maxWidth: 420,
-        bgcolor: "background.paper",
-        p: { xs: 3, sm: 4 },
-        borderRadius: 1,
-        border: "1px solid",
-        borderColor: "divider",
-      }}
-    >
-      <KiribeTypography variant="h4" sx={{ mb: 0.5 }}>
-        Accept your invite
-      </KiribeTypography>
-      <KiribeTypography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Set a password to activate your Kiribé admin account.
-      </KiribeTypography>
+  if (done) {
+    return (
+      <AdminAuthShell title="Account activated" subtitle="Redirecting you to sign in…">
+        <p className="text-sm leading-6 text-ink-secondary">
+          Your password is set. You&rsquo;ll be sent to the sign-in page in a moment.
+        </p>
+      </AdminAuthShell>
+    );
+  }
 
-      {done ? (
-        <KiribeTypography variant="body2" sx={{ color: "primary.main" }}>
-          Your account is active. Redirecting you to sign in…
-        </KiribeTypography>
-      ) : (
-        <Stack spacing={2}>
-          <KiribeTextField
-            label="New password"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            fullWidth
-            autoComplete="new-password"
-            helperText={`At least ${MIN_PASSWORD} characters, with a letter and a number.`}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword((v) => !v)} edge="end" aria-label="Toggle password">
-                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-          <KiribeTextField
-            label="Confirm password"
-            type={showPassword ? "text" : "password"}
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            required
-            fullWidth
-            autoComplete="new-password"
-          />
-          {error && (
-            <KiribeTypography variant="body2" color="error">
-              {error}
-            </KiribeTypography>
-          )}
-          <KiribeButton type="submit" fullWidth disabled={loading}>
-            {loading ? "Activating…" : "Activate account"}
-          </KiribeButton>
-        </Stack>
-      )}
-    </Box>
+  return (
+    <AdminAuthShell
+      title="Accept your invite"
+      subtitle="Set a password to activate your Kiribé admin account."
+    >
+      <form onSubmit={onSubmit} className="space-y-4" noValidate>
+        <AuthPasswordField
+          label="New password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          hint={PASSWORD_HINT}
+          required
+        />
+        <AuthPasswordField
+          label="Confirm password"
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          required
+        />
+        {error && (
+          <p
+            role="alert"
+            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
+            {error}
+          </p>
+        )}
+        <AdminButton type="submit" disabled={loading} className="w-full">
+          {loading ? "Activating…" : "Activate account"}
+        </AdminButton>
+      </form>
+    </AdminAuthShell>
   );
 }
 
 export function AdminAcceptInvitePage() {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        bgcolor: "#1C1214",
-        backgroundImage:
-          "repeating-linear-gradient(90deg, rgba(201,162,39,0.08) 0, rgba(201,162,39,0.08) 1px, transparent 1px, transparent 24px)",
-        px: 2,
-      }}
-    >
-      <Suspense fallback={null}>
-        <AcceptInviteForm />
-      </Suspense>
-    </Box>
+    <Suspense fallback={null}>
+      <AcceptInviteForm />
+    </Suspense>
   );
 }

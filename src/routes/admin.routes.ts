@@ -3,6 +3,8 @@ export enum AdminRoutes {
   home = "/admin",
   login = "/admin/login",
   acceptInvite = "/admin/accept-invite",
+  forgotPassword = "/admin/forgot-password",
+  resetPassword = "/admin/reset-password",
   dashboard = "/admin/dashboard",
   recentActivity = "/admin/recent-activity",
   articles = "/admin/articles",

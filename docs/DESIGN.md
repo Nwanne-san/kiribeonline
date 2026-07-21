@@ -29,16 +29,25 @@ Premium editorial magazine — film, TV, opinion, news, spotlight, culture.
 | Body & UI | **Open Sans** | Nav links, excerpts, metadata, forms |
 | Labels | Open Sans, uppercase, tracked | Category tags, section kicker text |
 
-### Scale (V5 desktop)
+### Scale — fluid
 
-| Token | Size | Weight | Notes |
-|-------|------|--------|-------|
-| `display` | 48–56px | 700 | Archive hero "All Articles" |
-| `section-title` | 28–32px | 700 | `FILM`, `NEWS & UPDATES` — all caps |
-| `card-title` | 20–24px | 700 | Article card headlines |
-| `body` | 16px | 400 | Excerpts, bio text |
-| `body-sm` | 14px | 400 | Metadata, footer links |
-| `label` | 11–12px | 600 | Category tags, `VIEW ALL` |
+Sizes are **fluid `clamp()` tokens**, defined once in `src/theme/tailwind.css`
+`@theme` and referenced by `muiTheme.ts` typography variants. They interpolate
+with the viewport, so call sites must **not** add `fontSize: { xs, md }` ramps.
+
+| Token | Mobile → desktop | Weight | Notes |
+|-------|------------------|--------|-------|
+| `--text-display` | 32 → 56px | 700 | Archive hero, article title |
+| `--text-section-title` | 24 → 32px | 700 | `FILM`, `NEWS & UPDATES` — all caps |
+| `--text-card-title` | 18 → 24px | 700 | Article card headlines |
+| `--text-body` | 15 → 16px | 400 | Excerpts, bio text |
+| `--text-body-sm` | 14px (fixed) | 400 | Metadata, footer links |
+| `--text-label` | 12px (fixed) | 600 | Category tags, `VIEW ALL` |
+
+Tailwind: `text-display`, `text-card-title`, … MUI: `h1`/`h2`/`h3` and the
+`kicker` / `sectionTitle` / `cardTitle` variants already resolve to these.
+Bespoke display sizes outside this scale (home hero, spotlight name) use an
+inline `clamp()` rather than a stepped breakpoint ramp.
 
 Section titles include a **short gold underline** beneath the first word or first two letters.
 
@@ -82,7 +91,52 @@ Implementation: `src/theme/category-colors.ts` + Tailwind tokens.
 
 ## 4. Layout
 
-- **Max content width:** 1200px (`.editorial-container`)
+### 4.1 Breakpoints (single source of truth)
+
+Defined once in `src/theme/tailwind.css` `@theme` and mirrored into
+`src/theme/muiTheme.ts`, so a given name means the same width in **both** stacks.
+
+| Name | Width | Typical use |
+|------|-------|-------------|
+| `xs` | 0 (MUI) / 24rem = 384px (Tailwind) | Base / small phone |
+| `sm` | 30rem = 480px | Large phone |
+| `md` | 48rem = 768px | Tablet portrait — cards go 2-up |
+| `base` | 64rem = 1024px | Laptop — cards go 3-up, sidebars split |
+| `lg` | 80rem = 1280px | Desktop — nav expands, social rail appears |
+| `xl` | 90rem = 1440px | Wide desktop |
+| `2xl` | 100rem = 1600px | Admin dashboard wide tiers |
+| `3xl` | 120rem = 1920px | Reserved |
+
+**Units are rem, in both stacks.** MUI is configured with
+`breakpoints.unit: "rem"` to match Tailwind v4. This is deliberate: a rem media
+query keys off the browser's default font size, so readers who enlarge theirs
+get the roomier layout sooner. Never declare a breakpoint in px — that only
+agrees with these at a 16px root and silently re-splits the two stacks for the
+readers who most need the help.
+
+`base`, `2xl` and `3xl` are Tailwind's own keys, added to MUI via
+`BreakpointOverrides` in `src/theme/mui.d.ts`. `xs` is the single key the two
+stacks cannot reconcile (MUI's zero-floor vs Tailwind's 24rem query).
+
+**Editorial grid rhythm:** 1 column → `md` 2 columns → `base` 3 columns. Use
+`base`, not `lg`, for content-density changes; `lg` is for chrome (nav, rails).
+When a skeleton mirrors a grid, it must use the *same* keys — a mismatch is a
+guaranteed layout shift when content replaces it.
+
+In JS, read breakpoints through `useBreakpointUp` / `useBreakpointDown`
+(`src/utils/hooks/useBreakpoint.ts`) — never a hardcoded `matchMedia` string.
+Prefer CSS show/hide over JS wherever possible.
+
+### 4.2 Dimensions
+
+- **Max content width:** 1200px — token `--container-editorial`. MUI `Container`
+  defaults to `maxWidth={false}` with a root override in `muiTheme.ts`, so its
+  width is decoupled from the `lg` breakpoint and matches Tailwind surfaces
+  exactly. Do not pass `maxWidth` to `Container` — it reintroduces the split.
+- **Admin width:** 1280px — token `--container-admin` (`max-w-admin`). Separate
+  on purpose: the admin is a workbench (tables, editor sidebar), not a reading
+  column, so tuning reading measure must not resize it.
+- Never hardcode a container width.
 - **Homepage sections:** full-width white band → inner container → section header row → 3-column card grid
 - **Gutter:** 24px between cards (desktop), 16px mobile
 - **Section vertical rhythm:** 64px padding top/bottom per section

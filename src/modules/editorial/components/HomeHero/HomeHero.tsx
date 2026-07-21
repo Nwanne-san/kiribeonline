@@ -31,8 +31,8 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
   return (
     <EditorialSection sx={{ pt: { xs: 4, md: 6 }, pb: { xs: 5, md: 8 } }}>
       <EditorialContainer>
-        <Grid container spacing={{ xs: 4, lg: 6 }}>
-          <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid container spacing={{ xs: 4, base: 6 }}>
+          <Grid size={{ xs: 12, base: 8 }}>
             {heroArticle ? (
               <Stack spacing={2.5}>
                 {heroHref && (
@@ -57,7 +57,7 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
                     variant="h1"
                     component="h1"
                     sx={{
-                      fontSize: { xs: "1.875rem", sm: "2.25rem", md: "2.5rem", lg: "2.75rem" },
+                      fontSize: "clamp(1.875rem, 1.5rem + 1.6vw, 2.75rem)",
                       lineHeight: 1.15,
                       letterSpacing: "-0.01em",
                     }}
@@ -108,7 +108,7 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
               </Stack>
             )}
           </Grid>
-          <Grid size={{ xs: 12, lg: 4 }}>
+          <Grid size={{ xs: 12, base: 4 }}>
             <EditorsPicksList picks={editorsPicks} />
           </Grid>
         </Grid>

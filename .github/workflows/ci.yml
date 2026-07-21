@@ -46,11 +46,12 @@ jobs:
       - run: npm run build
 
   e2e:
-    # Smoke suite — separate job so a flake here doesn't gate merges yet.
+    # Smoke suite — separate job so a flake here doesn't gate every merge.
     # `needs: verify` keeps CI cheap (skips if the base checks are already red).
-    # Non-blocking for now (decision 2026-07-20): suite is landed but unproven
-    # in CI; flip continue-on-error off once it runs green in the next build.
-    continue-on-error: true
+    # Blocking only for PRs targeting `main` (production release train); for
+    # develop/staging PRs and push events the smoke suite stays advisory so a
+    # flake doesn't stall day-to-day work.
+    continue-on-error: ${{ !(github.event_name == 'pull_request' && github.base_ref == 'main') }}
     needs: verify
     runs-on: ubuntu-latest
     services:

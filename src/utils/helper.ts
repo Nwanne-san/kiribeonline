@@ -1,14 +1,8 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import Cookies from "js-cookie";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-export function getAccessToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return Cookies.get("accessToken") ?? null;
 }
 
 export function buildQuery(params: Record<string, string | number | boolean | undefined | null>) {

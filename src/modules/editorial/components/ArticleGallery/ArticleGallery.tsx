@@ -35,7 +35,7 @@ export function ArticleGallery({ items }: ArticleGalleryProps) {
           display: "grid",
           gridTemplateColumns: {
             xs: "repeat(2, 1fr)",
-            sm: `repeat(${Math.min(valid.length, 3)}, 1fr)`,
+            md: `repeat(${Math.min(valid.length, 3)}, 1fr)`,
           },
           gap: 1,
         }}

@@ -42,7 +42,10 @@ export function useDebouncedUrlParam(options: UseDebouncedUrlParamOptions = {}) 
         params.set(URL_PARAMS.page, "1");
       }
       const query = params.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname);
+      // scroll: false — syncing keystrokes to the URL must not scroll the page.
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
     }, debounceMs);
 
     return () => window.clearTimeout(handler);

@@ -66,7 +66,7 @@ const proseSx = {
   "& h2": {
     fontFamily: "var(--font-headline), 'Outfit', sans-serif",
     fontWeight: 400,
-    fontSize: { xs: "1.5rem", md: "1.875rem" },
+    fontSize: "clamp(1.5rem, 1.37rem + 0.55vw, 1.875rem)",
     lineHeight: 1.3,
     color: "primary.main",
     mt: 6,
@@ -105,6 +105,25 @@ const proseSx = {
   "& img": { width: "100%", height: "auto", my: 4 },
   "& figure": { my: 4 },
   "& figcaption": { fontSize: "0.875rem", fontStyle: "italic", color: "#6A7282", mt: 1 },
+  /* CMS-authored embeds (iframes, video) may declare intrinsic widths wider
+     than the 832px reading column — cap them so a wide YouTube or Twitter
+     embed can't force a horizontal scrollbar on phones. */
+  "& iframe, & video, & object, & embed": {
+    display: "block",
+    maxWidth: "100%",
+    my: 3,
+  },
+  /* Tables and <pre> can be genuinely wider than the column (code blocks,
+     data tables). Wrap them so they scroll *inside* the article instead of
+     pushing the whole page. Uses the parent `& > table` selector so raw
+     rich-text tables get the same treatment even without a wrapper element. */
+  "& > table, & > pre, & .table-wrap": {
+    display: "block",
+    maxWidth: "100%",
+    overflowX: "auto",
+    WebkitOverflowScrolling: "touch",
+    my: 3,
+  },
 } as const;
 
 function ArticleDetailContent({
@@ -153,7 +172,7 @@ function ArticleDetailContent({
 
       {/* ── Breadcrumb ───────────────────────────────────────── */}
       <Box sx={{ bgcolor: "#F9FAFB", borderBottom: "1px solid", borderColor: "divider" }}>
-        <Box sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 4 } }}>
+        <Box sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
           <Stack
             direction="row"
             alignItems="center"
@@ -266,7 +285,7 @@ function ArticleDetailContent({
             sx={{
               fontFamily: "var(--font-headline), 'Outfit', sans-serif",
               fontWeight: 400,
-              fontSize: { xs: "2rem", md: "3rem" },
+              fontSize: "var(--text-display)",
               lineHeight: 1.25,
               color: "#fff",
             }}
@@ -336,7 +355,7 @@ function ArticleDetailContent({
               sx={{
                 fontFamily: "var(--font-body), 'Open Sans', sans-serif",
                 fontWeight: 300,
-                fontSize: { xs: "1.25rem", md: "1.5rem" },
+                fontSize: "clamp(1.125rem, 1.02rem + 0.5vw, 1.5rem)",
                 lineHeight: 1.625,
                 color: "#364153",
               }}
@@ -439,7 +458,7 @@ function ArticleDetailContent({
       {/* ── Related articles ─────────────────────────────────── */}
       {relatedArticles.length > 0 && (
         <Box component="section" sx={{ bgcolor: "#F9FAFB", py: { xs: 8, md: 8 }, mt: { xs: 4, md: 4 } }}>
-          <Box sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 4 } }}>
+          <Box sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
             <KiribeTypography
               sx={{
                 fontFamily: "var(--font-headline), 'Outfit', sans-serif",
@@ -457,7 +476,7 @@ function ArticleDetailContent({
               sx={{
                 display: "grid",
                 gap: 4,
-                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "1fr 1fr 1fr" },
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", base: "1fr 1fr 1fr" },
               }}
             >
               {relatedArticles.map((related) => (

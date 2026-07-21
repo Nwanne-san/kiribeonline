@@ -73,16 +73,23 @@ export function ReadingProgress({ target = "article" }: ReadingProgressProps) {
         // 1200+). Header AppBar is sticky at ~1100.
         zIndex: 1099,
         pointerEvents: "none",
-        background: "transparent",
+        // Faint mustard track so the unfilled remainder reads as a bar, not a
+        // floating sliver. The whole thing stays hidden until reading starts.
+        background: "color-mix(in srgb, var(--color-mustard) 22%, transparent)",
+        opacity: progress > 0 ? 1 : 0,
+        transition: "opacity var(--duration-base) var(--ease-out-soft)",
       }}
     >
       <div
         style={{
           height: "100%",
-          width: `${progress * 100}%`,
+          width: "100%",
           background: "var(--color-mustard)",
+          transform: `scaleX(${progress})`,
           transformOrigin: "left center",
-          transition: "width var(--duration-fast) linear",
+          // scaleX instead of width — compositor-only, so the fill tracks the
+          // scroll without layout work on every frame.
+          transition: "transform var(--duration-fast) linear",
         }}
       />
     </div>

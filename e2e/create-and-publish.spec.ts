@@ -1,10 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import {
-  SMOKE_ADMIN_EMAIL,
-  SMOKE_ADMIN_PASSWORD,
-  SMOKE_CATEGORY_SLUG,
-} from "./fixtures/constants";
+import { SMOKE_CATEGORY_SLUG } from "./fixtures/constants";
 
 /**
  * Smoke: an authenticated admin can create + publish an article, and the
@@ -28,14 +24,8 @@ test.describe("Create → Publish", () => {
     page,
     request,
   }) => {
-    // 1. Log in via UI so cookies land on the browser context.
-    await page.goto("/admin/login");
-    await page.getByLabel("Email").fill(SMOKE_ADMIN_EMAIL);
-    await page.getByLabel("Password").fill(SMOKE_ADMIN_PASSWORD);
-    await page.getByRole("button", { name: /sign in/i }).click();
-    await page.waitForURL(/\/admin\//, { timeout: 15_000 });
-
-    // 2. Exercise the editor form. We land on the new-article page and put
+    // 1. Auth cookie is preloaded by auth.setup — go straight to the editor.
+    //    2. Exercise the editor form. We land on the new-article page and put
     //    a title into the KiribeTextField so we've proven the form mounts
     //    for an authenticated admin. Full body input is via API (below) —
     //    keeps the spec resilient to Lexical editor churn.

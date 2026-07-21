@@ -12,8 +12,8 @@ export default function HomeLoading() {
     <>
       <EditorialSection sx={{ pt: { xs: 4, md: 6 }, pb: { xs: 5, md: 8 } }}>
         <EditorialContainer>
-          <Grid container spacing={{ xs: 4, lg: 6 }}>
-            <Grid size={{ xs: 12, lg: 8 }}>
+          <Grid container spacing={{ xs: 4, base: 6 }}>
+            <Grid size={{ xs: 12, base: 8 }}>
               <Stack spacing={2.5}>
                 <Skeleton
                   variant="rectangular"
@@ -26,7 +26,7 @@ export default function HomeLoading() {
                 <Skeleton width="85%" height={20} />
               </Stack>
             </Grid>
-            <Grid size={{ xs: 12, lg: 4 }}>
+            <Grid size={{ xs: 12, base: 4 }}>
               <Stack spacing={1}>
                 <Skeleton width={160} height={28} />
                 <Skeleton width={48} height={4} sx={{ mb: 2 }} />
@@ -77,7 +77,7 @@ export default function HomeLoading() {
             </Stack>
             <Grid container spacing={{ xs: 3, md: 2 }}>
               {[0, 1, 2].map((c) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={c}>
+                <Grid size={{ xs: 12, md: 6, base: 4 }} key={c}>
                   <Skeleton variant="rectangular" sx={{ width: "100%", aspectRatio: "16/10", borderRadius: 1 }} />
                   <Skeleton width={60} height={16} sx={{ mt: 2 }} />
                   <Skeleton width="92%" height={26} sx={{ mt: 1 }} />
@@ -94,10 +94,10 @@ export default function HomeLoading() {
       <EditorialSection sx={{ bgcolor: "#F9FAFB", py: { xs: 6, md: 8 } }}>
         <EditorialContainer>
           <Grid container spacing={4}>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, base: 6 }}>
               <Skeleton variant="rectangular" sx={{ width: "100%", aspectRatio: "4/5", borderRadius: 2 }} />
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, base: 6 }}>
               <Stack spacing={2}>
                 <Skeleton width="70%" height={56} />
                 <Skeleton width="50%" height={24} />
@@ -130,7 +130,7 @@ export default function HomeLoading() {
           </Stack>
           <Grid container spacing={{ xs: 2, md: 3 }}>
             {[0, 1, 2, 3].map((i) => (
-              <Grid size={{ xs: 6, sm: 4, md: 3 }} key={i}>
+              <Grid size={{ xs: 6, md: 4, base: 3 }} key={i}>
                 <Skeleton variant="rectangular" sx={{ width: "100%", aspectRatio: "3/4", borderRadius: 2 }} />
                 <Skeleton width="70%" height={22} sx={{ mt: 1.5 }} />
                 <Skeleton width="50%" height={16} sx={{ mt: 0.5 }} />

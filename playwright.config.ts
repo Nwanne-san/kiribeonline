@@ -19,7 +19,9 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: /.*\.spec\.ts$/,
+  // Match both regular specs and *.setup.ts. The `setup` project scopes itself
+  // further via its own testMatch below.
+  testMatch: /.*(\.spec|\.setup)\.ts$/,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
@@ -39,9 +41,21 @@ export default defineConfig({
     navigationTimeout: 30_000,
   },
   projects: [
+    // Runs once, logs in via the UI, and writes `e2e/.auth/admin.json`. Every
+    // authed spec inherits that cookie via `storageState`, keeping us clear
+    // of the 5-per-15-min login rate limit that would fire if each spec's
+    // beforeEach logged in on its own.
+    {
+      name: "setup",
+      testMatch: /.*\.setup\.ts$/,
+    },
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/admin.json",
+      },
+      dependencies: ["setup"],
     },
   ],
   webServer: {

@@ -197,7 +197,7 @@ export function MediaLibraryGrid({
                 const isSelected = selectedIds?.has(item.id) ?? false;
                 const select = () => onSelect({ id: item.id, url: item.url, alt: item.alt });
                 return (
-                  <Grid key={item.id} size={{ xs: 4, sm: 3 }}>
+                  <Grid key={item.id} size={{ xs: 4, md: 3 }}>
                     <Box
                       role={multiSelect ? "checkbox" : "button"}
                       aria-checked={multiSelect ? isSelected : undefined}
