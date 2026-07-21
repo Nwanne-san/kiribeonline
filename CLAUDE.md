@@ -178,6 +178,6 @@ Project memory lives in `.claude/agent-memory/<role>/`. Keep `MEMORY.md` under 2
 Separate Film/TV/Videos sections, comments, paywall, native app, i18n, personalization.
 
 > **Multi-admin is now in scope.** The team uses role-based access (admin / editor
-> / writer / contributor) enforced by a capability map in `src/payload/access/roles.ts`.
+> / writer / contributor) enforced by a capability map in `src/server/access/roles.ts`.
 > Every admin mutation guards a capability server-side (`requireAdminWriteCapability`),
 > and the client reads its own capabilities from `/api/admin/me` via `usePermissions`.

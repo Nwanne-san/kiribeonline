@@ -2,7 +2,6 @@
 
 import MenuRounded from "@mui/icons-material/MenuRounded";
 import SearchRounded from "@mui/icons-material/SearchRounded";
-import NotificationsNoneRounded from "@mui/icons-material/NotificationsNoneRounded";
 import AddRounded from "@mui/icons-material/AddRounded";
 import FileUploadOutlined from "@mui/icons-material/FileUploadOutlined";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
@@ -20,10 +19,10 @@ import {
 } from "@/modules/shared/components/brand";
 import { InitialAvatar } from "@/modules/admin/components/ui/AdminPrimitives";
 import { usePermissions } from "@/modules/admin/hooks/usePermissions";
+import { useBreakpointUp } from "@/utils/hooks";
 import { NAV_GROUPS, isNavActive, type NavGroup, type NavItem } from "./nav";
 
 const COLLAPSE_KEY = "kiribe.admin.sidebarCollapsed";
-const DESKTOP_QUERY = "(min-width: 80rem)"; // lg — matches sidebar `lg:` breakpoint
 
 const ACTIVE_ITEM = "bg-[#7f0400] text-white";
 const IDLE_ITEM = "text-gray-400 hover:bg-white/[0.06] hover:text-white";
@@ -57,6 +56,10 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
+  // Matches the sidebar's `lg:flex` — above it the hamburger collapses the
+  // sidebar to icons, below it the same button opens the mobile drawer.
+  const isDesktop = useBreakpointUp("lg");
+
   // Restore the persisted collapse preference after mount (avoids SSR mismatch).
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -71,8 +74,6 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const toggleSidebar = useCallback(() => {
-    const isDesktop =
-      typeof window !== "undefined" && window.matchMedia(DESKTOP_QUERY).matches;
     if (isDesktop) {
       setCollapsed((prev) => {
         const next = !prev;
@@ -82,7 +83,7 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
     } else {
       setMobileOpen((prev) => !prev);
     }
-  }, []);
+  }, [isDesktop]);
 
   const navigate = useCallback(
     (route: string) => {
@@ -155,7 +156,7 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
           }
         />
         <RouteProgress />
-        <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 md:px-6 md:py-8">
+        <main className="mx-auto w-full max-w-admin flex-1 px-4 py-6 md:px-6 md:py-8">
           {children}
         </main>
       </div>
@@ -389,15 +390,6 @@ function TopBar({
         >
           <FileUploadOutlined sx={{ fontSize: 16 }} />
           Upload
-        </button>
-
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative grid h-9 w-9 place-items-center rounded-lg text-ink-secondary transition-colors hover:bg-surface-muted"
-        >
-          <NotificationsNoneRounded fontSize="small" />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#7f0400]" />
         </button>
 
         <div className="flex items-center gap-2 pl-1">

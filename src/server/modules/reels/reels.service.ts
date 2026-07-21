@@ -1,4 +1,5 @@
 import { getPayloadClient } from "@/lib/payload/get-payload";
+import { toRelId } from "@/server/shared/rel-id";
 import { slugify } from "@/utils/helper";
 
 export type ReelInput = {
@@ -31,7 +32,7 @@ export async function createReelAdmin(input: ReelInput) {
       slug: input.slug ?? slugify(input.title),
       label: input.label,
       platform: input.platform,
-      thumbnail: input.thumbnailId,
+      thumbnail: toRelId(input.thumbnailId),
       externalUrl: input.externalUrl,
       published: input.published ?? true,
       sortOrder: input.sortOrder ?? 0,
@@ -47,7 +48,7 @@ export async function updateReelAdmin(id: string, input: Partial<ReelInput>) {
   if (input.slug) data.slug = input.slug;
   if (input.label) data.label = input.label;
   if (input.platform) data.platform = input.platform;
-  if (input.thumbnailId) data.thumbnail = input.thumbnailId;
+  if (input.thumbnailId) data.thumbnail = toRelId(input.thumbnailId);
   if (input.externalUrl) data.externalUrl = input.externalUrl;
   if (input.published !== undefined) data.published = input.published;
   if (input.sortOrder !== undefined) data.sortOrder = input.sortOrder;

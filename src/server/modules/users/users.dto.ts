@@ -40,6 +40,22 @@ export const acceptInviteSchema = z.object({
   password: adminPasswordSchema,
 });
 
+/**
+ * Kick off a password reset. Only the email is required; the response is
+ * always generic so it cannot be used to enumerate accounts.
+ */
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email(),
+});
+
+/** Complete a reset: single-use token + the new password. */
+export const resetPasswordSchema = z.object({
+  token: z.string().trim().min(32),
+  password: adminPasswordSchema,
+});
+
 export type UserInviteInput = z.infer<typeof userInviteSchema>;
 export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

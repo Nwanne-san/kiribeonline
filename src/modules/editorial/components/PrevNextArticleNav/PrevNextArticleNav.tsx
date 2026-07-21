@@ -124,7 +124,7 @@ export function PrevNextArticleNav({ prev, next }: PrevNextArticleNavProps) {
         bgcolor: "background.paper",
       }}
     >
-      <Box sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 4 } }}>
+      <Box sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
         <Stack
           direction={{ xs: "column", sm: "row" }}
           divider={

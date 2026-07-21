@@ -70,7 +70,7 @@ export function CategoryModuleSection({ module, alt = false }: CategoryModuleSec
         {hasArticles && module.layout === "grid-2" && (
           <Grid container spacing={3}>
             {module.articles.map((article) => (
-              <Grid key={article.id} size={{ xs: 12, sm: 6 }}>
+              <Grid key={article.id} size={{ xs: 12, md: 6 }}>
                 <ArticleCard article={article} />
               </Grid>
             ))}
@@ -80,7 +80,7 @@ export function CategoryModuleSection({ module, alt = false }: CategoryModuleSec
         {hasArticles && (module.layout === "grid-3" || !module.layout) && (
           <Grid container spacing={{ xs: 3, md: 2 }}>
             {module.articles.map((article) => (
-              <Grid key={article.id} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Grid key={article.id} size={{ xs: 12, md: 6, base: 4 }}>
                 <ArticleCard article={article} />
               </Grid>
             ))}
@@ -89,10 +89,10 @@ export function CategoryModuleSection({ module, alt = false }: CategoryModuleSec
 
         {hasArticles && module.layout === "hero-plus-grid" && (
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 8 }}>
+            <Grid size={{ xs: 12, base: 8 }}>
               <HeroPlusLead article={module.articles[0]!} />
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, base: 4 }}>
               <Stack spacing={2}>
                 {module.articles.slice(1).map((article) => (
                   <ArticleCard key={article.id} article={article} variant="list" />

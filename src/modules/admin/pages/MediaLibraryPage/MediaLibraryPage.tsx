@@ -491,7 +491,7 @@ function MediaTile({
           src={item.url}
           alt={alt}
           fill
-          sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+          sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 480px) 33vw, 50vw"
           className="object-cover"
         />
       ) : (

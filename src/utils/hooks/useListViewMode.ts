@@ -28,7 +28,9 @@ export function useListViewMode() {
       const params = new URLSearchParams(searchParams.toString());
       params.set(URL_PARAMS.view, nextView);
       params.set(URL_PARAMS.page, "1");
-      router.replace(`${pathname}?${params.toString()}`);
+      // scroll: false — the toggle sits above the list; jumping to the top of
+      // the page on every view switch loses the reader's place.
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [pathname, router, searchParams]
   );

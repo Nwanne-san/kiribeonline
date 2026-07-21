@@ -1,5 +1,4 @@
 import axios, { AxiosInstance } from "axios";
-import Cookies from "js-cookie";
 import { sessionEventEmitter } from "./eventEmitters";
 import { debounceHandler } from "./debounceHandler";
 import { ApiMethods } from "../../types/service";
@@ -83,18 +82,11 @@ export class Client {
   create(config?: ClientInstanceConfig) {
     this.http = axios.create({
       baseURL: config?.baseUrl || apiUrl,
-    });
-
-    this.http.interceptors.request.use((requestConfig) => {
-      const token =
-        typeof window !== "undefined" ? Cookies.get("accessToken") : null;
-
-      if (token) {
-        requestConfig.headers = requestConfig.headers || {};
-        requestConfig.headers.Authorization = `Bearer ${token}`;
-      }
-
-      return requestConfig;
+      // Session lives in the Payload httpOnly cookie set by /api/admin/auth/login.
+      // Ensures every admin request is authenticated without the client ever
+      // handling the raw token (the old Bearer interceptor read `accessToken`
+      // from js-cookie — a BrandDrive carry-over that this app never sets).
+      withCredentials: true,
     });
   }
 }

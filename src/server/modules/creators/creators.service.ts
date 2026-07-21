@@ -1,4 +1,5 @@
 import { getPayloadClient } from "@/lib/payload/get-payload";
+import { toRelId } from "@/server/shared/rel-id";
 import { slugify } from "@/utils/helper";
 
 export type CreatorInput = {
@@ -34,7 +35,7 @@ export async function createCreatorAdmin(input: CreatorInput) {
       role: input.role,
       bio: input.bio,
       quote: input.quote,
-      portrait: input.portraitId,
+      portrait: toRelId(input.portraitId),
       badges: input.badges,
       achievements: input.achievements,
       featuredOnHomepage: input.featuredOnHomepage ?? false,
@@ -52,7 +53,7 @@ export async function updateCreatorAdmin(id: string, input: Partial<CreatorInput
   if (input.role) data.role = input.role;
   if (input.bio !== undefined) data.bio = input.bio;
   if (input.quote !== undefined) data.quote = input.quote;
-  if (input.portraitId) data.portrait = input.portraitId;
+  if (input.portraitId) data.portrait = toRelId(input.portraitId);
   if (input.badges) data.badges = input.badges;
   if (input.achievements) data.achievements = input.achievements;
   if (input.featuredOnHomepage !== undefined) data.featuredOnHomepage = input.featuredOnHomepage;

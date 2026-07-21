@@ -77,6 +77,20 @@ export const Users: CollectionConfig = {
       access: { read: () => false, create: () => false, update: () => false },
       admin: { hidden: true },
     },
+    {
+      // SHA-256 hash of the single-use password-reset token. Mirrors the invite
+      // pair above — raw token emailed once, never persisted. 30-min TTL.
+      name: "resetTokenHash",
+      type: "text",
+      access: { read: () => false, create: () => false, update: () => false },
+      admin: { hidden: true },
+    },
+    {
+      name: "resetTokenExpiresAt",
+      type: "date",
+      access: { read: () => false, create: () => false, update: () => false },
+      admin: { hidden: true },
+    },
   ],
   hooks: {
     afterLogin: [auditAuthAfterLogin],
