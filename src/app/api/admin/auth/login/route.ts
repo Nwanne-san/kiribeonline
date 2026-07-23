@@ -10,6 +10,7 @@ import {
   RATE_LIMIT_WINDOW_1_HOUR_MS,
 } from "@/constants";
 import { peekRateLimit, rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
+import { assertSameOrigin } from "@/server/security";
 import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ const LOGIN_THROTTLED = "Too many login attempts. Try again later.";
 
 export async function POST(request: NextRequest) {
   try {
+    assertSameOrigin(request);
     const ip = getClientIp(request);
     const ipLimit = await rateLimitForEndpoint(
       "admin_login",

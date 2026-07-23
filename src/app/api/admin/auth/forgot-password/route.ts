@@ -9,6 +9,7 @@ import {
   RATE_LIMIT_WINDOW_MS,
 } from "@/constants";
 import { rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
+import { assertSameOrigin } from "@/server/security";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ const PER_EMAIL_LIMIT = 3;
  */
 export async function POST(request: NextRequest) {
   try {
+    assertSameOrigin(request);
     const ip = getClientIp(request);
     const ipLimit = await rateLimitForEndpoint(
       "admin_forgot_password",

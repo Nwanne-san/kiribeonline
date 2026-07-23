@@ -1,7 +1,8 @@
 import { headers as nextHeaders } from "next/headers";
 import { NextResponse } from "next/server";
-import { apiSuccess } from "@/lib/api";
+import { apiError, apiSuccess } from "@/lib/api";
 import { getPayloadClient } from "@/lib/payload/get-payload";
+import { assertSameOrigin, CsrfError } from "@/server/security";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,15 @@ export const dynamic = "force-dynamic";
  * Best-effort: if the incoming cookie has already been forged out or the
  * session record is gone, we still clear the cookie and return success.
  */
-export async function POST() {
+export async function POST(request: Request) {
+  try {
+    assertSameOrigin(request);
+  } catch (error) {
+    if (error instanceof CsrfError) {
+      return apiError(error.message, error.statusCode);
+    }
+    throw error;
+  }
   const payload = await getPayloadClient();
   const prefix = payload.config.cookiePrefix;
   const response = NextResponse.json(apiSuccess({ loggedOut: true }).body);

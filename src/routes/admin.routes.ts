@@ -6,6 +6,12 @@ export enum AdminRoutes {
   forgotPassword = "/admin/forgot-password",
   resetPassword = "/admin/reset-password",
   dashboard = "/admin/dashboard",
+  /**
+   * Admin Audit Log. URL is `/admin/recent-activity` for historical reasons
+   * (the page shipped as "Recent Activity" first, then grew into the full
+   * audit viewer). New code should reference `AdminRoutes.auditLog` below —
+   * same URL, greppable name.
+   */
   recentActivity = "/admin/recent-activity",
   articles = "/admin/articles",
   articleNew = "/admin/articles/new",
@@ -40,3 +46,12 @@ export function adminRoute(
   }
   return path;
 }
+
+/**
+ * Non-enum aliases for the same URLs — kept out of `AdminRoutes` so TypeScript
+ * doesn't reject duplicate enum values. New callers should prefer these names.
+ */
+export const AdminRouteAlias = {
+  /** Same URL as `AdminRoutes.recentActivity`; use for grep-ability. */
+  auditLog: AdminRoutes.recentActivity,
+} as const;

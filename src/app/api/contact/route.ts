@@ -4,10 +4,12 @@ import { getClientIp } from "@/server/auth";
 import { contactFormSchema } from "@/lib/validation/contact";
 import { DEFAULT_CONTACT_RATE_LIMIT, RATE_LIMIT_WINDOW_15_MIN_MS } from "@/constants";
 import { rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
+import { assertSameOrigin } from "@/server/security";
 import { submitContactMessage } from "@/services/contact.service";
 
 export async function POST(request: NextRequest) {
   try {
+    assertSameOrigin(request);
     const ip = getClientIp(request);
     const limit = await rateLimitForEndpoint(
       "contact",
