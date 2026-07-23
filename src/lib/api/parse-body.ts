@@ -1,4 +1,5 @@
 import type { ZodTypeAny, z } from "zod";
+import { CsrfError } from "@/server/security";
 import { apiError } from "./response";
 
 export function parseBody<S extends ZodTypeAny>(schema: S, body: unknown): z.output<S> {
@@ -31,6 +32,9 @@ export class ValidationError extends Error {
 export function handleRouteError(error: unknown) {
   if (error instanceof ValidationError) {
     return apiError(error.message, 400, error.errors);
+  }
+  if (error instanceof CsrfError) {
+    return apiError(error.message, error.statusCode);
   }
 
   console.error("[api]", error);

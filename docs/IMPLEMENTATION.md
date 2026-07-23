@@ -56,7 +56,7 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [x] Homepage builder + Editor's Picks + per-category layout
 - [x] Site settings editor
 - [x] Analytics (viewCount tables + GA4 link)
-- [ ] Audit log viewer
+- [x] Audit log viewer (filters, pagination, metadata expand — `audit:view` capability)
 
 ### 2.3 Content delivery
 - [x] Server-rendered article detail pages
@@ -103,7 +103,7 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [x] Image optimization pipeline (variants, WebP, LQIP blur-up, body images via next/image)
 - [ ] Lighthouse performance pass
 - [ ] Backup/restore runbook tested on Neon
-- [ ] Monitoring and logging baseline
+- [x] Monitoring and logging baseline (Sentry Next.js SDK — client + server + edge, no-op without DSN, expected 4xx filtered out)
 
 ---
 
@@ -111,7 +111,7 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 
 - [ ] Strong password policy
 - [ ] Session expiration
-- [ ] CSRF on applicable forms
+- [x] CSRF on applicable forms (Origin/Referer allowlist via `assertSameOrigin`, wired into admin write path + public forms + auth routes; `CSRF_ALLOWED_ORIGINS` env, fails closed)
 - [x] Rate limiting on auth and public writes (login IP+email dimensions, contact, subscribe, confirm-token, admin writes; Redis-backed when `REDIS_URL` set)
 - [x] Secure file upload validation (size cap pre-buffer, MIME allowlist + magic bytes, pixel-decode cap, capability-gated)
 - [x] Env vars never in client bundle (verified in code reviews of PRs #3/#15/#16)

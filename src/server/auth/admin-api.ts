@@ -1,5 +1,6 @@
 import { apiError, handleRouteError } from "@/lib/api";
 import { RateLimitError, tooManyRequests } from "@/lib/rate-limit";
+import { CsrfError } from "@/server/security";
 import { AdminAuthError } from "./session";
 
 /**
@@ -57,6 +58,9 @@ export function handleAdminAuthError(error: unknown) {
 export function handleAdminRouteError(error: unknown) {
   if (error instanceof AdminAuthError) {
     return handleAdminAuthError(error);
+  }
+  if (error instanceof CsrfError) {
+    return apiError(error.message, error.statusCode);
   }
   if (error instanceof RateLimitError) {
     return tooManyRequests(
