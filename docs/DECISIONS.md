@@ -46,17 +46,24 @@ token handling) for little gain at this team size.
 **Reopens if:** the team grows beyond a handful of seats or lockouts become a
 recurring support burden.
 
+## 2026-07-23 — Article edit ownership: scope non-editor edits (closes M3)
+
+**Decision:** Writers and contributors may only edit, delete, and create-
+under their own byline. Editors and admins may act on any article. Enforced
+at three layers: (1) the Payload `Articles` collection `access.update`/
+`.delete` return a row-scoped `{ author: { equals: user.id } }` filter for
+non-editors; (2) the admin route handlers (PATCH, DELETE, POST, bulk) re-
+check ownership after `overrideAccess`; (3) authorId reassignment on create
+or update is editor-only, so a writer can't hand off or claim authorship.
+
+**Why:** Option (a) — the minimum policy change that lets us safely invite
+external contributors. The in-review workflow (Wave 3) already provides the
+submission spine; a heavier submit-for-review-only model (option c) can be
+layered on later without redoing this ownership gate.
+
+**Reopens if:** we adopt a full submit-for-review workflow that forbids
+non-editors from editing their own published pieces without re-submission.
+
 ## 2026-07-19 — OPEN: article edit ownership (review finding M3)
 
-**Question for product:** any role holding `articles:edit` (writer,
-contributor) can edit *any* article's body — including other authors'
-published pieces (publish/schedule/feature transitions are gated by
-`articles:publish`; body edits are not ownership-scoped).
-
-**Options:** (a) keep as-is — small trusted team; (b) scope non-editor edits
-to `author === user` (needs an ownership dimension in the capability map);
-(c) full workflow: contributors edit own drafts only, submit for review.
-The in-review workflow (Wave 3) implements the submission spine either way;
-ownership scoping remains a one-line policy decision on top.
-
-**Owner:** Nwanne — decide before inviting external contributors.
+Superseded by the 2026-07-23 decision above.

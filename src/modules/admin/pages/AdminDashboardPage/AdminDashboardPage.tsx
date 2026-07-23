@@ -98,7 +98,7 @@ function categoryColor(slug: string): string {
 
 export function AdminDashboardPage() {
   const router = useRouter();
-  const { me } = usePermissions();
+  const { me, can } = usePermissions();
 
   const { data, isLoading } = useQueryService<Record<string, never>, DashboardData>({
     service: { path: "/api/admin/dashboard", method: ApiMethods.GET },
@@ -198,8 +198,12 @@ export function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Performance + Activity */}
-      <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+      {/* Performance + Activity — the activity tile is gated on `audit:view`
+          server-side (see /api/admin/dashboard) so writers/contributors get a
+          performance-only row rather than seeing other users' actions. */}
+      <div
+        className={`grid gap-5 ${can("audit:view") ? "lg:grid-cols-[1.6fr_1fr]" : ""}`}
+      >
         <AdminPanel
           title="Content Performance"
           action={<PanelLink label="View Analytics" onClick={() => router.push(AdminRoutes.analytics)} />}
@@ -250,6 +254,7 @@ export function AdminDashboardPage() {
           )}
         </AdminPanel>
 
+        {can("audit:view") && (
         <AdminPanel
           title="Recent Activity"
           action={<PanelLink label="See All" onClick={() => router.push(AdminRoutes.recentActivity)} />}
@@ -280,6 +285,7 @@ export function AdminDashboardPage() {
             <div className="px-5 py-8 text-center text-sm text-muted-soft">No recent activity.</div>
           )}
         </AdminPanel>
+        )}
       </div>
 
       {/* Scheduled + Recently updated */}

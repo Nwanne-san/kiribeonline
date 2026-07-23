@@ -5,8 +5,8 @@ import {
   handleAdminRouteError,
   requireAdminWriteCapability,
 } from "@/server/auth";
-import { bulkUpdateArticles } from "@/server/modules/articles";
-import { can, type Capability } from "@/server/access/roles";
+import { allArticlesOwnedBy, bulkUpdateArticles } from "@/server/modules/articles";
+import { can, isEditorOrAbove, type Capability } from "@/server/access/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +35,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { ids, action } = parseBody(bulkSchema, body);
     if (!can(user.role, ACTION_CAPABILITY[action])) {
+      return apiError("Forbidden", 403);
+    }
+    // Ownership scope: writers/contributors may only bulk-act on their own
+    // articles. One query — fail the whole request if any id is unowned or
+    // missing, so the caller sees the boundary rather than a partial success.
+    if (!isEditorOrAbove(user.role) && !(await allArticlesOwnedBy(ids, user.id))) {
       return apiError("Forbidden", 403);
     }
     const result = await bulkUpdateArticles(ids, action);

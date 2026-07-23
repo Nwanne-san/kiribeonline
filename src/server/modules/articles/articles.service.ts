@@ -123,6 +123,67 @@ export async function getAdminArticle(id: string) {
   return payload.findByID({ collection: "articles", id, depth: 2, overrideAccess: true });
 }
 
+/**
+ * Cheap ownership probe used by the ownership guard on PATCH/DELETE/bulk. Reads
+ * only the `author` relation with `depth: 0` so the returned value is the
+ * author's id (never a full document), and skips access checks — the caller is
+ * about to enforce them itself.
+ */
+export async function getAdminArticleAuthorId(id: string): Promise<string | null> {
+  const payload = await getPayloadClient();
+  const doc = await payload.findByID({
+    collection: "articles",
+    id,
+    depth: 0,
+    overrideAccess: true,
+  });
+  return normalizeAuthorId((doc as { author?: unknown }).author);
+}
+
+/**
+ * True when every id in `ids` is authored by `userId`. Single query — the
+ * ownership guard on bulk mutations uses this to avoid an N+1 findByID.
+ * Returns false if any id belongs to someone else, is unowned, or doesn't
+ * exist (we do not want a caller to succeed on ids they can't observe).
+ */
+export async function allArticlesOwnedBy(ids: string[], userId: string | number): Promise<boolean> {
+  if (ids.length === 0) return true;
+  const payload = await getPayloadClient();
+  const foreign = await payload.find({
+    collection: "articles",
+    where: {
+      and: [
+        { id: { in: ids } },
+        { author: { not_equals: userId } },
+      ],
+    },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+    pagination: false,
+  });
+  if (foreign.docs.length > 0) return false;
+  const mine = await payload.find({
+    collection: "articles",
+    where: { and: [{ id: { in: ids } }, { author: { equals: userId } }] },
+    limit: ids.length,
+    depth: 0,
+    overrideAccess: true,
+    pagination: false,
+  });
+  return mine.docs.length === ids.length;
+}
+
+function normalizeAuthorId(author: unknown): string | null {
+  if (author === null || author === undefined) return null;
+  if (typeof author === "string" || typeof author === "number") return String(author);
+  if (typeof author === "object" && "id" in (author as Record<string, unknown>)) {
+    const id = (author as { id: unknown }).id;
+    if (typeof id === "string" || typeof id === "number") return String(id);
+  }
+  return null;
+}
+
 export async function createAdminArticle(input: ArticleInput) {
   const payload = await getPayloadClient();
   return payload.create({

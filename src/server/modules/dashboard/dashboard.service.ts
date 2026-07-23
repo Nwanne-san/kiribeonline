@@ -110,7 +110,15 @@ function getRecentActivity(): Promise<DashboardActivityItem[]> {
   return listActivity(8);
 }
 
-export async function getDashboardStats(): Promise<DashboardStats> {
+/**
+ * `includeActivity` — surface the recent-activity preview only when the caller
+ * holds `audit:view`. Writers/contributors have `analytics:read` (so they see
+ * the dashboard) but must not see other users' actions or auth events on the
+ * home tile; the "See All" link is already hidden client-side for them.
+ */
+export async function getDashboardStats({
+  includeActivity = true,
+}: { includeActivity?: boolean } = {}): Promise<DashboardStats> {
   const weekAgo = new Date(Date.now() - WEEK_MS).toISOString();
 
   const [
@@ -143,7 +151,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     sumViews(),
     countUnreadMessages(),
     listAdminArticles({ limit: 5 }),
-    getRecentActivity(),
+    includeActivity ? getRecentActivity() : Promise.resolve([] as DashboardActivityItem[]),
     getContentPerformance(),
   ]);
 
