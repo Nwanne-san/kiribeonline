@@ -33,6 +33,7 @@ export const CAPABILITIES = [
   "creators:manage",
   "reels:manage",
   "analytics:read",
+  "audit:view",
   "users:manage",
   "settings:manage",
 ] as const;
@@ -50,6 +51,7 @@ const EDITOR_CAPS: Capability[] = [
   "creators:manage",
   "reels:manage",
   "analytics:read",
+  "audit:view",
 ];
 
 const WRITER_CAPS: Capability[] = [
@@ -99,4 +101,14 @@ export function can(role: UserRole, capability: Capability): boolean {
 /** True when the user's effective role grants the capability. */
 export function userCan(user: RoleBearer, capability: Capability): boolean {
   return can(resolveRole(user), capability);
+}
+
+/**
+ * True for roles that may edit/publish articles owned by anyone else (admin,
+ * editor). Writers and contributors are ownership-scoped to their own articles
+ * — enforced in the article routes and the collection access layer. See
+ * DECISIONS.md (article edit ownership).
+ */
+export function isEditorOrAbove(role: UserRole): boolean {
+  return role === "admin" || role === "editor";
 }

@@ -5,7 +5,7 @@ import {
   requireAdminUserFromRequest,
   requireAdminWriteCapability,
 } from "@/server/auth";
-import { can } from "@/server/access/roles";
+import { can, isEditorOrAbove } from "@/server/access/roles";
 import {
   createAdminArticle,
   listAdminArticles,
@@ -49,6 +49,16 @@ export async function POST(request: NextRequest) {
       input.featured === true ||
       (input.featuredPriority ?? 0) > 0;
     if (wantsPublish && !can(user.role, "articles:publish")) {
+      return apiError("Forbidden", 403);
+    }
+    // Ownership scope: writers/contributors may only file under their own
+    // byline; editors may file for anyone. See DECISIONS.md.
+    if (
+      !isEditorOrAbove(user.role) &&
+      input.authorId !== undefined &&
+      input.authorId !== null &&
+      String(input.authorId) !== String(user.id)
+    ) {
       return apiError("Forbidden", 403);
     }
     // Default attribution to the creating user so articles are never

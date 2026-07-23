@@ -5,11 +5,13 @@ import { getClientIp } from "@/server/auth";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 import { DEFAULT_ANALYTICS_VIEW_RATE_LIMIT, RATE_LIMIT_WINDOW_MS } from "@/constants";
 import { rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
+import { assertSameOrigin } from "@/server/security";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    assertSameOrigin(request);
     const ip = getClientIp(request);
     const limit = await rateLimitForEndpoint(
       "analytics_view",

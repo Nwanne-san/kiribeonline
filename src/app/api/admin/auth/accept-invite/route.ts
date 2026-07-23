@@ -8,6 +8,7 @@ import {
   RATE_LIMIT_WINDOW_15_MIN_MS,
 } from "@/constants";
 import { rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
+import { assertSameOrigin } from "@/server/security";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   try {
+    assertSameOrigin(request);
     const ip = getClientIp(request);
     const limit = await rateLimitForEndpoint(
       "admin_accept_invite",

@@ -1,6 +1,11 @@
 import type { CollectionConfig } from "payload";
 import { denyFieldWrite, requireCapability } from "../access";
-import { articleStatusFieldAccess } from "@/server/modules/articles/articles.access";
+import {
+  articleAuthorFieldAccess,
+  articleDeleteAccess,
+  articleStatusFieldAccess,
+  articleUpdateAccess,
+} from "@/server/modules/articles/articles.access";
 import { slugField } from "../fields/slug";
 import { auditAfterChange, auditAfterDelete } from "../hooks/audit";
 import {
@@ -27,8 +32,8 @@ export const Articles: CollectionConfig = {
       };
     },
     create: requireCapability("articles:create"),
-    update: requireCapability("articles:edit"),
-    delete: requireCapability("articles:delete"),
+    update: articleUpdateAccess,
+    delete: articleDeleteAccess,
   },
   versions: {
     drafts: true,
@@ -70,6 +75,10 @@ export const Articles: CollectionConfig = {
       name: "author",
       type: "relationship",
       relationTo: "users",
+      access: {
+        create: articleAuthorFieldAccess,
+        update: articleAuthorFieldAccess,
+      },
       admin: {
         position: "sidebar",
         description: "Byline shown on the article and used for author stats",

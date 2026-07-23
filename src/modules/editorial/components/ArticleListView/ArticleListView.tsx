@@ -364,8 +364,16 @@ export function ArticleListView({
                       rowsPerPage={limit}
                       totalItems={pagination.totalDocs}
                       onPageChange={({ page: nextPage, rowsPerPage }) => {
-                        setPage(nextPage);
-                        setLimit(rowsPerPage);
+                        // KiribePaginationControls fires this callback for both
+                        // page-changes and page-size changes with the same
+                        // shape. `setLimit` resets the page to 1 by design, so
+                        // calling both unconditionally clobbers the setPage URL
+                        // write on the Next/Prev clicks — split the branches.
+                        if (rowsPerPage !== limit) {
+                          setLimit(rowsPerPage);
+                        } else {
+                          setPage(nextPage);
+                        }
                       }}
                       isCondense
                       itemLabel="Stories per page"
