@@ -3,6 +3,7 @@ import { Open_Sans, Outfit } from "next/font/google";
 import { GoogleAnalytics } from "@/modules/shared/components/GoogleAnalytics";
 import { getSiteSettingsForPublic } from "@/lib/content";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
+import { JsonLd, siteGraph } from "@/lib/seo/json-ld";
 import { Analytics } from "@vercel/analytics/next"
 import Providers from "./providers";
 import "./globals.css";
@@ -86,6 +87,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.variable} ${openSans.variable} antialiased`}>
+        <JsonLd data={siteGraph()} />
         <GoogleAnalytics />
         <Analytics />
         <Providers>{children}</Providers>

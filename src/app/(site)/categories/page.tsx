@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import { getCategoriesIndexForPublic } from "@/lib/content";
+import {
+  breadcrumbListSchema,
+  collectionPageSchema,
+  JsonLd,
+} from "@/lib/seo/json-ld";
 import { CategoriesPage } from "@/modules/editorial/pages/CategoriesPage";
 
 const title = "Categories";
@@ -15,5 +20,18 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   const categories = await getCategoriesIndexForPublic();
-  return <CategoriesPage categories={categories} />;
+  return (
+    <>
+      <JsonLd
+        data={collectionPageSchema({ name: title, description, url: "/categories" })}
+      />
+      <JsonLd
+        data={breadcrumbListSchema([
+          { name: "Home", url: "/" },
+          { name: "Categories", url: "/categories" },
+        ])}
+      />
+      <CategoriesPage categories={categories} />
+    </>
+  );
 }

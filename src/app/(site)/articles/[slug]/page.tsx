@@ -9,6 +9,11 @@ import {
   queryArticles,
 } from "@/lib/content";
 import type { ArticleCardDoc } from "@/lib/content/types";
+import {
+  breadcrumbListSchema,
+  JsonLd,
+  newsArticleSchema,
+} from "@/lib/seo/json-ld";
 import { ArticleDetailPage } from "@/modules/editorial/pages/ArticleDetailPage";
 
 type PageProps = {
@@ -24,6 +29,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = article.seo?.title ?? article.title;
   const description = article.seo?.description ?? article.excerpt;
   const canonical = `/articles/${article.slug}`;
+  const primaryCategory = article.categories?.[0];
+  const tags = article.tags?.map((t) => t.name).filter(Boolean) as string[] | undefined;
 
   // NOTE: the co-located `opengraph-image.tsx` file convention takes precedence
   // over `openGraph.images` set here (file-based metadata wins in Next.js), so
@@ -32,6 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
+    keywords: tags,
     alternates: { canonical },
     openGraph: {
       type: "article",
@@ -39,7 +47,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       url: canonical,
       publishedTime: article.publishedAt,
+      modifiedTime: (article as { updatedAt?: string }).updatedAt,
       authors: article.author?.name ? [article.author.name] : undefined,
+      section: primaryCategory?.name,
+      tags,
     },
     twitter: {
       card: "summary_large_image",
@@ -96,13 +107,43 @@ export default async function Page({ params }: PageProps) {
     }),
   ]);
 
+  const canonical = `/articles/${article.slug}`;
+  const primaryCategory = article.categories?.[0];
+  const heroImageUrl = article.heroImage?.url ?? undefined;
+  const tagNames = article.tags?.map((t) => t.name).filter(Boolean) as string[] | undefined;
+
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "Articles", url: "/articles" },
+    ...(primaryCategory
+      ? [{ name: primaryCategory.name, url: `/categories/${primaryCategory.slug}` }]
+      : []),
+    { name: article.title, url: canonical },
+  ];
+
+  const articleSchema = newsArticleSchema({
+    url: canonical,
+    headline: article.title,
+    description: article.seo?.description ?? article.excerpt,
+    imageUrl: heroImageUrl,
+    datePublished: article.publishedAt ?? new Date().toISOString(),
+    dateModified: (article as { updatedAt?: string }).updatedAt,
+    authorName: article.author?.name ?? undefined,
+    section: primaryCategory?.name,
+    keywords: tagNames,
+  });
+
   return (
-    <ArticleDetailPage
-      article={article}
-      relatedArticles={relatedArticles}
-      mostReadArticles={mostReadArticles}
-      readNextArticles={readNextArticles}
-      adjacentArticles={adjacentArticles}
-    />
+    <>
+      <JsonLd data={articleSchema} />
+      <JsonLd data={breadcrumbListSchema(breadcrumbs)} />
+      <ArticleDetailPage
+        article={article}
+        relatedArticles={relatedArticles}
+        mostReadArticles={mostReadArticles}
+        readNextArticles={readNextArticles}
+        adjacentArticles={adjacentArticles}
+      />
+    </>
   );
 }

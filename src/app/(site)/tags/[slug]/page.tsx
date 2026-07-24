@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTagBySlug } from "@/lib/content";
+import {
+  breadcrumbListSchema,
+  collectionPageSchema,
+  JsonLd,
+} from "@/lib/seo/json-ld";
 import { TagArchivePage } from "@/modules/editorial/pages/TagArchivePage";
 
 type PageProps = {
@@ -33,5 +38,25 @@ export default async function Page({ params }: PageProps) {
     notFound();
   }
 
-  return <TagArchivePage slug={slug} title={tag.name} />;
+  const canonical = `/tags/${slug}`;
+
+  return (
+    <>
+      <JsonLd
+        data={collectionPageSchema({
+          name: `${tag.name} — Tag`,
+          description: `Articles tagged ${tag.name} on Kiribé Online.`,
+          url: canonical,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbListSchema([
+          { name: "Home", url: "/" },
+          { name: "Articles", url: "/articles" },
+          { name: `Tag: ${tag.name}`, url: canonical },
+        ])}
+      />
+      <TagArchivePage slug={slug} title={tag.name} />
+    </>
+  );
 }

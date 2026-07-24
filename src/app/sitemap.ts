@@ -16,7 +16,10 @@ import { getSitemapEntries } from "@/services/cron.service";
 export const dynamic = "force-dynamic";
 
 const getCachedSitemapEntries = unstable_cache(getSitemapEntries, ["public-sitemap"], {
-  tags: ["articles"],
+  // Bust when articles, categories, or tags change so the sitemap doesn't
+  // lag content changes. Homepage tag is included because our Categories /
+  // Tags admin routes revalidate it on write (see `revalidate-homepage`).
+  tags: ["articles", "homepage"],
   revalidate: 3600,
 });
 
