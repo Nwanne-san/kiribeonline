@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import type { RemotePattern } from "next/dist/shared/lib/image-config";
 import { withPayload } from "@payloadcms/next/withPayload";
+import { withSentryConfig } from "@sentry/nextjs";
 
 /**
  * Allow the configured R2 public origin (custom domain or *.r2.dev) so
@@ -100,4 +101,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPayload(nextConfig);
+/**
+ * Wrap with Sentry when a source-maps auth token is present. Without
+ * `SENTRY_AUTH_TOKEN`, `withSentryConfig` still runs but skips the source-map
+ * upload step, so local `next build` works fine even without a Sentry account.
+ * The runtime SDKs stay no-ops when their DSNs aren't set.
+ */
+const sentryOptions = {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+};
+
+export default withSentryConfig(withPayload(nextConfig), sentryOptions);

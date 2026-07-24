@@ -9,12 +9,14 @@ import GroupOutlined from "@mui/icons-material/GroupOutlined";
 import CalendarTodayOutlined from "@mui/icons-material/CalendarTodayOutlined";
 import QueryStatsOutlined from "@mui/icons-material/QueryStatsOutlined";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
+import HistoryOutlined from "@mui/icons-material/HistoryOutlined";
+import MarkEmailReadOutlined from "@mui/icons-material/MarkEmailReadOutlined";
 import HomeOutlined from "@mui/icons-material/HomeOutlined";
 import StarOutline from "@mui/icons-material/StarOutline";
 import MovieOutlined from "@mui/icons-material/MovieOutlined";
 import VideocamOutlined from "@mui/icons-material/VideocamOutlined";
 import InsightsOutlined from "@mui/icons-material/InsightsOutlined";
-import { AdminRoutes } from "@/routes/admin.routes";
+import { AdminRouteAlias, AdminRoutes } from "@/routes/admin.routes";
 import type { Capability } from "@/server/access/roles";
 
 export type NavIcon = ComponentType<{
@@ -75,6 +77,18 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: GroupOutlined,
         route: AdminRoutes.usersRoles,
         capability: "users:manage",
+      },
+      {
+        label: "Subscribers",
+        icon: MarkEmailReadOutlined,
+        route: AdminRoutes.subscribers,
+        capability: "subscribers:manage",
+      },
+      {
+        label: "Audit Log",
+        icon: HistoryOutlined,
+        route: AdminRouteAlias.auditLog,
+        capability: "audit:view",
       },
       { label: "Editorial Calendar", icon: CalendarTodayOutlined, soon: true },
       { label: "SEO", icon: QueryStatsOutlined, soon: true },

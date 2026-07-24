@@ -8,6 +8,7 @@ export const CATEGORY_COLORS = {
   spotlight: { border: "#6E11B0", text: "#6E11B0", bg: "#6E11B0" },
   documentary: { border: "#016630", text: "#016630", bg: "#016630" },
   events: { border: "#0D9488", text: "#0D9488", bg: "#0D9488" },
+  videos: { border: "#6B1D2A", text: "#6B1D2A", bg: "#6B1D2A" },
 } as const;
 
 export type CategorySlug = keyof typeof CATEGORY_COLORS;

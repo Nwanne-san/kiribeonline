@@ -1,0 +1,1 @@
+export { VideosArchivePage } from "./VideosArchivePage";

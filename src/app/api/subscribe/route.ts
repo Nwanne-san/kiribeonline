@@ -4,10 +4,12 @@ import { getClientIp } from "@/server/auth";
 import { subscribeFormSchema } from "@/lib/validation/subscribe";
 import { DEFAULT_SUBSCRIBE_RATE_LIMIT, RATE_LIMIT_WINDOW_15_MIN_MS } from "@/constants";
 import { rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
+import { assertSameOrigin } from "@/server/security";
 import { submitSubscribe } from "@/services/subscribe.service";
 
 export async function POST(request: NextRequest) {
   try {
+    assertSameOrigin(request);
     const ip = getClientIp(request);
     const limit = await rateLimitForEndpoint(
       "subscribe",

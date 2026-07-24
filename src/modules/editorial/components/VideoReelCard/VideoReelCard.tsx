@@ -6,8 +6,6 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import YouTubeIcon from "@mui/icons-material/YouTube";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import { useState } from "react";
 import type { PublicReel } from "@/lib/content/query-homepage";
 import { parseReelEmbed } from "@/lib/reels/parse-embed";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
@@ -25,17 +23,37 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
 
 type VideoReelCardProps = {
   reel: PublicReel;
+  /**
+   * Fired when the card is clicked. Parent owns the modal so the same card can
+   * live inside homepage rows and the /categories/videos archive without each
+   * card carrying its own dialog. When omitted (unusual — only the rare case
+   * where an embed isn't possible), the card still link-outs.
+   */
+  onSelect?: (reel: PublicReel) => void;
+  /** Layout tuning per surface. Homepage row keeps the tight portrait size;
+   * the archive grid passes larger dimensions. */
+  size?: "row" | "grid";
 };
 
-export function VideoReelCard({ reel }: VideoReelCardProps) {
+const SIZE_PRESETS = {
+  row: {
+    width: { xs: 180, sm: 200 } as const,
+    height: { xs: 320, sm: 356 } as const,
+    sizes: "200px",
+  },
+  grid: {
+    width: { xs: "100%", sm: "100%" } as const,
+    height: { xs: 380, sm: 440 } as const,
+    sizes: "(max-width: 600px) 90vw, 260px",
+  },
+} as const;
+
+export function VideoReelCard({ reel, onSelect, size = "row" }: VideoReelCardProps) {
   const embed = parseReelEmbed(reel.externalUrl);
-  const [activated, setActivated] = useState(false);
+  const preset = SIZE_PRESETS[size];
 
-  const cardWidth = { xs: 180, sm: 200 } as const;
-  const cardHeight = { xs: 320, sm: 356 } as const;
-
-  // No embed possible → render a link-out poster (same as before).
-  if (!embed || !embed.fitsPortraitCard) {
+  // No modal-embeddable target — fall back to opening the source in a new tab.
+  if (!embed || !embed.embedUrl || !onSelect) {
     return (
       <KiribeLink
         href={reel.externalUrl}
@@ -44,83 +62,41 @@ export function VideoReelCard({ reel }: VideoReelCardProps) {
         underline="none"
         color="inherit"
       >
-        <ReelPoster reel={reel} width={cardWidth} height={cardHeight} showExternalIcon />
+        <ReelPoster
+          reel={reel}
+          width={preset.width}
+          height={preset.height}
+          sizes={preset.sizes}
+          showExternalIcon
+        />
       </KiribeLink>
     );
   }
 
-  // Activate-on-click pattern — keeps the homepage light by not loading
-  // third-party iframes until the user interacts.
-  if (!activated) {
-    return (
-      <Box
-        component="button"
-        type="button"
-        onClick={() => setActivated(true)}
-        aria-label={`Play ${reel.title}`}
-        sx={{
-          all: "unset",
-          cursor: "pointer",
-          display: "block",
-          "&:focus-visible > div": {
-            outline: "2px solid",
-            outlineColor: "secondary.main",
-            outlineOffset: 2,
-          },
-        }}
-      >
-        <ReelPoster reel={reel} width={cardWidth} height={cardHeight} />
-      </Box>
-    );
-  }
-
-  // Live embed.
   return (
     <Box
+      component="button"
+      type="button"
+      onClick={() => onSelect(reel)}
+      aria-label={`Play ${reel.title}`}
       sx={{
-        position: "relative",
-        width: cardWidth,
-        height: cardHeight,
-        borderRadius: 2,
-        overflow: "hidden",
-        bgcolor: "#0A0A0A",
+        all: "unset",
+        cursor: "pointer",
+        display: "block",
+        width: "100%",
+        "&:focus-visible > div": {
+          outline: "2px solid",
+          outlineColor: "secondary.main",
+          outlineOffset: 2,
+        },
       }}
     >
-      <Box
-        component="iframe"
-        src={embed.embedUrl}
-        title={reel.title}
-        loading="lazy"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
-        sx={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          border: 0,
-        }}
+      <ReelPoster
+        reel={reel}
+        width={preset.width}
+        height={preset.height}
+        sizes={preset.sizes}
       />
-      <IconButton
-        size="small"
-        aria-label="Open on original site"
-        component={KiribeLink}
-        href={reel.externalUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        sx={{
-          position: "absolute",
-          top: 8,
-          right: 8,
-          width: 28,
-          height: 28,
-          bgcolor: "rgba(0,0,0,0.55)",
-          color: "#fff",
-          "&:hover": { bgcolor: "rgba(0,0,0,0.75)" },
-        }}
-      >
-        <OpenInNewIcon sx={{ fontSize: 14 }} />
-      </IconButton>
     </Box>
   );
 }
@@ -129,11 +105,13 @@ function ReelPoster({
   reel,
   width,
   height,
+  sizes,
   showExternalIcon = false,
 }: {
   reel: PublicReel;
-  width: { xs: number; sm: number };
+  width: { xs: number | string; sm: number | string };
   height: { xs: number; sm: number };
+  sizes: string;
   showExternalIcon?: boolean;
 }) {
   return (
@@ -151,7 +129,7 @@ function ReelPoster({
         src={reel.thumbnail}
         alt={reel.thumbnail?.alt ?? reel.title}
         fill
-        sizes="200px"
+        sizes={sizes}
       />
       <Box
         sx={{

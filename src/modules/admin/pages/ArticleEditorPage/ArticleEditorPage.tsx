@@ -2,17 +2,12 @@
 
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CheckOutlined from "@mui/icons-material/CheckOutlined";
+import ExpandLessRounded from "@mui/icons-material/ExpandLessRounded";
+import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import LockOutlined from "@mui/icons-material/LockOutlined";
 import RateReviewOutlined from "@mui/icons-material/RateReviewOutlined";
 import RefreshOutlined from "@mui/icons-material/RefreshOutlined";
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Grid from "@mui/material/Grid";
-import MenuItem from "@mui/material/MenuItem";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
+import SaveRounded from "@mui/icons-material/SaveRounded";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -24,20 +19,24 @@ import {
 } from "react";
 import { ApiMethods } from "../../../../../types/service";
 import { AdminRoutes } from "@/routes/admin.routes";
+import { AdminChipSelect } from "@/modules/admin/components/AdminUi";
 import {
-  AdminCard,
-  AdminChipSelect,
-  AdminFieldLabel,
+  AdminButton,
+  AdminCheckboxRow,
+  AdminField,
+  AdminInput,
   AdminPageHeader,
-} from "@/modules/admin/components/AdminUi";
+  AdminPanel,
+  AdminSelect,
+  AdminTextarea,
+} from "@/modules/admin/components/ui/AdminPrimitives";
+import { PanelListSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
 import { AdminRichTextEditor } from "@/modules/admin/components/AdminRichTextEditor";
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
 import {
   PublishChecklistDialog,
   type ChecklistItem,
 } from "@/modules/admin/components/PublishChecklist";
-import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
-import { KiribeLoader } from "@/modules/shared/components/brand";
 import { useKiribeToast } from "@/modules/shared/components/feedback/KiribeSnackbar";
 import { usePermissions } from "@/modules/admin/hooks/usePermissions";
 import { useAutosave } from "@/modules/admin/hooks/useAutosave";
@@ -610,319 +609,309 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-        <KiribeLoader size="sm" label="Loading article" />
-      </Box>
+      <div className="space-y-5">
+        <AdminPanel>
+          <PanelListSkeleton rows={4} />
+        </AdminPanel>
+      </div>
     );
   }
 
   return (
-    <Stack
-      component="form"
+    <form
       onSubmit={(e: React.FormEvent) => {
         e.preventDefault();
         void handleSave(false);
       }}
-      spacing={2}
+      className="space-y-5"
     >
-      <Stack direction="row" alignItems="center" spacing={0.5}>
-        <Typography
-          component={NextLink}
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1 text-xs text-muted-soft">
+        <NextLink
           href={AdminRoutes.articles}
-          variant="caption"
-          color="text.secondary"
-          sx={{ textDecoration: "none" }}
+          className="hover:text-ink-secondary hover:underline"
         >
           Articles
-        </Typography>
-        <ChevronRightIcon sx={{ fontSize: 14, color: "text.disabled" }} />
-        <Typography variant="caption">
+        </NextLink>
+        <ChevronRightIcon sx={{ fontSize: 14 }} className="text-muted-soft" />
+        <span className="text-ink-secondary">
           {isEdit ? "Edit article" : "New article"}
-        </Typography>
-      </Stack>
+        </span>
+      </div>
 
       <AdminPageHeader
         title={isEdit ? "Edit article" : "New article"}
         action={
-          <Stack direction="row" spacing={2} alignItems="center">
+          <div className="flex items-center gap-3">
             {isEdit && viewCount !== null ? (
-              <Typography variant="caption" color="text.secondary">
+              <span className="text-xs text-muted">
                 {viewCount.toLocaleString()} views
-              </Typography>
+              </span>
             ) : null}
-            <SavedIndicator
-              saving={saving}
-              dirty={dirty}
-              lastSavedAt={lastSavedAt}
-            />
-          </Stack>
+            <SavedIndicator saving={saving} dirty={dirty} lastSavedAt={lastSavedAt} />
+          </div>
         }
       />
 
       {isEdit && status === "in_review" ? (
-        <Alert
-          icon={<RateReviewOutlined fontSize="small" />}
-          severity="info"
-          sx={{
-            bgcolor: "#FDF3EF",
-            color: "#7F0400",
-            border: "1px solid #F3D7CB",
-            "& .MuiAlert-icon": { color: "#7F0400" },
-          }}
-        >
-          {canPublish
-            ? "This article is awaiting your review. Move it to Published or Scheduled when it’s ready — or back to Draft to send it for more work."
-            : "This article has been submitted for review. An editor will take it from here."}
-        </Alert>
+        <div className="flex items-start gap-3 rounded-lg border border-[#F3D7CB] bg-[#FDF3EF] px-4 py-3 text-sm text-burgundy">
+          <RateReviewOutlined sx={{ fontSize: 20 }} className="mt-0.5 shrink-0" />
+          <p className="min-w-0">
+            {canPublish
+              ? "This article is awaiting your review. Move it to Published or Scheduled when it’s ready — or back to Draft to send it for more work."
+              : "This article has been submitted for review. An editor will take it from here."}
+          </p>
+        </div>
       ) : null}
 
-      <Grid container spacing={2.5} alignItems="flex-start">
-        <Grid size={{ xs: 12, base: 8 }}>
-          <Stack spacing={2}>
-            <AdminCard sx={{ p: 2.5 }}>
-              <KiribeTextField
-                label="Title"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  bumpDirty();
-                }}
-                required
-                fullWidth
-              />
-            </AdminCard>
-            <AdminCard sx={{ p: 2.5 }}>
-              <KiribeTextField
-                label="Excerpt"
-                value={excerpt}
-                onChange={(e) => {
-                  setExcerpt(e.target.value);
-                  bumpDirty();
-                }}
-                fullWidth
-                multiline
-                rows={2}
-              />
-            </AdminCard>
-            {editorReady ? (
-              <AdminRichTextEditor
-                key={articleId ?? "new"}
-                label="Body"
-                value={body}
-                onChange={(next) => {
-                  setBody(next);
-                  bumpDirty();
-                }}
-                required
-              />
-            ) : null}
-            <AdminCard sx={{ p: 0 }}>
-              <Box
-                component="button"
-                type="button"
-                onClick={() => setSeoOpen(!seoOpen)}
-                sx={{
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  p: 2,
-                  border: "none",
-                  bgcolor: "transparent",
-                  cursor: "pointer",
-                }}
-              >
-                <Typography variant="subtitle2" fontWeight={600}>
-                  SEO & metadata
-                </Typography>
-              </Box>
-              {seoOpen && (
-                <Stack
-                  spacing={2}
-                  sx={{
-                    px: 2.5,
-                    pb: 2.5,
-                    borderTop: "1px solid",
-                    borderColor: "divider",
-                    pt: 2,
+      {/* Two-column layout: body left, sidebar right. Stacks on mobile. */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)] lg:items-start">
+        {/* Body column */}
+        <div className="space-y-5">
+          <AdminPanel title="Article">
+            <div className="space-y-4 p-5">
+              <AdminField label="Title" htmlFor="ae-title" required>
+                <AdminInput
+                  id="ae-title"
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    bumpDirty();
                   }}
+                  placeholder="Working title — shape it after the piece lands."
+                />
+              </AdminField>
+
+              <AdminField
+                label="Excerpt"
+                htmlFor="ae-excerpt"
+                hint="Short standfirst shown on article cards and OG previews."
+              >
+                <AdminTextarea
+                  id="ae-excerpt"
+                  value={excerpt}
+                  onChange={(e) => {
+                    setExcerpt(e.target.value);
+                    bumpDirty();
+                  }}
+                  rows={2}
+                />
+              </AdminField>
+            </div>
+          </AdminPanel>
+
+          {editorReady ? (
+            <AdminPanel title="Body">
+              <div className="p-5">
+                <AdminRichTextEditor
+                  key={articleId ?? "new"}
+                  label="Body"
+                  value={body}
+                  onChange={(next) => {
+                    setBody(next);
+                    bumpDirty();
+                  }}
+                  required
+                />
+              </div>
+            </AdminPanel>
+          ) : null}
+
+          <AdminPanel>
+            <button
+              type="button"
+              onClick={() => setSeoOpen(!seoOpen)}
+              className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-surface-alt"
+            >
+              <h2 className="relative pb-1 font-headline text-[0.8125rem] font-bold uppercase tracking-[0.12em] text-burgundy after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-8 after:bg-mustard after:content-['']">
+                SEO &amp; metadata
+              </h2>
+              {seoOpen ? (
+                <ExpandLessRounded sx={{ fontSize: 20 }} className="text-muted" />
+              ) : (
+                <ExpandMoreRounded sx={{ fontSize: 20 }} className="text-muted" />
+              )}
+            </button>
+            {seoOpen && (
+              <div className="space-y-4 border-t border-border-soft p-5">
+                <AdminField
+                  label="SEO title"
+                  htmlFor="ae-seo-title"
+                  hint="Overrides the article title in search results and social cards."
                 >
-                  <KiribeTextField
-                    label="SEO title"
+                  <AdminInput
+                    id="ae-seo-title"
                     value={seoTitle}
                     onChange={(e) => {
                       setSeoTitle(e.target.value);
                       bumpDirty();
                     }}
-                    fullWidth
                   />
-                  <KiribeTextField
-                    label="SEO description"
+                </AdminField>
+                <AdminField label="SEO description" htmlFor="ae-seo-desc">
+                  <AdminTextarea
+                    id="ae-seo-desc"
                     value={seoDescription}
                     onChange={(e) => {
                       setSeoDescription(e.target.value);
                       bumpDirty();
                     }}
-                    fullWidth
-                    multiline
                     rows={3}
                   />
-                  <MediaPicker
-                    label="OG image"
-                    value={seoOgImage}
-                    onChange={(next) => {
-                      setSeoOgImage(next);
-                      bumpDirty();
-                    }}
-                  />
-                </Stack>
-              )}
-            </AdminCard>
-          </Stack>
-        </Grid>
+                </AdminField>
+                <MediaPicker
+                  label="OG image"
+                  value={seoOgImage}
+                  onChange={(next) => {
+                    setSeoOgImage(next);
+                    bumpDirty();
+                  }}
+                />
+              </div>
+            )}
+          </AdminPanel>
+        </div>
 
-        <Grid size={{ xs: 12, base: 4 }}>
-          <Stack spacing={2}>
-            <AdminCard sx={{ p: 2 }}>
-              <KiribeTextField
-                select
+        {/* Sidebar column */}
+        <aside className="space-y-5">
+          <AdminPanel title="Publish">
+            <div className="space-y-4 p-5">
+              <AdminField
                 label="Status"
-                value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value);
-                  bumpDirty();
-                }}
-                fullWidth
+                htmlFor="ae-status"
                 required
-                helperText={
+                hint={
                   !canPublish
                     ? "Submit for review to send this piece to an editor."
                     : undefined
                 }
               >
-                {statusOptions.map((s) => (
-                  <MenuItem
-                    key={s.value}
-                    value={s.value}
-                    disabled={s.label.endsWith("(locked)")}
-                  >
-                    {s.label}
-                  </MenuItem>
-                ))}
-              </KiribeTextField>
-              <Box sx={{ mt: 2 }}>
-                <AdminFieldLabel label="Publish date" />
-                <KiribeTextField
+                <AdminSelect
+                  id="ae-status"
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    bumpDirty();
+                  }}
+                >
+                  {statusOptions.map((s) => (
+                    <option
+                      key={s.value}
+                      value={s.value}
+                      disabled={s.label.endsWith("(locked)")}
+                    >
+                      {s.label}
+                    </option>
+                  ))}
+                </AdminSelect>
+              </AdminField>
+
+              <AdminField label="Publish date" htmlFor="ae-publish-date">
+                <AdminInput
+                  id="ae-publish-date"
                   type="datetime-local"
                   value={publishedAt}
                   onChange={(e) => {
                     setPublishedAt(e.target.value);
                     bumpDirty();
                   }}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
                 />
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <KiribeTextField
-                  label="URL slug"
-                  value={slug}
-                  onChange={(e) => {
-                    setSlug(e.target.value);
-                    setSlugTouched(true);
-                    bumpDirty();
-                  }}
-                  fullWidth
-                  disabled={slugReadOnly}
-                  error={Boolean(slugError)}
-                  helperText={
-                    slugReadOnly
-                      ? "The slug is locked once an article is published."
-                      : slugError ??
-                        (slugTouched
-                          ? "Lowercase letters, numbers, and dashes."
-                          : "Autofilled from the title until you edit it.")
-                  }
-                  InputProps={{
-                    endAdornment: slugReadOnly ? (
-                      <LockOutlined
-                        fontSize="small"
-                        sx={{ color: "text.disabled" }}
-                      />
-                    ) : null,
-                  }}
-                />
-              </Box>
+              </AdminField>
+
+              <AdminField
+                label="URL slug"
+                htmlFor="ae-slug"
+                error={slugError ?? undefined}
+                hint={
+                  slugReadOnly
+                    ? "The slug is locked once an article is published."
+                    : slugTouched
+                      ? "Lowercase letters, numbers, and dashes."
+                      : "Autofilled from the title until you edit it."
+                }
+              >
+                <div className="relative">
+                  <AdminInput
+                    id="ae-slug"
+                    value={slug}
+                    onChange={(e) => {
+                      setSlug(e.target.value);
+                      setSlugTouched(true);
+                      bumpDirty();
+                    }}
+                    disabled={slugReadOnly}
+                    invalid={Boolean(slugError)}
+                    className={slugReadOnly ? "pr-9" : ""}
+                  />
+                  {slugReadOnly ? (
+                    <LockOutlined
+                      sx={{ fontSize: 16 }}
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-soft"
+                    />
+                  ) : null}
+                </div>
+              </AdminField>
+
               {canPickAuthor ? (
-                <Box sx={{ mt: 2 }}>
-                  <KiribeTextField
-                    select
-                    label="Author"
+                <AdminField
+                  label="Author"
+                  htmlFor="ae-author"
+                  hint="Byline shown on the article and used for author stats."
+                >
+                  <AdminSelect
+                    id="ae-author"
                     value={authorId}
                     onChange={(e) => {
                       setAuthorId(e.target.value);
                       bumpDirty();
                     }}
-                    fullWidth
-                    helperText="Byline shown on the article and used for author stats."
                   >
                     {(authorList?.docs ?? []).map((u) => (
-                      <MenuItem key={u.id} value={u.id}>
+                      <option key={u.id} value={u.id}>
                         {u.name}
-                      </MenuItem>
+                      </option>
                     ))}
                     {/* Keep the current selection visible even if it's not in
                         the picker list (e.g. an inactive user still bylined) */}
                     {authorId &&
                     !(authorList?.docs ?? []).some((u) => u.id === authorId) ? (
-                      <MenuItem value={authorId}>
-                        (current author)
-                      </MenuItem>
+                      <option value={authorId}>(current author)</option>
                     ) : null}
-                  </KiribeTextField>
-                </Box>
+                  </AdminSelect>
+                </AdminField>
               ) : null}
-            </AdminCard>
+            </div>
+          </AdminPanel>
 
-            <AdminCard sx={{ p: 2 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={featured}
-                    onChange={(e) => {
-                      setFeatured(e.target.checked);
-                      bumpDirty();
-                    }}
-                  />
-                }
-                label={
-                  <Box>
-                    <Typography variant="body2" fontWeight={500}>
-                      Featured
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Show on homepage featured modules
-                    </Typography>
-                  </Box>
-                }
+          <AdminPanel title="Homepage">
+            <div className="space-y-3 p-5">
+              <AdminCheckboxRow
+                label="Featured"
+                hint="Show on homepage featured modules"
+                checked={featured}
+                onChange={(e) => {
+                  setFeatured(e.target.checked);
+                  bumpDirty();
+                }}
               />
               {featured && (
-                <Box sx={{ mt: 1.5 }}>
-                  <KiribeTextField
-                    label="Featured priority"
+                <AdminField label="Featured priority" htmlFor="ae-featured-priority">
+                  <AdminInput
+                    id="ae-featured-priority"
                     type="number"
                     value={featuredPriority}
                     onChange={(e) => {
                       setFeaturedPriority(Number(e.target.value));
                       bumpDirty();
                     }}
-                    fullWidth
                   />
-                </Box>
+                </AdminField>
               )}
-            </AdminCard>
+            </div>
+          </AdminPanel>
 
-            <AdminCard sx={{ p: 2 }}>
+          <AdminPanel title="Hero image">
+            <div className="p-5">
               <MediaPicker
                 label="Hero image"
                 value={heroImage}
@@ -931,57 +920,63 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                   bumpDirty();
                 }}
               />
-            </AdminCard>
+            </div>
+          </AdminPanel>
 
-            <AdminChipSelect
-              label="Categories"
-              options={categories?.docs ?? []}
-              value={categoryIds}
-              onChange={(next) => {
-                setCategoryIds(next);
-                bumpDirty();
-              }}
-              getColor={(o) => o.brandColor ?? "#6B1D2A"}
-            />
+          <AdminPanel title="Taxonomy">
+            <div className="space-y-4 p-5">
+              <AdminChipSelect
+                label="Categories"
+                options={categories?.docs ?? []}
+                value={categoryIds}
+                onChange={(next) => {
+                  setCategoryIds(next);
+                  bumpDirty();
+                }}
+                getColor={(o) => o.brandColor ?? "#6B1D2A"}
+              />
 
-            <AdminChipSelect
-              label="Tags"
-              options={tags?.docs ?? []}
-              value={tagIds}
-              onChange={(next) => {
-                setTagIds(next);
-                bumpDirty();
-              }}
-              getColor={(o) => o.brandColor ?? "#C9A227"}
-            />
-          </Stack>
-        </Grid>
-      </Grid>
+              <AdminChipSelect
+                label="Tags"
+                options={tags?.docs ?? []}
+                value={tagIds}
+                onChange={(next) => {
+                  setTagIds(next);
+                  bumpDirty();
+                }}
+                getColor={(o) => o.brandColor ?? "#C9A227"}
+              />
+            </div>
+          </AdminPanel>
+        </aside>
+      </div>
 
-      <Stack
-        direction="row"
-        spacing={2}
-        sx={{ pt: 2, borderTop: "1px solid", borderColor: "divider" }}
-      >
-        <KiribeButton type="submit" disabled={saving}>
-          {saving ? "Saving..." : "Save"}
-        </KiribeButton>
-        <KiribeButton
+      {/* Action bar */}
+      <div className="flex flex-col gap-2 border-t border-border-soft pt-4 sm:flex-row sm:items-center">
+        <AdminButton
+          type="submit"
+          disabled={saving}
+          leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
+        >
+          {saving ? "Saving…" : "Save"}
+        </AdminButton>
+        <AdminButton
           type="button"
-          variant="outlined"
+          variant="secondary"
           onClick={() => void handleSave(true)}
           disabled={saving}
         >
           Save and close
-        </KiribeButton>
-        <KiribeButton
-          type="button"
-          variant="outlined"
-          onClick={handleCancel}
-        >
+        </AdminButton>
+        <AdminButton type="button" variant="ghost" onClick={handleCancel}>
           Cancel
-        </KiribeButton>
-      </Stack>
+        </AdminButton>
+        {publishBlocked && PUBLISH_STATUSES.has(status) ? (
+          <span className="text-xs text-muted-soft sm:ml-2">
+            A few required fields are missing for publish (see checklist).
+          </span>
+        ) : null}
+      </div>
 
       <PublishChecklistDialog
         open={Boolean(pendingPublish)}
@@ -991,15 +986,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         onConfirm={() => void handleConfirmPublish()}
         isPending={saving}
       />
-
-      {publishBlocked && PUBLISH_STATUSES.has(status) ? (
-        // Inline hint so the editor knows why the publish button is going to
-        // pop a blocked checklist — surfaced before they click.
-        <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-          A few required fields are missing for publish (see checklist).
-        </Typography>
-      ) : null}
-    </Stack>
+    </form>
   );
 }
 
@@ -1019,32 +1006,23 @@ function SavedIndicator({
 }) {
   if (saving) {
     return (
-      <Stack direction="row" spacing={0.75} alignItems="center">
+      <span className="inline-flex items-center gap-1 text-xs text-muted">
         <RefreshOutlined
-          fontSize="small"
-          sx={{ color: "text.secondary", animation: "spin 1s linear infinite" }}
+          sx={{ fontSize: 14, animation: "spin 1s linear infinite" }}
         />
-        <Typography variant="caption" color="text.secondary">
-          Saving…
-        </Typography>
-      </Stack>
+        Saving…
+      </span>
     );
   }
   if (dirty) {
-    return (
-      <Typography variant="caption" color="text.secondary">
-        Unsaved changes
-      </Typography>
-    );
+    return <span className="text-xs text-muted">Unsaved changes</span>;
   }
   if (lastSavedAt) {
     return (
-      <Stack direction="row" spacing={0.5} alignItems="center">
-        <CheckOutlined fontSize="small" sx={{ color: "#15803d" }} />
-        <Typography variant="caption" color="text.secondary">
-          Saved · {lastSavedAt}
-        </Typography>
-      </Stack>
+      <span className="inline-flex items-center gap-1 text-xs text-muted">
+        <CheckOutlined sx={{ fontSize: 14 }} className="text-[#15803d]" />
+        Saved · {lastSavedAt}
+      </span>
     );
   }
   return null;
