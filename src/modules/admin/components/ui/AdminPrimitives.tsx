@@ -1,4 +1,11 @@
-import type { ButtonHTMLAttributes, ComponentType, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  ComponentType,
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 
 /**
  * Tailwind-first admin UI primitives (MUI→Tailwind migration, per CLAUDE.md).
@@ -250,4 +257,158 @@ export function formatCompact(n: number): string {
   }
   const m = n / 1_000_000;
   return `${m % 1 === 0 ? m : m.toFixed(1)}M`;
+}
+
+/* ────────────────────────────────────────────────── Page + form primitives */
+
+/**
+ * Standard admin page header — burgundy title with the mustard underline bar
+ * (matches the SubscribersPage / RecentActivityPage / ArticlesListPage shape).
+ * Use as the first child of a page's root `<div className="space-y-5">`.
+ */
+export function AdminPageHeader({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string;
+  subtitle?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <h1 className="relative inline-block pb-2 font-headline text-2xl font-bold text-burgundy after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-12 after:bg-mustard after:content-['']">
+          {title}
+        </h1>
+        {subtitle ? <p className="mt-2 text-sm text-muted">{subtitle}</p> : null}
+      </div>
+      {action ? <div className="flex shrink-0 items-center gap-2">{action}</div> : null}
+    </div>
+  );
+}
+
+/**
+ * A labeled form-field wrapper. Renders a small uppercase label, the input
+ * `children`, an optional hint below, and (when present) a red error message
+ * that supersedes the hint.
+ */
+export function AdminField({
+  label,
+  htmlFor,
+  hint,
+  error,
+  required = false,
+  children,
+  className = "",
+}: {
+  label: string;
+  htmlFor?: string;
+  hint?: ReactNode;
+  error?: ReactNode;
+  required?: boolean;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`space-y-1.5 ${className}`}>
+      <label
+        htmlFor={htmlFor}
+        className="block text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted"
+      >
+        {label}
+        {required ? <span className="ml-1 text-[#b42318]">*</span> : null}
+      </label>
+      {children}
+      {error ? (
+        <p className="text-xs text-[#b42318]">{error}</p>
+      ) : hint ? (
+        <p className="text-xs text-muted-soft">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+const CONTROL_BASE =
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted-soft focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20 disabled:cursor-not-allowed disabled:opacity-60";
+const CONTROL_ERROR = "border-[#b42318] focus:border-[#b42318] focus:ring-[#b42318]/20";
+
+/** Standard admin text input. Add `invalid` to switch to the error border. */
+export function AdminInput({
+  invalid = false,
+  className = "",
+  ...rest
+}: {
+  invalid?: boolean;
+} & InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className={`${CONTROL_BASE} ${invalid ? CONTROL_ERROR : ""} ${className}`}
+      {...rest}
+    />
+  );
+}
+
+/** Standard admin textarea. */
+export function AdminTextarea({
+  invalid = false,
+  className = "",
+  rows = 4,
+  ...rest
+}: {
+  invalid?: boolean;
+} & TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      rows={rows}
+      className={`${CONTROL_BASE} min-h-[80px] leading-relaxed ${invalid ? CONTROL_ERROR : ""} ${className}`}
+      {...rest}
+    />
+  );
+}
+
+/** Standard admin select. Wrap `<option>` children as usual. */
+export function AdminSelect({
+  invalid = false,
+  className = "",
+  children,
+  ...rest
+}: {
+  invalid?: boolean;
+} & SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={`${CONTROL_BASE} pr-8 ${invalid ? CONTROL_ERROR : ""} ${className}`}
+      {...rest}
+    >
+      {children}
+    </select>
+  );
+}
+
+/**
+ * A checkbox row with an inline label — the compact form control pattern used
+ * on sidebar toggles ("Featured", "Published", "Consent").
+ */
+export function AdminCheckboxRow({
+  label,
+  hint,
+  ...rest
+}: {
+  label: string;
+  hint?: ReactNode;
+} & InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border bg-surface px-3 py-2.5 hover:bg-surface-muted">
+      <input
+        type="checkbox"
+        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-burgundy focus:ring-2 focus:ring-burgundy/20"
+        {...rest}
+      />
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-ink">{label}</span>
+        {hint ? <span className="mt-0.5 block text-xs text-muted-soft">{hint}</span> : null}
+      </span>
+    </label>
+  );
 }

@@ -1,22 +1,22 @@
 "use client";
 
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import Box from "@mui/material/Box";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import IconButton from "@mui/material/IconButton";
-import MenuItem from "@mui/material/MenuItem";
-import Stack from "@mui/material/Stack";
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
-import Typography from "@mui/material/Typography";
+import AddRounded from "@mui/icons-material/AddRounded";
+import ArrowDownwardRounded from "@mui/icons-material/ArrowDownwardRounded";
+import ArrowUpwardRounded from "@mui/icons-material/ArrowUpwardRounded";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import SaveRounded from "@mui/icons-material/SaveRounded";
 import { useEffect, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
-import { AdminCard, AdminPageHeader } from "@/modules/admin/components/AdminUi";
-import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
-import { KiribeLoader } from "@/modules/shared/components/brand";
+import {
+  AdminButton,
+  AdminCheckboxRow,
+  AdminField,
+  AdminInput,
+  AdminPageHeader,
+  AdminPanel,
+  AdminSelect,
+} from "@/modules/admin/components/ui/AdminPrimitives";
+import { PanelListSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import client from "@/utils/client";
@@ -37,6 +37,20 @@ type ModuleRow = {
 };
 
 type PickRow = { articleId: string; sortOrder: number };
+
+const TABS = [
+  { label: "Hero & picks" },
+  { label: "Category modules" },
+  { label: "Spotlight & creators" },
+  { label: "Reels & CTA" },
+] as const;
+
+const LAYOUT_OPTIONS = [
+  { value: "grid-3", label: "3-column grid" },
+  { value: "grid-2", label: "2-column grid" },
+  { value: "list", label: "List" },
+  { value: "hero-plus-grid", label: "Hero + grid" },
+];
 
 export function HomepageBuilderPage() {
   const [tab, setTab] = useState(0);
@@ -73,47 +87,48 @@ export function HomepageBuilderPage() {
   useEffect(() => {
     void (async () => {
       try {
-      const res = await client.request<never, Record<string, unknown>>({
-        path: "/api/admin/homepage",
-        method: ApiMethods.GET,
-      });
-      const data = unwrapApiData(res);
-      const hero = data.heroArticle;
-      if (hero && typeof hero === "object" && "id" in hero) {
-        setHeroArticleId(String((hero as { id: string }).id));
-      }
-      const editorPickRows = (data.editorsPicks as Array<{ sortOrder?: number; article?: { id?: string } }>) ?? [];
-      setPicks(
-        editorPickRows
-          .map((row, idx) => ({
-            articleId: String(row.article?.id ?? ""),
-            sortOrder: Number(row.sortOrder ?? idx),
+        const res = await client.request<never, Record<string, unknown>>({
+          path: "/api/admin/homepage",
+          method: ApiMethods.GET,
+        });
+        const data = unwrapApiData(res);
+        const hero = data.heroArticle;
+        if (hero && typeof hero === "object" && "id" in hero) {
+          setHeroArticleId(String((hero as { id: string }).id));
+        }
+        const editorPickRows =
+          (data.editorsPicks as Array<{ sortOrder?: number; article?: { id?: string } }>) ?? [];
+        setPicks(
+          editorPickRows
+            .map((row, idx) => ({
+              articleId: String(row.article?.id ?? ""),
+              sortOrder: Number(row.sortOrder ?? idx),
+            }))
+            .filter((p) => p.articleId)
+        );
+        const rows = (data.categoryModules as Array<Record<string, unknown>>) ?? [];
+        setModules(
+          rows.map((row, index) => ({
+            categoryId: String((row.category as { id: string })?.id ?? ""),
+            sectionTitle: String(row.sectionTitle ?? ""),
+            layout: String(row.layout ?? "grid-3"),
+            maxItems: Number(row.maxItems ?? 3),
+            enabled: row.enabled !== false,
+            sortOrder: Number(row.sortOrder ?? index),
           }))
-          .filter((p) => p.articleId)
-      );
-      const rows = (data.categoryModules as Array<Record<string, unknown>>) ?? [];
-      setModules(
-        rows.map((row, index) => ({
-          categoryId: String((row.category as { id: string })?.id ?? ""),
-          sectionTitle: String(row.sectionTitle ?? ""),
-          layout: String(row.layout ?? "grid-3"),
-          maxItems: Number(row.maxItems ?? 3),
-          enabled: row.enabled !== false,
-          sortOrder: Number(row.sortOrder ?? index),
-        }))
-      );
-      const spotlight = data.spotlightCreator;
-      if (spotlight && typeof spotlight === "object" && "id" in spotlight) {
-        setSpotlightCreatorId(String((spotlight as { id: string }).id));
-      }
-      const featured = (data.featuredCreators as Array<{ creator?: { id: string } }>) ?? [];
-      setFeaturedCreatorIds(
-        featured.map((row) => String(row.creator?.id ?? "")).filter(Boolean)
-      );
-      const reelRows = (data.reels as Array<{ id: string }>) ?? [];
-      setReelIds(reelRows.map((r) => String(r.id)));
-      setReelsEnabled(data.reelsEnabled !== false);
-      setArchiveCtaEnabled(data.archiveCtaEnabled !== false);
+        );
+        const spotlight = data.spotlightCreator;
+        if (spotlight && typeof spotlight === "object" && "id" in spotlight) {
+          setSpotlightCreatorId(String((spotlight as { id: string }).id));
+        }
+        const featured = (data.featuredCreators as Array<{ creator?: { id: string } }>) ?? [];
+        setFeaturedCreatorIds(
+          featured.map((row) => String(row.creator?.id ?? "")).filter(Boolean)
+        );
+        const reelRows = (data.reels as Array<{ id: string }>) ?? [];
+        setReelIds(reelRows.map((r) => String(r.id)));
+        setReelsEnabled(data.reelsEnabled !== false);
+        setArchiveCtaEnabled(data.archiveCtaEnabled !== false);
       } finally {
         setLoading(false);
       }
@@ -217,465 +232,435 @@ export function HomepageBuilderPage() {
     setReelIds((prev) => moveItem(prev, index, dir));
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-        <KiribeLoader size="sm" label="Loading homepage" />
-      </Box>
-    );
-  }
-
   return (
-    <Stack spacing={3}>
+    <div className="space-y-5">
       <AdminPageHeader
         title="Homepage builder"
+        subtitle="Section order is fixed to the editorial design. Manage what appears inside each section here."
         action={
-          <KiribeButton onClick={save} disabled={isPending}>
-            {isPending ? "Saving..." : "Save"}
-          </KiribeButton>
+          <AdminButton
+            onClick={save}
+            disabled={isPending || loading}
+            leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
+          >
+            {isPending ? "Saving…" : "Save"}
+          </AdminButton>
         }
       />
 
-      <Typography variant="body2" color="text.secondary">
-        Homepage section order is fixed to the editorial design. Use the tabs below
-        to manage the content within each section — reorder articles in the hero
-        sidebar, drag category modules, pick the spotlight, etc.
-      </Typography>
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-1.5 rounded-xl border border-border bg-surface p-2 shadow-card">
+        {TABS.map((t, i) => (
+          <button
+            key={t.label}
+            type="button"
+            onClick={() => setTab(i)}
+            className={`rounded-md px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
+              tab === i
+                ? "bg-[#7f0400] text-white"
+                : "border border-border text-ink-secondary hover:bg-surface-muted"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      <Tabs value={tab} onChange={(_e, v) => setTab(v)}>
-        <Tab label="Hero & editor's picks" />
-        <Tab label="Category modules" />
-        <Tab label="Spotlight & creators" />
-        <Tab label="Reels & CTA" />
-      </Tabs>
-
-      {tab === 0 && (
-        <AdminCard sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                Hero article
-              </Typography>
-              <KiribeTextField
-                select
-                label="Featured story"
-                value={heroArticleId}
-                onChange={(e) => setHeroArticleId(e.target.value)}
-                fullWidth
-              >
-                <MenuItem value="">None</MenuItem>
-                {(articles?.docs ?? []).map((a) => (
-                  <MenuItem key={a.id} value={String(a.id)}>
-                    {a.title}
-                  </MenuItem>
-                ))}
-              </KiribeTextField>
-            </Box>
-
-            <Box>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 1 }}
-              >
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  Editor&apos;s picks ({picks.length}/5)
-                </Typography>
-                <KiribeButton
-                  variant="outlined"
-                  onClick={addPick}
-                  disabled={picks.length >= 5}
-                >
-                  Add pick
-                </KiribeButton>
-              </Stack>
-              <Typography variant="caption" color="text.secondary">
-                Sidebar list under the hero. Use the arrows to reorder.
-              </Typography>
-              <Stack spacing={1} sx={{ mt: 2 }}>
-                {picks.map((pick, index) => (
-                  <Stack
-                    key={index}
-                    direction="row"
-                    spacing={1.5}
-                    alignItems="center"
-                    sx={{
-                      p: 1.5,
-                      border: "1px solid",
-                      borderColor: "divider",
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Stack direction="row">
-                      <IconButton
-                        size="small"
-                        aria-label="Move up"
-                        disabled={index === 0}
-                        onClick={() => setPicks((p) => moveItem(p, index, -1))}
-                      >
-                        <ArrowUpwardIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        aria-label="Move down"
-                        disabled={index === picks.length - 1}
-                        onClick={() => setPicks((p) => moveItem(p, index, 1))}
-                      >
-                        <ArrowDownwardIcon fontSize="small" />
-                      </IconButton>
-                    </Stack>
-                    <KiribeTextField
-                      select
-                      label={`Pick ${index + 1}`}
-                      value={pick.articleId}
-                      onChange={(e) => {
-                        const next = [...picks];
-                        next[index] = { ...pick, articleId: e.target.value };
-                        setPicks(next);
-                      }}
-                      fullWidth
+      {loading ? (
+        <AdminPanel>
+          <PanelListSkeleton rows={4} />
+        </AdminPanel>
+      ) : (
+        <>
+          {tab === 0 && (
+            <div className="space-y-5">
+              <AdminPanel title="Hero article">
+                <div className="p-5">
+                  <AdminField label="Featured story" htmlFor="hb-hero">
+                    <AdminSelect
+                      id="hb-hero"
+                      value={heroArticleId}
+                      onChange={(e) => setHeroArticleId(e.target.value)}
                     >
-                      <MenuItem value="">Select article</MenuItem>
+                      <option value="">None</option>
                       {(articles?.docs ?? []).map((a) => (
-                        <MenuItem key={a.id} value={String(a.id)}>
+                        <option key={a.id} value={String(a.id)}>
                           {a.title}
-                        </MenuItem>
+                        </option>
                       ))}
-                    </KiribeTextField>
-                    <IconButton
-                      size="small"
-                      aria-label="Remove pick"
-                      onClick={() => removePick(index)}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                ))}
-                {picks.length === 0 && (
-                  <Typography variant="caption" color="text.secondary">
-                    No picks yet. Click &ldquo;Add pick&rdquo; to populate the sidebar.
-                  </Typography>
-                )}
-              </Stack>
-            </Box>
-          </Stack>
-        </AdminCard>
-      )}
+                    </AdminSelect>
+                  </AdminField>
+                </div>
+              </AdminPanel>
 
-      {tab === 1 && (
-        <AdminCard sx={{ p: 3 }}>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Category modules
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                First 3 modules render above Spotlight; remaining modules render
-                below the More Creators grid. Reorder with the arrows.
-              </Typography>
-            </Box>
-            {modules.map((mod, index) => (
-              <Stack
-                key={index}
-                spacing={1.5}
-                sx={{
-                  p: 2,
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 1,
-                }}
-              >
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Stack direction="row">
-                    <IconButton
-                      size="small"
-                      aria-label="Move up"
-                      disabled={index === 0}
-                      onClick={() => setModules((m) => moveItem(m, index, -1))}
-                    >
-                      <ArrowUpwardIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      aria-label="Move down"
-                      disabled={index === modules.length - 1}
-                      onClick={() => setModules((m) => moveItem(m, index, 1))}
-                    >
-                      <ArrowDownwardIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                  <Typography variant="caption" color="text.secondary">
-                    Module {index + 1} · {index < 3 ? "above Spotlight" : "below Creators"}
-                  </Typography>
-                  <Box sx={{ flex: 1 }} />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={mod.enabled}
-                        onChange={(e) => {
-                          const next = [...modules];
-                          next[index] = { ...mod, enabled: e.target.checked };
-                          setModules(next);
-                        }}
-                      />
-                    }
-                    label="Enabled"
-                  />
-                  <IconButton
-                    size="small"
-                    aria-label="Remove module"
-                    onClick={() => removeModule(index)}
+              <AdminPanel
+                title={`Editor's picks · ${picks.length}/5`}
+                action={
+                  <AdminButton
+                    variant="secondary"
+                    size="sm"
+                    onClick={addPick}
+                    disabled={picks.length >= 5}
+                    leftIcon={<AddRounded sx={{ fontSize: 14 }} />}
                   >
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Stack>
-                <KiribeTextField
-                  select
-                  label="Category"
-                  value={mod.categoryId}
-                  onChange={(e) => {
-                    const next = [...modules];
-                    next[index] = { ...mod, categoryId: e.target.value };
-                    setModules(next);
-                  }}
-                  fullWidth
-                >
-                  {(categories?.docs ?? []).map((c) => (
-                    <MenuItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </MenuItem>
-                  ))}
-                </KiribeTextField>
-                <KiribeTextField
-                  label="Section title"
-                  value={mod.sectionTitle}
-                  onChange={(e) => {
-                    const next = [...modules];
-                    next[index] = { ...mod, sectionTitle: e.target.value };
-                    setModules(next);
-                  }}
-                  fullWidth
-                />
-                <Stack direction="row" spacing={1.5}>
-                  <KiribeTextField
-                    select
-                    label="Layout"
-                    value={mod.layout}
-                    onChange={(e) => {
-                      const next = [...modules];
-                      next[index] = { ...mod, layout: e.target.value };
-                      setModules(next);
-                    }}
-                    fullWidth
-                  >
-                    {["grid-3", "grid-2", "list", "hero-plus-grid"].map((layout) => (
-                      <MenuItem key={layout} value={layout}>
-                        {layout}
-                      </MenuItem>
-                    ))}
-                  </KiribeTextField>
-                  <KiribeTextField
-                    label="Max items"
-                    type="number"
-                    value={mod.maxItems}
-                    onChange={(e) => {
-                      const next = [...modules];
-                      next[index] = { ...mod, maxItems: Number(e.target.value) };
-                      setModules(next);
-                    }}
-                    sx={{ maxWidth: 160 }}
-                  />
-                </Stack>
-              </Stack>
-            ))}
-            <KiribeButton variant="outlined" onClick={addModule}>
-              Add category module
-            </KiribeButton>
-          </Stack>
-        </AdminCard>
-      )}
-
-      {tab === 2 && (
-        <AdminCard sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                Spotlight creator
-              </Typography>
-              <KiribeTextField
-                select
-                label="Featured spotlight"
-                value={spotlightCreatorId}
-                onChange={(e) => setSpotlightCreatorId(e.target.value)}
-                fullWidth
+                    Add pick
+                  </AdminButton>
+                }
               >
-                <MenuItem value="">None</MenuItem>
-                {(creators?.docs ?? []).map((c) => (
-                  <MenuItem key={c.id} value={String(c.id)}>
-                    {c.name}
-                  </MenuItem>
-                ))}
-              </KiribeTextField>
-            </Box>
-
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                More creators ({featuredCreatorIds.length}/4)
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Tick to feature; reorder selected creators with the arrows.
-              </Typography>
-
-              {featuredCreatorIds.length > 0 && (
-                <Stack spacing={1} sx={{ mt: 2 }}>
-                  {featuredCreatorIds.map((id, index) => {
-                    const creator = creators?.docs?.find((c) => String(c.id) === id);
-                    return (
-                      <Stack
-                        key={id}
-                        direction="row"
-                        spacing={1}
-                        alignItems="center"
-                        sx={{
-                          p: 1,
-                          border: "1px solid",
-                          borderColor: "divider",
-                          borderRadius: 1,
-                        }}
+                <div className="space-y-3 p-5">
+                  <p className="text-xs text-muted-soft">
+                    Sidebar list under the hero. Use the arrows to reorder.
+                  </p>
+                  {picks.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border bg-surface-alt px-4 py-8 text-center text-sm text-muted-soft">
+                      No picks yet.
+                    </div>
+                  ) : (
+                    picks.map((pick, index) => (
+                      <div
+                        key={index}
+                        className="flex items-end gap-2 rounded-lg border border-border bg-surface-alt p-3"
                       >
-                        <IconButton
-                          size="small"
-                          aria-label="Move up"
-                          disabled={index === 0}
-                          onClick={() => moveFeaturedCreator(index, -1)}
-                        >
-                          <ArrowUpwardIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          aria-label="Move down"
-                          disabled={index === featuredCreatorIds.length - 1}
-                          onClick={() => moveFeaturedCreator(index, 1)}
-                        >
-                          <ArrowDownwardIcon fontSize="small" />
-                        </IconButton>
-                        <Typography variant="body2">{creator?.name ?? id}</Typography>
-                      </Stack>
-                    );
-                  })}
-                </Stack>
-              )}
+                        <MoveButtons
+                          onUp={() => setPicks((p) => moveItem(p, index, -1))}
+                          onDown={() => setPicks((p) => moveItem(p, index, 1))}
+                          canUp={index > 0}
+                          canDown={index < picks.length - 1}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <AdminField label={`Pick ${index + 1}`} htmlFor={`hb-pick-${index}`}>
+                            <AdminSelect
+                              id={`hb-pick-${index}`}
+                              value={pick.articleId}
+                              onChange={(e) => {
+                                const next = [...picks];
+                                next[index] = { ...pick, articleId: e.target.value };
+                                setPicks(next);
+                              }}
+                            >
+                              <option value="">Select article</option>
+                              {(articles?.docs ?? []).map((a) => (
+                                <option key={a.id} value={String(a.id)}>
+                                  {a.title}
+                                </option>
+                              ))}
+                            </AdminSelect>
+                          </AdminField>
+                        </div>
+                        <IconRoundBtn onClick={() => removePick(index)} label="Remove pick">
+                          <DeleteOutlineRounded sx={{ fontSize: 16 }} />
+                        </IconRoundBtn>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </AdminPanel>
+            </div>
+          )}
 
-              <Stack spacing={0.5} sx={{ mt: 2 }}>
-                {(creators?.docs ?? []).map((c) => (
-                  <FormControlLabel
-                    key={c.id}
-                    control={
-                      <Checkbox
+          {tab === 1 && (
+            <AdminPanel
+              title="Category modules"
+              action={
+                <AdminButton
+                  variant="secondary"
+                  size="sm"
+                  onClick={addModule}
+                  leftIcon={<AddRounded sx={{ fontSize: 14 }} />}
+                >
+                  Add module
+                </AdminButton>
+              }
+            >
+              <div className="space-y-4 p-5">
+                <p className="text-xs text-muted-soft">
+                  First 3 modules render above Spotlight; remaining render below the More
+                  Creators grid. Reorder with the arrows.
+                </p>
+                {modules.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-border bg-surface-alt px-4 py-8 text-center text-sm text-muted-soft">
+                    No modules yet.
+                  </div>
+                ) : (
+                  modules.map((mod, index) => (
+                    <div
+                      key={index}
+                      className="space-y-3 rounded-lg border border-border bg-surface-alt p-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <MoveButtons
+                          onUp={() => setModules((m) => moveItem(m, index, -1))}
+                          onDown={() => setModules((m) => moveItem(m, index, 1))}
+                          canUp={index > 0}
+                          canDown={index < modules.length - 1}
+                        />
+                        <span className="text-xs text-muted-soft">
+                          Module {index + 1} ·{" "}
+                          {index < 3 ? "above Spotlight" : "below Creators"}
+                        </span>
+                        <div className="flex-1" />
+                        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-ink">
+                          <input
+                            type="checkbox"
+                            checked={mod.enabled}
+                            onChange={(e) => {
+                              const next = [...modules];
+                              next[index] = { ...mod, enabled: e.target.checked };
+                              setModules(next);
+                            }}
+                            className="h-4 w-4 rounded border-border text-burgundy focus:ring-2 focus:ring-burgundy/20"
+                          />
+                          Enabled
+                        </label>
+                        <IconRoundBtn onClick={() => removeModule(index)} label="Remove module">
+                          <DeleteOutlineRounded sx={{ fontSize: 16 }} />
+                        </IconRoundBtn>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <AdminField label="Category" htmlFor={`hb-cat-${index}`}>
+                          <AdminSelect
+                            id={`hb-cat-${index}`}
+                            value={mod.categoryId}
+                            onChange={(e) => {
+                              const next = [...modules];
+                              next[index] = { ...mod, categoryId: e.target.value };
+                              setModules(next);
+                            }}
+                          >
+                            {(categories?.docs ?? []).map((c) => (
+                              <option key={c.id} value={String(c.id)}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </AdminSelect>
+                        </AdminField>
+                        <AdminField label="Section title" htmlFor={`hb-title-${index}`}>
+                          <AdminInput
+                            id={`hb-title-${index}`}
+                            value={mod.sectionTitle}
+                            onChange={(e) => {
+                              const next = [...modules];
+                              next[index] = { ...mod, sectionTitle: e.target.value };
+                              setModules(next);
+                            }}
+                          />
+                        </AdminField>
+                        <AdminField label="Layout" htmlFor={`hb-layout-${index}`}>
+                          <AdminSelect
+                            id={`hb-layout-${index}`}
+                            value={mod.layout}
+                            onChange={(e) => {
+                              const next = [...modules];
+                              next[index] = { ...mod, layout: e.target.value };
+                              setModules(next);
+                            }}
+                          >
+                            {LAYOUT_OPTIONS.map((l) => (
+                              <option key={l.value} value={l.value}>
+                                {l.label}
+                              </option>
+                            ))}
+                          </AdminSelect>
+                        </AdminField>
+                        <AdminField label="Max items" htmlFor={`hb-max-${index}`}>
+                          <AdminInput
+                            id={`hb-max-${index}`}
+                            type="number"
+                            min={1}
+                            max={12}
+                            value={mod.maxItems}
+                            onChange={(e) => {
+                              const next = [...modules];
+                              next[index] = { ...mod, maxItems: Number(e.target.value) };
+                              setModules(next);
+                            }}
+                          />
+                        </AdminField>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </AdminPanel>
+          )}
+
+          {tab === 2 && (
+            <div className="space-y-5">
+              <AdminPanel title="Spotlight creator">
+                <div className="p-5">
+                  <AdminField label="Featured spotlight" htmlFor="hb-spotlight">
+                    <AdminSelect
+                      id="hb-spotlight"
+                      value={spotlightCreatorId}
+                      onChange={(e) => setSpotlightCreatorId(e.target.value)}
+                    >
+                      <option value="">None</option>
+                      {(creators?.docs ?? []).map((c) => (
+                        <option key={c.id} value={String(c.id)}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </AdminSelect>
+                  </AdminField>
+                </div>
+              </AdminPanel>
+
+              <AdminPanel title={`More creators · ${featuredCreatorIds.length}/4`}>
+                <div className="space-y-4 p-5">
+                  <p className="text-xs text-muted-soft">
+                    Tick to feature; reorder selected creators with the arrows.
+                  </p>
+
+                  {featuredCreatorIds.length > 0 && (
+                    <div className="space-y-2">
+                      {featuredCreatorIds.map((id, index) => {
+                        const creator = creators?.docs?.find((c) => String(c.id) === id);
+                        return (
+                          <div
+                            key={id}
+                            className="flex items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2"
+                          >
+                            <MoveButtons
+                              onUp={() => moveFeaturedCreator(index, -1)}
+                              onDown={() => moveFeaturedCreator(index, 1)}
+                              canUp={index > 0}
+                              canDown={index < featuredCreatorIds.length - 1}
+                            />
+                            <span className="text-sm text-ink">{creator?.name ?? id}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    {(creators?.docs ?? []).map((c) => (
+                      <AdminCheckboxRow
+                        key={c.id}
+                        label={c.name}
                         checked={featuredCreatorIds.includes(String(c.id))}
                         onChange={() => toggleFeaturedCreator(String(c.id))}
                       />
-                    }
-                    label={c.name}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          </Stack>
-        </AdminCard>
-      )}
+                    ))}
+                  </div>
+                </div>
+              </AdminPanel>
+            </div>
+          )}
 
-      {tab === 3 && (
-        <AdminCard sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            <Box>
-              <FormControlLabel
-                control={
-                  <Checkbox
+          {tab === 3 && (
+            <div className="space-y-5">
+              <AdminPanel title="Section toggles">
+                <div className="space-y-2 p-5">
+                  <AdminCheckboxRow
+                    label="Show Reels & Shorts section"
+                    hint="The video row rendered right under the hero."
                     checked={reelsEnabled}
                     onChange={(e) => setReelsEnabled(e.target.checked)}
                   />
-                }
-                label="Show Reels & Shorts section"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
+                  <AdminCheckboxRow
+                    label="Show Browse Archive CTA"
+                    hint="Full-bleed CTA band above the newsletter block."
                     checked={archiveCtaEnabled}
                     onChange={(e) => setArchiveCtaEnabled(e.target.checked)}
                   />
-                }
-                label="Show Browse Archive CTA"
-              />
-            </Box>
+                </div>
+              </AdminPanel>
 
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                Reels in carousel ({reelIds.length})
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Tick to include; reorder selected reels with the arrows.
-              </Typography>
+              <AdminPanel title={`Reels in carousel · ${reelIds.length}`}>
+                <div className="space-y-4 p-5">
+                  <p className="text-xs text-muted-soft">
+                    Tick to include; reorder selected reels with the arrows.
+                  </p>
 
-              {reelIds.length > 0 && (
-                <Stack spacing={1} sx={{ mt: 2 }}>
-                  {reelIds.map((id, index) => {
-                    const reel = reels?.docs?.find((r) => String(r.id) === id);
-                    return (
-                      <Stack
-                        key={id}
-                        direction="row"
-                        spacing={1}
-                        alignItems="center"
-                        sx={{
-                          p: 1,
-                          border: "1px solid",
-                          borderColor: "divider",
-                          borderRadius: 1,
-                        }}
-                      >
-                        <IconButton
-                          size="small"
-                          aria-label="Move up"
-                          disabled={index === 0}
-                          onClick={() => moveReel(index, -1)}
-                        >
-                          <ArrowUpwardIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          aria-label="Move down"
-                          disabled={index === reelIds.length - 1}
-                          onClick={() => moveReel(index, 1)}
-                        >
-                          <ArrowDownwardIcon fontSize="small" />
-                        </IconButton>
-                        <Typography variant="body2">{reel?.title ?? id}</Typography>
-                      </Stack>
-                    );
-                  })}
-                </Stack>
-              )}
+                  {reelIds.length > 0 && (
+                    <div className="space-y-2">
+                      {reelIds.map((id, index) => {
+                        const reel = reels?.docs?.find((r) => String(r.id) === id);
+                        return (
+                          <div
+                            key={id}
+                            className="flex items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2"
+                          >
+                            <MoveButtons
+                              onUp={() => moveReel(index, -1)}
+                              onDown={() => moveReel(index, 1)}
+                              canUp={index > 0}
+                              canDown={index < reelIds.length - 1}
+                            />
+                            <span className="text-sm text-ink">{reel?.title ?? id}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
-              <Stack spacing={0.5} sx={{ mt: 2 }}>
-                {(reels?.docs ?? []).map((r) => (
-                  <FormControlLabel
-                    key={r.id}
-                    control={
-                      <Checkbox
+                  <div className="space-y-1.5">
+                    {(reels?.docs ?? []).map((r) => (
+                      <AdminCheckboxRow
+                        key={r.id}
+                        label={r.title}
                         checked={reelIds.includes(String(r.id))}
                         onChange={() => toggleReel(String(r.id))}
                       />
-                    }
-                    label={r.title}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          </Stack>
-        </AdminCard>
+                    ))}
+                  </div>
+                </div>
+              </AdminPanel>
+            </div>
+          )}
+        </>
       )}
-    </Stack>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────── sub-components */
+
+function IconRoundBtn({
+  children,
+  onClick,
+  label,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  label: string;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </button>
+  );
+}
+
+function MoveButtons({
+  onUp,
+  onDown,
+  canUp,
+  canDown,
+}: {
+  onUp: () => void;
+  onDown: () => void;
+  canUp: boolean;
+  canDown: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <IconRoundBtn onClick={onUp} label="Move up" disabled={!canUp}>
+        <ArrowUpwardRounded sx={{ fontSize: 14 }} />
+      </IconRoundBtn>
+      <IconRoundBtn onClick={onDown} label="Move down" disabled={!canDown}>
+        <ArrowDownwardRounded sx={{ fontSize: 14 }} />
+      </IconRoundBtn>
+    </div>
   );
 }
