@@ -96,11 +96,18 @@ export type NewsArticleInput = {
   /** Slugs / names — powers the `articleSection` field for Google news. */
   section?: string;
   keywords?: string[];
+  /** Approximate word count of the article body. Signal for reading-time
+   * previews in Discover and voice-first surfaces. */
+  wordCount?: number;
 };
 
 /**
  * NewsArticle schema — the shape Google Rich Results reads for headline
- * cards, in-Discover previews, and Search publisher-carousels.
+ * cards, in-Discover previews, Search publisher-carousels, and the
+ * voice/AI assistants that read out headlines and excerpts.
+ *
+ * `speakable` marks the headline + standfirst so Assistant / AI readers
+ * pick them up when narrating the article.
  */
 export function newsArticleSchema(input: NewsArticleInput): Record<string, unknown> {
   const url = toAbsoluteUrl(input.url);
@@ -127,6 +134,15 @@ export function newsArticleSchema(input: NewsArticleInput): Record<string, unkno
     },
     articleSection: input.section,
     keywords: input.keywords?.length ? input.keywords.join(", ") : undefined,
+    wordCount: input.wordCount,
+    speakable: {
+      "@type": "SpeakableSpecification",
+      // Selectors match the headline and the standfirst on the rendered
+      // article — adjust if you rename these classes. Assistant only
+      // narrates elements it can find, so an unmatched selector is a
+      // no-op rather than an error.
+      cssSelector: ["h1", "[data-speakable='excerpt']"],
+    },
   };
 }
 

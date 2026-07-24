@@ -121,6 +121,11 @@ export default async function Page({ params }: PageProps) {
     { name: article.title, url: canonical },
   ];
 
+  // Word count for JSON-LD — cheap approximation from the existing reading-
+  // time estimate (200 wpm) so we don't walk the Lexical body twice.
+  const readingMinutes = (article as { readingTime?: number }).readingTime;
+  const wordCount = readingMinutes ? readingMinutes * 200 : undefined;
+
   const articleSchema = newsArticleSchema({
     url: canonical,
     headline: article.title,
@@ -131,6 +136,7 @@ export default async function Page({ params }: PageProps) {
     authorName: article.author?.name ?? undefined,
     section: primaryCategory?.name,
     keywords: tagNames,
+    wordCount,
   });
 
   return (
