@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { breadcrumbListSchema, JsonLd } from "@/lib/seo/json-ld";
 import { ContactPage } from "@/modules/marketing/pages/ContactPage";
 
 const title = "Contact";
@@ -13,5 +14,15 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <ContactPage />;
+  return (
+    <>
+      <JsonLd
+        data={breadcrumbListSchema([
+          { name: "Home", url: "/" },
+          { name: "Contact", url: "/contact" },
+        ])}
+      />
+      <ContactPage />
+    </>
+  );
 }

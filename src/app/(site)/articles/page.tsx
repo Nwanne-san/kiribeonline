@@ -1,4 +1,9 @@
 import type { Metadata } from "next";
+import {
+  breadcrumbListSchema,
+  collectionPageSchema,
+  JsonLd,
+} from "@/lib/seo/json-ld";
 import { ArticlesPage } from "@/modules/editorial/pages/ArticlesPage";
 
 const title = "Articles";
@@ -13,5 +18,18 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <ArticlesPage />;
+  return (
+    <>
+      <JsonLd
+        data={collectionPageSchema({ name: title, description, url: "/articles" })}
+      />
+      <JsonLd
+        data={breadcrumbListSchema([
+          { name: "Home", url: "/" },
+          { name: "Articles", url: "/articles" },
+        ])}
+      />
+      <ArticlesPage />
+    </>
+  );
 }
