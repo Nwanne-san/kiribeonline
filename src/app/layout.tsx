@@ -48,6 +48,18 @@ export async function generateMetadata(): Promise<Metadata> {
   const description = seo.description?.trim() || SITE_DESCRIPTION;
   const ogImages = seo.ogImage ? [{ url: seo.ogImage }] : undefined;
 
+  // Search engine ownership verification. Both are optional — set the env in
+  // Vercel Production only, then confirm ownership in the respective console.
+  const googleVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim();
+  const bingVerification = process.env.BING_SITE_VERIFICATION?.trim();
+  const verification =
+    googleVerification || bingVerification
+      ? {
+          ...(googleVerification ? { google: googleVerification } : {}),
+          ...(bingVerification ? { other: { "msvalidate.01": bingVerification } } : {}),
+        }
+      : undefined;
+
   return {
     metadataBase: new URL(getSiteBaseUrl()),
     title: {
@@ -55,6 +67,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${SITE_NAME}`,
     },
     description,
+    ...(verification ? { verification } : {}),
     // Advertise the RSS feed so feed readers and RSS discovery UI in
     // browsers can auto-detect it on every page.
     alternates: {
