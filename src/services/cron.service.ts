@@ -24,34 +24,58 @@ export async function getSitemapEntries(): Promise<SitemapEntry[]> {
     PublicRoutes.contact,
     PublicRoutes.privacy,
     PublicRoutes.terms,
+    // Special-cased category routes not backed by article-tagged data — must
+    // be listed explicitly so crawlers discover them.
+    "/categories/spotlight",
+    PublicRoutes.categoryVideos,
   ];
   const staticEntries: SitemapEntry[] = staticPaths.map((path) => ({
     url: `${baseUrl}${path}`,
   }));
 
-  // Articles are best-effort: a DB outage degrades the sitemap to static routes
-  // rather than failing the request (and the static prerender), mirroring the
-  // resilience of the other public content queries.
+  // Articles + taxonomy are best-effort: a DB outage degrades the sitemap to
+  // static routes rather than failing the request (and the static prerender),
+  // mirroring the resilience of the other public content queries.
   try {
     const payload = await getPayloadClient();
-    const { docs: articles } = await payload.find({
-      collection: "articles",
-      where: { status: { equals: "published" } },
-      limit: 1000,
-      overrideAccess: true,
-    });
+    const [articlesRes, categoriesRes, tagsRes] = await Promise.all([
+      payload.find({
+        collection: "articles",
+        where: { status: { equals: "published" } },
+        limit: 1000,
+        overrideAccess: true,
+      }),
+      payload.find({
+        collection: "categories",
+        limit: 200,
+        overrideAccess: true,
+      }),
+      payload.find({
+        collection: "tags",
+        limit: 500,
+        overrideAccess: true,
+      }),
+    ]);
 
     return [
       ...staticEntries,
-      ...articles.map((article) => ({
+      ...articlesRes.docs.map((article) => ({
         url: `${baseUrl}/articles/${article.slug}`,
         lastModified:
           (article.updatedAt as string | undefined) ??
           (article.publishedAt as string | undefined),
       })),
+      ...categoriesRes.docs.map((cat) => ({
+        url: `${baseUrl}/categories/${cat.slug}`,
+        lastModified: cat.updatedAt as string | undefined,
+      })),
+      ...tagsRes.docs.map((tag) => ({
+        url: `${baseUrl}/tags/${tag.slug}`,
+        lastModified: tag.updatedAt as string | undefined,
+      })),
     ];
   } catch (err) {
-    console.error("[sitemap] failed to load articles, serving static routes only", err);
+    console.error("[sitemap] failed to load taxonomies, serving static routes only", err);
     return staticEntries;
   }
 }

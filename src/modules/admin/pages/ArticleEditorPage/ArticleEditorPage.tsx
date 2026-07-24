@@ -555,8 +555,17 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         ok: seoDescription.trim().length > 0,
         hard: false,
       },
+      {
+        // The article's opengraph-image route falls back to the hero image
+        // when no explicit OG is set, so this is genuinely optional — but a
+        // dedicated share card usually crops better than the hero.
+        key: "ogImage",
+        label: "Dedicated OG image (optional — falls back to hero)",
+        ok: Boolean(seoOgImage),
+        hard: false,
+      },
     ];
-  }, [heroImage, excerpt, categoryIds.length, seoTitle, seoDescription]);
+  }, [heroImage, excerpt, categoryIds.length, seoTitle, seoDescription, seoOgImage]);
 
   const publishBlocked = checklistItems.some((item) => item.hard && !item.ok);
 
