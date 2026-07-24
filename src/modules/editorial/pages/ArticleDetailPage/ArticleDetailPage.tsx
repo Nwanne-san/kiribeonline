@@ -352,6 +352,10 @@ function ArticleDetailContent({
           <Box sx={{ pt: { xs: 5, md: 6 }, pb: 4, borderBottom: "1px solid", borderColor: "divider" }}>
             <Box sx={{ width: 48, height: 4, bgcolor: "var(--color-mustard)", mb: 3 }} />
             <KiribeTypography
+              // `data-speakable` marks this block as the standfirst that
+              // voice/AI assistants should read (see NewsArticle
+              // `speakable.cssSelector` in `src/lib/seo/json-ld.tsx`).
+              data-speakable="excerpt"
               sx={{
                 fontFamily: "var(--font-body), 'Open Sans', sans-serif",
                 fontWeight: 300,
