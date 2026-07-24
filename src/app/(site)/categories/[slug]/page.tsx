@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCategoriesForPublic } from "@/lib/content";
+import { getCategoriesForPublic, getPublishedReels } from "@/lib/content";
 import { getSpotlightArchiveData } from "@/lib/content/query-creators";
 import { CategoryArchivePage } from "@/modules/editorial/pages/CategoryArchivePage";
 import { SpotlightArchivePage } from "@/modules/editorial/pages/SpotlightArchivePage";
+import { VideosArchivePage } from "@/modules/editorial/pages/VideosArchivePage";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -17,6 +18,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const title = "Spotlight — Category";
     const description =
       "In-depth profiles of the directors, actors, and creatives defining contemporary culture.";
+    return {
+      title,
+      description,
+      alternates: { canonical },
+      openGraph: { type: "website", title, description, url: canonical },
+    };
+  }
+
+  if (slug === "videos") {
+    const title = "Videos — Category";
+    const description =
+      "Short-form reels, interviews, and visual features from Kiribé.";
     return {
       title,
       description,
@@ -52,6 +65,14 @@ export default async function Page({ params }: PageProps) {
         moreCreators={moreCreators}
       />
     );
+  }
+
+  // Videos is a reels grid, not an article archive — reels live in a separate
+  // collection and never carried the `videos` category tag on articles, so the
+  // generic archive was always empty here.
+  if (slug === "videos") {
+    const reels = await getPublishedReels(48);
+    return <VideosArchivePage reels={reels} />;
   }
 
   // Junk slugs 404 instead of rendering an empty archive with a 200. A real

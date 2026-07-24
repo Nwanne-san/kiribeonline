@@ -1,11 +1,17 @@
 "use client";
 
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
+import SaveRounded from "@mui/icons-material/SaveRounded";
 import { useEffect, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
-import { KiribeButton, KiribeTextField, KiribeTypography } from "@/modules/shared/components/ui";
-import { KiribeLoader } from "@/modules/shared/components/brand";
+import {
+  AdminButton,
+  AdminField,
+  AdminInput,
+  AdminPageHeader,
+  AdminPanel,
+  AdminTextarea,
+} from "@/modules/admin/components/ui/AdminPrimitives";
+import { PanelListSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import client from "@/utils/client";
 import { unwrapApiData } from "@/lib/api/unwrap";
@@ -41,32 +47,57 @@ export function SettingsAdminPage() {
     options: { keys: ["admin", "settings"] },
   });
 
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-        <KiribeLoader size="sm" label="Loading settings" />
-      </Box>
-    );
-  }
-
   return (
-    <Stack spacing={3} sx={{ maxWidth: 560 }}>
-      <KiribeTypography variant="h4">Site settings</KiribeTypography>
-      <KiribeTextField label="Site name" value={siteName} onChange={(e) => setSiteName(e.target.value)} fullWidth />
-      <KiribeTextField
-        label="Default SEO description"
-        value={seoDescription}
-        onChange={(e) => setSeoDescription(e.target.value)}
-        fullWidth
-        multiline
-        rows={3}
+    <div className="space-y-5">
+      <AdminPageHeader
+        title="Site settings"
+        subtitle="Global site metadata used by the header, SEO tags, and social share cards."
       />
-      <KiribeButton
-        onClick={() => mutate({ siteName, seoDefaults: { description: seoDescription } })}
-        disabled={isPending}
-      >
-        {isPending ? "Saving..." : "Save settings"}
-      </KiribeButton>
-    </Stack>
+
+      <AdminPanel title="Identity & SEO">
+        {loading ? (
+          <PanelListSkeleton rows={3} />
+        ) : (
+          <div className="space-y-4 p-5">
+            <AdminField
+              label="Site name"
+              htmlFor="settings-site-name"
+              hint="Shown in the header, browser tab, and social previews."
+            >
+              <AdminInput
+                id="settings-site-name"
+                value={siteName}
+                onChange={(e) => setSiteName(e.target.value)}
+                placeholder="Kiribé Online"
+              />
+            </AdminField>
+
+            <AdminField
+              label="Default SEO description"
+              htmlFor="settings-seo-description"
+              hint="Fallback meta description used on pages without an explicit one."
+            >
+              <AdminTextarea
+                id="settings-seo-description"
+                value={seoDescription}
+                onChange={(e) => setSeoDescription(e.target.value)}
+                rows={3}
+                placeholder="Kiribé Online is a premium editorial destination for..."
+              />
+            </AdminField>
+          </div>
+        )}
+      </AdminPanel>
+
+      <div className="flex items-center gap-2">
+        <AdminButton
+          onClick={() => mutate({ siteName, seoDefaults: { description: seoDescription } })}
+          disabled={isPending || loading}
+          leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
+        >
+          {isPending ? "Saving…" : "Save settings"}
+        </AdminButton>
+      </div>
+    </div>
   );
 }

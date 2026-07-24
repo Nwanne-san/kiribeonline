@@ -24,6 +24,7 @@ export enum AdminRoutes {
   settings = "/admin/settings",
   analytics = "/admin/analytics",
   usersRoles = "/admin/users",
+  subscribers = "/admin/subscribers",
   creators = "/admin/creators",
   creatorNew = "/admin/creators/new",
   creatorEdit = "/admin/creators/:id/edit",

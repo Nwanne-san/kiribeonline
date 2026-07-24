@@ -1,19 +1,21 @@
 "use client";
 
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
+import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
+import SaveRounded from "@mui/icons-material/SaveRounded";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
-import {
-  AdminCard,
-  AdminFieldLabel,
-  AdminPageHeader,
-} from "@/modules/admin/components/AdminUi";
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
 import type { AdminMediaRef } from "@/server/modules";
+import {
+  AdminButton,
+  AdminField,
+  AdminInput,
+  AdminPageHeader,
+  AdminPanel,
+  AdminTextarea,
+} from "@/modules/admin/components/ui/AdminPrimitives";
 import { AdminRoutes } from "@/routes/admin.routes";
-import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import client from "@/utils/client";
 import { unwrapApiData } from "@/lib/api/unwrap";
@@ -62,8 +64,10 @@ export function CreatorEditorPage({ creatorId }: CreatorEditorPageProps) {
     },
   });
 
+  const canSave = name.trim() && role.trim() && portrait?.id && !isPending;
+
   const save = () => {
-    if (!name.trim() || !role.trim() || !portrait?.id) return;
+    if (!canSave) return;
     mutate({
       name: name.trim(),
       role: role.trim(),
@@ -74,41 +78,84 @@ export function CreatorEditorPage({ creatorId }: CreatorEditorPageProps) {
   };
 
   return (
-    <>
-      <AdminPageHeader title={isEdit ? "Edit creator" : "New creator"} />
-      <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-        <AdminCard sx={{ flex: 1, p: 3 }}>
-          <Stack spacing={2}>
-            <Box>
-              <AdminFieldLabel label="Name" required />
-              <KiribeTextField fullWidth value={name} onChange={(e) => setName(e.target.value)} />
-            </Box>
-            <Box>
-              <AdminFieldLabel label="Role" required />
-              <KiribeTextField fullWidth value={role} onChange={(e) => setRole(e.target.value)} />
-            </Box>
-            <Box>
-              <AdminFieldLabel label="Bio" />
-              <KiribeTextField fullWidth multiline minRows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
-            </Box>
-            <Box>
-              <AdminFieldLabel label="Quote" />
-              <KiribeTextField fullWidth multiline minRows={2} value={quote} onChange={(e) => setQuote(e.target.value)} />
-            </Box>
-          </Stack>
-        </AdminCard>
-        <AdminCard sx={{ width: { md: 320 }, p: 3 }}>
-          <MediaPicker label="Portrait" value={portrait} onChange={setPortrait} />
-        </AdminCard>
-      </Stack>
-      <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-        <KiribeButton onClick={save} disabled={isPending}>
-          {isPending ? "Saving..." : "Save"}
-        </KiribeButton>
-        <KiribeButton variant="outlined" onClick={() => router.push(AdminRoutes.creators)}>
+    <div className="space-y-5">
+      <AdminPageHeader
+        title={isEdit ? "Edit creator" : "New creator"}
+        subtitle="Directors, actors, and other cultural figures featured across the site."
+        action={
+          <AdminButton
+            variant="secondary"
+            leftIcon={<ArrowBackRounded sx={{ fontSize: 16 }} />}
+            onClick={() => router.push(AdminRoutes.creators)}
+          >
+            Back
+          </AdminButton>
+        }
+      />
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+        <AdminPanel title="Profile">
+          <div className="space-y-4 p-5">
+            <AdminField label="Name" htmlFor="creator-name" required>
+              <AdminInput
+                id="creator-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Kunle Afolayan"
+              />
+            </AdminField>
+
+            <AdminField label="Role" htmlFor="creator-role" required
+              hint="Short professional descriptor — Director, Actor, Editor, etc."
+            >
+              <AdminInput
+                id="creator-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              />
+            </AdminField>
+
+            <AdminField label="Bio" htmlFor="creator-bio">
+              <AdminTextarea
+                id="creator-bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={4}
+                placeholder="Short biography — 2–3 sentences."
+              />
+            </AdminField>
+
+            <AdminField label="Pull quote" htmlFor="creator-quote">
+              <AdminTextarea
+                id="creator-quote"
+                value={quote}
+                onChange={(e) => setQuote(e.target.value)}
+                rows={2}
+                placeholder="A one-line quote surfaced on the Spotlight card."
+              />
+            </AdminField>
+          </div>
+        </AdminPanel>
+
+        <AdminPanel title="Portrait">
+          <div className="p-5">
+            <MediaPicker label="Portrait" value={portrait} onChange={setPortrait} />
+          </div>
+        </AdminPanel>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <AdminButton
+          onClick={save}
+          disabled={!canSave}
+          leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
+        >
+          {isPending ? "Saving…" : "Save"}
+        </AdminButton>
+        <AdminButton variant="secondary" onClick={() => router.push(AdminRoutes.creators)}>
           Cancel
-        </KiribeButton>
-      </Stack>
-    </>
+        </AdminButton>
+      </div>
+    </div>
   );
 }

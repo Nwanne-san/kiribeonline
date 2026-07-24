@@ -34,6 +34,7 @@ export const CAPABILITIES = [
   "reels:manage",
   "analytics:read",
   "audit:view",
+  "subscribers:manage",
   "users:manage",
   "settings:manage",
 ] as const;

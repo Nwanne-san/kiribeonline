@@ -10,6 +10,7 @@ import CalendarTodayOutlined from "@mui/icons-material/CalendarTodayOutlined";
 import QueryStatsOutlined from "@mui/icons-material/QueryStatsOutlined";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
 import HistoryOutlined from "@mui/icons-material/HistoryOutlined";
+import MarkEmailReadOutlined from "@mui/icons-material/MarkEmailReadOutlined";
 import HomeOutlined from "@mui/icons-material/HomeOutlined";
 import StarOutline from "@mui/icons-material/StarOutline";
 import MovieOutlined from "@mui/icons-material/MovieOutlined";
@@ -76,6 +77,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: GroupOutlined,
         route: AdminRoutes.usersRoles,
         capability: "users:manage",
+      },
+      {
+        label: "Subscribers",
+        icon: MarkEmailReadOutlined,
+        route: AdminRoutes.subscribers,
+        capability: "subscribers:manage",
       },
       {
         label: "Audit Log",

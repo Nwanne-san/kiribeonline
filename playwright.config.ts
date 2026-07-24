@@ -34,6 +34,16 @@ export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   use: {
     baseURL,
+    // CSRF middleware (`assertSameOrigin`) rejects state-changing requests
+    // whose Origin/Referer isn't on the allowlist. Playwright's
+    // APIRequestContext + programmatic `page.request` calls don't set
+    // `Origin` by default, so any test that POSTs to /api/admin/* would
+    // 403 with "Missing Origin/Referer". Force the header to the same
+    // origin the server is bound to so real user traffic is what tests
+    // exercise — not a stripped-header edge case.
+    extraHTTPHeaders: {
+      Origin: baseURL,
+    },
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
