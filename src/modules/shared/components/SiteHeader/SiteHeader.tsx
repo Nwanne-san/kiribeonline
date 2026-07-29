@@ -244,6 +244,13 @@ export function SiteHeader({
                 sx={{
                   display: { xs: "none", sm: "inline-flex" },
                   color: "common.white",
+                  px: 2.5,
+                  py: 1,
+                  borderRadius: 0,
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
                 }}
               >
                 Subscribe
