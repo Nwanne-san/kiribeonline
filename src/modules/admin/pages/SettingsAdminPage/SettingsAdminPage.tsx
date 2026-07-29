@@ -1,103 +1,290 @@
 "use client";
 
+import AddRounded from "@mui/icons-material/AddRounded";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import SaveRounded from "@mui/icons-material/SaveRounded";
 import { useEffect, useState } from "react";
-import { ApiMethods } from "../../../../../types/service";
 import {
   AdminButton,
   AdminField,
   AdminInput,
   AdminPageHeader,
   AdminPanel,
+  AdminSelect,
   AdminTextarea,
 } from "@/modules/admin/components/ui/AdminPrimitives";
 import { PanelListSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
-import { useMutationService } from "@/utils/hooks/useMutationService";
-import client from "@/utils/client";
-import { unwrapApiData } from "@/lib/api/unwrap";
+import { MediaPicker } from "@/modules/admin/components/MediaPicker";
+import { usePermissions } from "@/modules/admin/hooks/usePermissions";
+import {
+  toMediaRef,
+  useSaveSiteSettings,
+  useSiteSettings,
+} from "@/modules/admin/hooks/useSiteSettings";
+import type { AdminMediaRef } from "@/server/modules";
+import { SOCIAL_PLATFORMS, normalizeSocialPlatform } from "@/constants";
+
+type SocialRow = { platform: string; url: string };
+
+const SEO_TITLE_MAX = 60;
+const SEO_DESCRIPTION_MAX = 160;
 
 export function SettingsAdminPage() {
+  const { can } = usePermissions();
+  const canManage = can("settings:manage");
+
+  const { data, isLoading } = useSiteSettings();
+  const { mutate, isPending } = useSaveSiteSettings("Settings saved");
+
   const [siteName, setSiteName] = useState("");
+  const [logo, setLogo] = useState<AdminMediaRef | null>(null);
+  const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [ogImage, setOgImage] = useState<AdminMediaRef | null>(null);
+  const [socialLinks, setSocialLinks] = useState<SocialRow[]>([]);
 
+  // Hydrate the form once the global arrives (and again after a save refetch —
+  // the server is the source of truth for what actually persisted).
   useEffect(() => {
-    void (async () => {
-      try {
-        const res = await client.request<never, Record<string, unknown>>({
-          path: "/api/admin/settings",
-          method: ApiMethods.GET,
-        });
-        const data = unwrapApiData(res);
-        setSiteName(String(data.siteName ?? ""));
-        const seo = data.seoDefaults as { description?: string } | undefined;
-        setSeoDescription(String(seo?.description ?? ""));
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+    if (!data) return;
+    setSiteName(data.siteName ?? "");
+    setLogo(toMediaRef(data.logo ?? null));
+    setSeoTitle(data.seoDefaults?.title ?? "");
+    setSeoDescription(data.seoDefaults?.description ?? "");
+    setOgImage(toMediaRef(data.seoDefaults?.ogImage ?? null));
+    setSocialLinks(
+      (data.socialLinks ?? [])
+        .map((link) => ({
+          platform: normalizeSocialPlatform(link.platform ?? ""),
+          url: link.url ?? "",
+        }))
+        .filter((link) => link.platform || link.url)
+    );
+  }, [data]);
 
-  const { mutate, isPending } = useMutationService({
-    service: (payload) => ({
-      path: "/api/admin/settings",
-      method: ApiMethods.PATCH,
-      data: payload,
-    }),
-    options: { keys: ["admin", "settings"] },
-  });
+  const usedPlatforms = new Set(socialLinks.map((link) => link.platform));
+  const nextFreePlatform =
+    SOCIAL_PLATFORMS.find((platform) => !usedPlatforms.has(platform.key))?.key ?? "";
+
+  const addSocialRow = () => {
+    setSocialLinks((prev) => [...prev, { platform: nextFreePlatform, url: "" }]);
+  };
+
+  const updateSocialRow = (index: number, patch: Partial<SocialRow>) => {
+    setSocialLinks((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row))
+    );
+  };
+
+  const removeSocialRow = (index: number) => {
+    setSocialLinks((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const save = () => {
+    mutate({
+      siteName: siteName.trim(),
+      logoId: logo ? String(logo.id) : null,
+      seoDefaults: {
+        title: seoTitle.trim(),
+        description: seoDescription.trim(),
+        ogImageId: ogImage ? String(ogImage.id) : null,
+      },
+      // Drop half-filled rows so an empty URL can't fail server URL validation
+      // and block the rest of the save.
+      socialLinks: socialLinks
+        .map((row) => ({
+          platform: normalizeSocialPlatform(row.platform),
+          url: row.url.trim(),
+        }))
+        .filter((row) => row.platform && row.url),
+    });
+  };
+
+  const saveButton = canManage ? (
+    <AdminButton
+      onClick={save}
+      disabled={isPending || isLoading || !siteName.trim()}
+      leftIcon={<SaveRounded className="text-[16px]" />}
+    >
+      {isPending ? "Saving…" : "Save settings"}
+    </AdminButton>
+  ) : null;
 
   return (
     <div className="space-y-5">
       <AdminPageHeader
         title="Site settings"
         subtitle="Global site metadata used by the header, SEO tags, and social share cards."
+        action={saveButton}
       />
 
-      <AdminPanel title="Identity & SEO">
-        {loading ? (
+      {!canManage && (
+        <div className="border border-border bg-surface-alt px-4 py-3 text-sm text-muted">
+          You have read-only access to site settings. Ask an admin to make changes.
+        </div>
+      )}
+
+      <AdminPanel title="Site identity">
+        {isLoading ? (
           <PanelListSkeleton rows={3} />
         ) : (
-          <div className="space-y-4 p-5">
+          <div className="space-y-5 p-5">
             <AdminField
               label="Site name"
               htmlFor="settings-site-name"
               hint="Shown in the header, browser tab, and social previews."
+              required
             >
               <AdminInput
                 id="settings-site-name"
                 value={siteName}
                 onChange={(e) => setSiteName(e.target.value)}
                 placeholder="Kiribé Online"
+                disabled={!canManage}
+              />
+            </AdminField>
+
+            <MediaPicker
+              label="Logo"
+              value={logo}
+              onChange={setLogo}
+              helperText="Used where the wordmark can't be rendered as SVG (emails, share cards)."
+            />
+          </div>
+        )}
+      </AdminPanel>
+
+      <AdminPanel title="SEO defaults">
+        {isLoading ? (
+          <PanelListSkeleton rows={3} />
+        ) : (
+          <div className="space-y-5 p-5">
+            <AdminField
+              label="Default title"
+              htmlFor="settings-seo-title"
+              hint={`Fallback <title> for pages without their own. ${seoTitle.length}/${SEO_TITLE_MAX} recommended.`}
+            >
+              <AdminInput
+                id="settings-seo-title"
+                value={seoTitle}
+                onChange={(e) => setSeoTitle(e.target.value)}
+                placeholder="Kiribé Online — Entertainment journalism"
+                disabled={!canManage}
               />
             </AdminField>
 
             <AdminField
-              label="Default SEO description"
+              label="Default description"
               htmlFor="settings-seo-description"
-              hint="Fallback meta description used on pages without an explicit one."
+              hint={`Fallback meta description. ${seoDescription.length}/${SEO_DESCRIPTION_MAX} recommended.`}
             >
               <AdminTextarea
                 id="settings-seo-description"
                 value={seoDescription}
                 onChange={(e) => setSeoDescription(e.target.value)}
                 rows={3}
-                placeholder="Kiribé Online is a premium editorial destination for..."
+                placeholder="Kiribé Online is a premium editorial destination for…"
+                disabled={!canManage}
               />
             </AdminField>
+
+            <MediaPicker
+              label="Default share image"
+              value={ogImage}
+              onChange={setOgImage}
+              helperText="Open Graph image for pages without their own. 1200×630 works best."
+            />
           </div>
         )}
       </AdminPanel>
 
-      <div className="flex items-center gap-2">
-        <AdminButton
-          onClick={() => mutate({ siteName, seoDefaults: { description: seoDescription } })}
-          disabled={isPending || loading}
-          leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
-        >
-          {isPending ? "Saving…" : "Save settings"}
-        </AdminButton>
-      </div>
+      <AdminPanel
+        title="Social links"
+        action={
+          canManage ? (
+            <AdminButton
+              variant="secondary"
+              size="sm"
+              onClick={addSocialRow}
+              disabled={!nextFreePlatform}
+              leftIcon={<AddRounded className="text-[14px]" />}
+            >
+              Add link
+            </AdminButton>
+          ) : null
+        }
+      >
+        {isLoading ? (
+          <PanelListSkeleton rows={3} />
+        ) : (
+          <div className="space-y-3 p-5">
+            <p className="text-xs text-muted-soft">
+              Only platforms with a URL appear in the site header rail and footer.
+            </p>
+
+            {socialLinks.length === 0 ? (
+              <div className="border border-dashed border-border bg-surface-alt px-4 py-8 text-center text-sm text-muted-soft">
+                No social links yet.
+              </div>
+            ) : (
+              socialLinks.map((row, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col gap-2 border border-border bg-surface-alt p-3 sm:flex-row sm:items-end"
+                >
+                  <div className="sm:w-48">
+                    <AdminField label="Platform" htmlFor={`settings-social-platform-${index}`}>
+                      <AdminSelect
+                        id={`settings-social-platform-${index}`}
+                        value={row.platform}
+                        onChange={(e) => updateSocialRow(index, { platform: e.target.value })}
+                        disabled={!canManage}
+                      >
+                        <option value="">Select platform</option>
+                        {SOCIAL_PLATFORMS.map((platform) => (
+                          <option
+                            key={platform.key}
+                            value={platform.key}
+                            disabled={
+                              platform.key !== row.platform && usedPlatforms.has(platform.key)
+                            }
+                          >
+                            {platform.label}
+                          </option>
+                        ))}
+                      </AdminSelect>
+                    </AdminField>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <AdminField label="URL" htmlFor={`settings-social-url-${index}`}>
+                      <AdminInput
+                        id={`settings-social-url-${index}`}
+                        type="url"
+                        value={row.url}
+                        onChange={(e) => updateSocialRow(index, { url: e.target.value })}
+                        placeholder="https://instagram.com/kiribeonline"
+                        disabled={!canManage}
+                      />
+                    </AdminField>
+                  </div>
+
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => removeSocialRow(index)}
+                      aria-label={`Remove ${row.platform || "social"} link`}
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-surface text-ink-secondary transition-colors hover:border-admin-primary hover:text-admin-primary"
+                    >
+                      <DeleteOutlineRounded className="text-[16px]" />
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </AdminPanel>
     </div>
   );
 }

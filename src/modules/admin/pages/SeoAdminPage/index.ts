@@ -1,0 +1,1 @@
+export { SeoAdminPage } from "./SeoAdminPage";

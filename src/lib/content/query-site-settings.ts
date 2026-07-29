@@ -1,7 +1,12 @@
 import { unstable_cache } from "next/cache";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
-import type { MediaAsset, SiteSettings } from "@/modules/shared/types/content";
+import { getNavigationChrome } from "@/server/modules/navigation";
+import type {
+  MediaAsset,
+  SiteNavigation,
+  SiteSettings,
+} from "@/modules/shared/types/content";
 
 type RawMedia = { id: string | number; url?: string | null; filename?: string | null; alt?: string | null };
 
@@ -35,15 +40,46 @@ const getSiteSettingsCached = unstable_cache(
   { tags: ["site-settings"], revalidate: 60 }
 );
 
+/**
+ * Drops rows an admin has toggled off and strips the editing-only fields, so
+ * the header/footer render exactly what's visible and nothing more. Header
+ * links arrive from the service already capped at `NAV_MAX_HEADER_LINKS`.
+ */
+async function fetchNavigation(): Promise<SiteNavigation | undefined> {
+  try {
+    const chrome = await getNavigationChrome();
+    return {
+      headerLinks: chrome.headerLinks
+        .filter((link) => link.visible && link.label && link.href)
+        .map(({ label, href }) => ({ label, href })),
+      footerColumns: chrome.footerColumns
+        .map((col) => ({
+          title: col.title,
+          links: col.links
+            .filter((link) => link.visible && link.label && link.href)
+            .map(({ label, href }) => ({ label, href })),
+        }))
+        .filter((col) => col.title && col.links.length > 0),
+    };
+  } catch {
+    // Chrome is decoration — never let it take down the layout.
+    return undefined;
+  }
+}
+
 async function fetchSiteSettingsUncached(): Promise<SiteSettings> {
   try {
     const payload = await getPayloadClient();
-    const raw = (await payload.findGlobal({
-      slug: "site-settings",
-      depth: 1,
-    })) as RawSettings;
+    const [raw, navigation] = await Promise.all([
+      payload.findGlobal({
+        slug: "site-settings",
+        depth: 1,
+      }) as Promise<RawSettings>,
+      fetchNavigation(),
+    ]);
 
     return {
+      navigation,
       siteName: raw.siteName ?? "Kiribe Online",
       logo: mapMedia(raw.logo),
       brandColors: {

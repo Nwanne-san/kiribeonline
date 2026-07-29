@@ -70,6 +70,21 @@ export interface SeoMetadata {
   ogImage?: string;
 }
 
+export interface SiteNavLink {
+  label: string;
+  href: string;
+}
+
+/**
+ * Header/footer chrome resolved for the public site. Always populated — the
+ * server falls back to category-derived defaults when an admin hasn't saved a
+ * custom nav — and `headerLinks` is already capped and visibility-filtered.
+ */
+export interface SiteNavigation {
+  headerLinks: SiteNavLink[];
+  footerColumns: Array<{ title: string; links: SiteNavLink[] }>;
+}
+
 export interface SiteSettings {
   siteName: string;
   logo?: MediaAsset;
@@ -79,6 +94,7 @@ export interface SiteSettings {
   };
   socialLinks?: Array<{ platform: string; url: string }>;
   seoDefaults?: SeoMetadata;
+  navigation?: SiteNavigation;
 }
 
 export type HomepageModuleLayout = "grid-3" | "grid-2" | "list" | "hero-plus-grid";

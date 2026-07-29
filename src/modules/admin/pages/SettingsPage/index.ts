@@ -1,1 +1,1 @@
-export { SettingsAdminPage as SettingsPage } from "../SettingsAdminPage/SettingsAdminPage";
+export { SettingsAdminPage as SettingsPage } from "../SettingsAdminPage";

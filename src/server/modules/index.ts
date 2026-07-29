@@ -11,4 +11,6 @@ export * from "./analytics";
 export * from "./homepage";
 export * from "./settings";
 export * from "./subscribers";
+export * from "./pages";
+export * from "./navigation";
 export * from "../shared/types";
