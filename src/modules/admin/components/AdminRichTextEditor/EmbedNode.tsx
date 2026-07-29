@@ -127,7 +127,7 @@ export class EmbedNode extends DecoratorNode<JSX.Element> {
             fontWeight: 700,
             letterSpacing: "0.06em",
             textTransform: "uppercase",
-            color: "#7F0400",
+            color: "#6b1d2a",
             background: "#F3E9C6",
             padding: "3px 8px",
             borderRadius: 4,

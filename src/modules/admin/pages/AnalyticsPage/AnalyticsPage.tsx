@@ -96,7 +96,7 @@ export function AnalyticsPage() {
             {statusEntries.map(([status, count]) => (
               <div
                 key={status}
-                className="flex items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2"
+                className="flex items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2"
               >
                 <Pill tone={STATUS_TONE[status] ?? "neutral"}>
                   {STATUS_LABEL[status] ?? status}

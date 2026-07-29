@@ -28,15 +28,23 @@ export function useModalRoute() {
     [pathname, router, searchParams]
   );
 
-  const closeModal = useCallback(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete(URL_PARAMS.modal);
-    const query = params.toString();
-    // scroll: false — closing a modal returns to the page exactly as it was.
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
-  }, [pathname, router, searchParams]);
+  /**
+   * `alsoClear` removes the modal's own params too (e.g. `reel`, `image`), so
+   * closing doesn't leave a stale id in the URL that would reopen on refresh.
+   */
+  const closeModal = useCallback(
+    (alsoClear?: string[]) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete(URL_PARAMS.modal);
+      alsoClear?.forEach((key) => params.delete(key));
+      const query = params.toString();
+      // scroll: false — closing a modal returns to the page exactly as it was.
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams]
+  );
 
   const navigateBack = useCallback(() => {
     if (modal) {

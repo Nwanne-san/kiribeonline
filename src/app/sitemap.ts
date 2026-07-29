@@ -19,7 +19,7 @@ const getCachedSitemapEntries = unstable_cache(getSitemapEntries, ["public-sitem
   // Bust when articles, categories, or tags change so the sitemap doesn't
   // lag content changes. Homepage tag is included because our Categories /
   // Tags admin routes revalidate it on write (see `revalidate-homepage`).
-  tags: ["articles", "homepage"],
+  tags: ["articles", "homepage", "pages"],
   revalidate: 3600,
 });
 

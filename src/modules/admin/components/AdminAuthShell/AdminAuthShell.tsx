@@ -43,7 +43,7 @@ export function AdminAuthShell({
         <BrandMark height={36} tone="light" />
       </Link>
 
-      <div className="w-full max-w-[420px] rounded-lg bg-white p-6 shadow-elevated sm:p-8">
+      <div className="w-full max-w-[420px] rounded-none bg-white p-6 shadow-elevated sm:p-8">
         <h1 className="font-headline text-2xl font-semibold leading-tight text-ink">
           {title}
         </h1>

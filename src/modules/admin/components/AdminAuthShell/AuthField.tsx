@@ -4,7 +4,7 @@ import type { InputHTMLAttributes } from "react";
 import { forwardRef, useId, useState } from "react";
 
 const BASE_INPUT =
-  "block w-full rounded-md border border-border bg-white px-3 py-2.5 text-[15px] leading-6 text-ink shadow-sm placeholder:text-ink-secondary focus:outline-none focus-visible:border-burgundy focus-visible:ring-2 focus-visible:ring-burgundy/20 disabled:cursor-not-allowed disabled:opacity-60";
+  "block w-full rounded-none border border-border bg-white px-3 py-2.5 text-[15px] leading-6 text-ink shadow-sm placeholder:text-ink-secondary focus:outline-none focus-visible:border-burgundy focus-visible:ring-2 focus-visible:ring-burgundy/20 disabled:cursor-not-allowed disabled:opacity-60";
 
 type AuthFieldProps = {
   label: string;

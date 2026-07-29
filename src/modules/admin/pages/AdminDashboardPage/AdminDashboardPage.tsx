@@ -371,7 +371,7 @@ function ArticleRow({
       className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-surface-alt"
     >
       {date && (
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-ink text-white">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-none bg-ink text-white">
           <span className="text-[0.5625rem] font-semibold uppercase leading-none">
             {date.toLocaleDateString("en-GB", { month: "short" })}
           </span>

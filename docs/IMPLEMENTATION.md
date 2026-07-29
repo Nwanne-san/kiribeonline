@@ -32,6 +32,12 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [ ] Figma MCP connected with file access
 - [ ] Color/spacing tokens confirmed in `src/theme/tailwind.css`
 - [x] Shared layout components (`SiteHeader`, `SiteFooter`)
+- [ ] MUI `sx` → Tailwind `className` migration — **reverted 2026-07-29.** A
+      bulk sweep across ~88 components regressed visual parity with Figma
+      (buttons, text fields, textareas, and type scale all drifted). Redo
+      component-by-component against the Figma node specs, verifying each
+      screen before moving on. Snapshot of the reverted sweep:
+      branch `wip/tailwind-sweep-snapshot`.
 
 ---
 
@@ -54,9 +60,22 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [x] Category/tag management
 - [x] Media library
 - [x] Homepage builder + Editor's Picks + per-category layout
-- [x] Site settings editor
+- [x] Site settings editor (site name, logo, SEO defaults, social links)
 - [x] Analytics (viewCount tables + GA4 link)
 - [x] Audit log viewer (filters, pagination, metadata expand — `audit:view` capability)
+- [x] Editorial Calendar (`/admin/calendar` — scheduled articles month grid)
+- [x] SEO hub (`/admin/seo` — defaults + top articles; homepage deep-link)
+- [x] Pages CMS (`/admin/pages` — full CRUD on the `pages` collection; rich-text
+      body, SEO group, draft/published; renders publicly at `/<slug>`)
+- [x] Navigation & Footer (`/admin/navigation` — header links + footer columns
+      persisted on the `site-settings` global; falls back to category-derived
+      defaults until an admin saves)
+- [x] Header nav capped at 6 category links (`NAV_MAX_HEADER_LINKS`) — enforced
+      in the Payload array (`maxRows`), the PATCH schema, and the header resolver
+- [x] Admin design system matches the public site — burgundy/mustard/cream (the
+      Figma Make CMS red `#7F0400` + amber `#E6A313` were dropped), square edges
+      everywhere, and `AdminButton` padding/type identical to the public
+      `MuiButton` theme
 
 ### 2.3 Content delivery
 - [x] Server-rendered article detail pages

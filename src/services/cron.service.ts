@@ -38,7 +38,7 @@ export async function getSitemapEntries(): Promise<SitemapEntry[]> {
   // mirroring the resilience of the other public content queries.
   try {
     const payload = await getPayloadClient();
-    const [articlesRes, categoriesRes, tagsRes] = await Promise.all([
+    const [articlesRes, categoriesRes, tagsRes, pagesRes] = await Promise.all([
       payload.find({
         collection: "articles",
         where: { status: { equals: "published" } },
@@ -53,6 +53,12 @@ export async function getSitemapEntries(): Promise<SitemapEntry[]> {
       payload.find({
         collection: "tags",
         limit: 500,
+        overrideAccess: true,
+      }),
+      payload.find({
+        collection: "pages",
+        where: { status: { equals: "published" } },
+        limit: 200,
         overrideAccess: true,
       }),
     ]);
@@ -72,6 +78,13 @@ export async function getSitemapEntries(): Promise<SitemapEntry[]> {
       ...tagsRes.docs.map((tag) => ({
         url: `${baseUrl}/tags/${tag.slug}`,
         lastModified: tag.updatedAt as string | undefined,
+      })),
+      // Editor-authored CMS pages live at the site root (`/<slug>`).
+      ...pagesRes.docs.map((page) => ({
+        url: `${baseUrl}/${page.slug}`,
+        lastModified:
+          (page.updatedAt as string | undefined) ??
+          (page.publishedAt as string | undefined),
       })),
     ];
   } catch (err) {

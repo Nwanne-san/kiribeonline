@@ -91,7 +91,7 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
       <figure
         contentEditable={false}
         style={{
-          borderLeft: "4px solid #7F0400",
+          borderLeft: "4px solid #6b1d2a",
           paddingLeft: 20,
           margin: "8px 0",
         }}

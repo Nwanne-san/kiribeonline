@@ -30,11 +30,16 @@ export async function PATCH(request: NextRequest) {
     if (input.logoId !== undefined) data.logo = input.logoId;
     if (input.socialLinks) data.socialLinks = input.socialLinks;
     if (input.seoDefaults) {
-      data.seoDefaults = {
+      const seoDefaults: Record<string, unknown> = {
         title: input.seoDefaults.title,
         description: input.seoDefaults.description,
-        ogImage: input.seoDefaults.ogImageId ?? undefined,
       };
+      // Only touch the upload relation when the client sent one — an explicit
+      // `null` clears it, an omitted key leaves the current image alone.
+      if (input.seoDefaults.ogImageId !== undefined) {
+        seoDefaults.ogImage = input.seoDefaults.ogImageId;
+      }
+      data.seoDefaults = seoDefaults;
     }
     const updated = await updateSiteSettings(data);
     return apiSuccess(updated);

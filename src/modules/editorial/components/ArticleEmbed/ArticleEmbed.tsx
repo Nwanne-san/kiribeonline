@@ -5,6 +5,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import Box from "@mui/material/Box";
 import { useState } from "react";
 import { parseEmbed, type ArticleEmbed as ParsedEmbed } from "@/lib/embeds/parse-embed";
+import { EmbedModal } from "@/modules/shared/components/media/EmbedModal";
 import { KiribeLink, KiribeTypography } from "@/modules/shared/components/ui";
 
 export type ArticleEmbedProps = {
@@ -32,6 +33,12 @@ const PLATFORM_LABEL: Record<ParsedEmbed["platform"], string> = {
  *
  * The iframe mounts only after an explicit click (no third-party network
  * request until the reader opts in), mirroring the VideoReelCard pattern.
+ *
+ * Video embeds open in the shared `EmbedModal` — the same lightbox the reels
+ * use — so every video on the site plays inside Kiribé in one consistent frame
+ * rather than inline at article width. Audio (Spotify) still plays inline: a
+ * modal would interrupt reading for something the reader listens to while
+ * scrolling.
  */
 export function ArticleEmbed({ url }: ArticleEmbedProps) {
   const [activated, setActivated] = useState(false);
@@ -103,9 +110,87 @@ export function ArticleEmbed({ url }: ArticleEmbedProps) {
         maxWidth: (embed.aspectRatio ?? "16 / 9").startsWith("9 /") ? 360 : "100%",
         mx: "auto",
         bgcolor: "#0A0A0A",
-        borderRadius: 2,
+        // Square edges, matching the project-wide surface rule.
+        borderRadius: 0,
         overflow: "hidden",
       };
+
+  // Video: the poster stays put and the player opens over the article.
+  if (!isAudio) {
+    return (
+      <Box component="figure" sx={{ my: 4, mx: 0 }}>
+        <Box
+          component="button"
+          type="button"
+          onClick={() => setActivated(true)}
+          aria-label={`Play ${label} video`}
+          sx={{
+            all: "unset",
+            cursor: "pointer",
+            display: "block",
+            width: "100%",
+            "&:focus-visible > div": {
+              outline: "2px solid",
+              outlineColor: "secondary.main",
+              outlineOffset: 2,
+            },
+          }}
+        >
+          <Box
+            sx={{
+              ...frameSx,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: "#111",
+            }}
+          >
+            <Box
+              sx={{
+                position: "absolute",
+                top: 10,
+                left: 10,
+                px: 1,
+                py: 0.25,
+                bgcolor: "rgba(0,0,0,0.55)",
+                color: "#fff",
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+              }}
+            >
+              {label}
+            </Box>
+            <Box
+              sx={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                bgcolor: "rgba(255,255,255,0.92)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
+              }}
+            >
+              <PlayArrowIcon sx={{ color: "primary.main", fontSize: 30, ml: 0.25 }} />
+            </Box>
+          </Box>
+        </Box>
+
+        <EmbedModal
+          open={activated}
+          onClose={() => setActivated(false)}
+          embedUrl={embed.embedUrl}
+          externalUrl={embed.externalUrl}
+          title={`${label} video`}
+          platform={embed.platform}
+          aspectRatio={embed.aspectRatio}
+        />
+      </Box>
+    );
+  }
 
   if (!activated) {
     return (

@@ -2,9 +2,9 @@
 
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import { useState } from "react";
 import type { PublicReel } from "@/lib/content/query-homepage";
 import { CategoryHero } from "@/modules/editorial/components/CategoryHero";
+import { useReelModal } from "@/modules/editorial/hooks/useReelModal";
 import { VideoModal } from "@/modules/editorial/components/VideoModal";
 import { VideoReelCard } from "@/modules/editorial/components/VideoReelCard";
 import { EmptyState } from "@/modules/shared/components/feedback";
@@ -24,7 +24,9 @@ const ACCENT = CATEGORY_COLORS.videos?.bg ?? "#6B1D2A";
  * Videos because reels live in a separate collection.
  */
 export function VideosArchivePage({ reels }: VideosArchivePageProps) {
-  const [activeReel, setActiveReel] = useState<PublicReel | null>(null);
+  // URL-driven (`?modal=video&reel=<id>`) so an open video is linkable and
+  // closes with the browser Back button.
+  const { activeReel, open: openReel, close: closeReel } = useReelModal(reels);
 
   return (
     <Box sx={{ pb: 10 }}>
@@ -65,7 +67,7 @@ export function VideosArchivePage({ reels }: VideosArchivePageProps) {
             <Grid container spacing={{ xs: 2, md: 3 }}>
               {reels.map((reel) => (
                 <Grid key={reel.id} size={{ xs: 6, sm: 4, md: 3 }}>
-                  <VideoReelCard reel={reel} onSelect={setActiveReel} size="grid" />
+                  <VideoReelCard reel={reel} onSelect={openReel} size="grid" />
                 </Grid>
               ))}
             </Grid>
@@ -73,7 +75,7 @@ export function VideosArchivePage({ reels }: VideosArchivePageProps) {
         )}
       </EditorialContainer>
 
-      <VideoModal reel={activeReel} onClose={() => setActiveReel(null)} />
+      <VideoModal reel={activeReel} onClose={closeReel} />
     </Box>
   );
 }

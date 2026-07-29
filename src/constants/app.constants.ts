@@ -28,6 +28,16 @@ export const URL_PARAMS = {
   modal: "modal",
 } as const;
 
+/**
+ * Hard cap on category/section links in the public header. The Figma nav is a
+ * single centred row between the wordmark and the search + Subscribe cluster;
+ * past six labels it wraps and collides with the utility rail on laptop widths.
+ * Enforced in three places so it can't be exceeded from any direction: the
+ * Payload array (`maxRows`), the admin PATCH schema, and the header resolver.
+ * Overflow categories stay reachable via `/categories` and the mobile drawer.
+ */
+export const NAV_MAX_HEADER_LINKS = 6;
+
 export const LIST_VIEW_MODES = ["grid", "list", "feed"] as const;
 export type ListViewMode = (typeof LIST_VIEW_MODES)[number];
 export const DEFAULT_LIST_VIEW: ListViewMode = "grid";

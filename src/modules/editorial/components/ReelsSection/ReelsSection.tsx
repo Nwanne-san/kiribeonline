@@ -3,8 +3,8 @@
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import NextLink from "next/link";
-import { useState } from "react";
 import type { PublicReel } from "@/lib/content/query-homepage";
+import { useReelModal } from "@/modules/editorial/hooks/useReelModal";
 import { VideoModal } from "@/modules/editorial/components/VideoModal";
 import { VideoReelCard } from "@/modules/editorial/components/VideoReelCard";
 import {
@@ -21,7 +21,9 @@ type ReelsSectionProps = {
 
 export function ReelsSection({ reels }: ReelsSectionProps) {
   const hasReels = reels.length > 0;
-  const [activeReel, setActiveReel] = useState<PublicReel | null>(null);
+  // URL-driven (`?modal=video&reel=<id>`) so an open video is linkable and
+  // closes with the browser Back button.
+  const { activeReel, open: openReel, close: closeReel } = useReelModal(reels);
 
   return (
     <EditorialSection sx={{ bgcolor: "#F9FAFB", py: { xs: 6, md: 8 } }}>
@@ -61,7 +63,7 @@ export function ReelsSection({ reels }: ReelsSectionProps) {
           >
             {reels.map((reel) => (
               <Box key={reel.id} sx={{ flex: "0 0 auto", scrollSnapAlign: "start" }}>
-                <VideoReelCard reel={reel} onSelect={setActiveReel} />
+                <VideoReelCard reel={reel} onSelect={openReel} />
               </Box>
             ))}
           </Box>
@@ -93,7 +95,7 @@ export function ReelsSection({ reels }: ReelsSectionProps) {
         </Stack>
       </EditorialContainer>
 
-      <VideoModal reel={activeReel} onClose={() => setActiveReel(null)} />
+      <VideoModal reel={activeReel} onClose={closeReel} />
     </EditorialSection>
   );
 }

@@ -170,7 +170,7 @@ function SubscribeBandInner() {
                 textTransform: "uppercase",
                 px: 3,
                 py: 1.25,
-                borderRadius: 1,
+                borderRadius: 0,
                 "&:hover": { bgcolor: MUSTARD_DARK },
               }}
             >
@@ -257,9 +257,9 @@ function SubscribeBandInner() {
                 inputProps={{ "aria-label": "Email address", inputMode: "email", autoComplete: "email" }}
                 sx={{
                   bgcolor: "common.white",
-                  borderRadius: 1,
+                  borderRadius: 0,
                   "& .MuiOutlinedInput-root": {
-                    borderRadius: 1,
+                    borderRadius: 0,
                     "& fieldset": { borderColor: "transparent" },
                     "&:hover fieldset": { borderColor: "transparent" },
                     "&.Mui-focused fieldset": { borderColor: MUSTARD, borderWidth: 1 },
@@ -294,7 +294,7 @@ function SubscribeBandInner() {
                   textTransform: "uppercase",
                   px: 3,
                   py: 1.5,
-                  borderRadius: 1,
+                  borderRadius: 0,
                   flexShrink: 0,
                   whiteSpace: "nowrap",
                   "&:hover": { bgcolor: MUSTARD_DARK },

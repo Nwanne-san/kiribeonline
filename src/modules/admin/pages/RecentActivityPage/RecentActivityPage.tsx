@@ -145,7 +145,7 @@ export function RecentActivityPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="space-y-3 rounded-xl border border-border bg-surface p-3 shadow-card">
+      <div className="space-y-3 rounded-none border border-border bg-surface p-3 shadow-card">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-1.5">
             {TABS.map((t, i) => (
@@ -153,9 +153,9 @@ export function RecentActivityPage() {
                 key={t.label}
                 type="button"
                 onClick={() => updateParams({ [PARAM.action]: t.action ?? null })}
-                className={`rounded-md px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
+                className={`rounded-none px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
                   activeTab === i
-                    ? "bg-[#7f0400] text-white"
+                    ? "bg-[#6b1d2a] text-white"
                     : "border border-border text-ink-secondary hover:bg-surface-muted"
                 }`}
               >
@@ -163,7 +163,7 @@ export function RecentActivityPage() {
               </button>
             ))}
           </div>
-          <div className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2 lg:w-64">
+          <div className="flex min-w-0 items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2 lg:w-64">
             <SearchRounded sx={{ fontSize: 18 }} className="shrink-0 text-muted-soft" />
             <input
               type="search"
@@ -180,7 +180,7 @@ export function RecentActivityPage() {
             <select
               value={targetType}
               onChange={(e) => updateParams({ [PARAM.targetType]: e.target.value })}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+              className="w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
             >
               <option value="">All entities</option>
               {(targetTypes ?? []).map((t) => (
@@ -217,7 +217,7 @@ export function RecentActivityPage() {
                         {actorName(e.actorEmail)}
                       </span>
                       <Pill tone={badge.tone}>{badge.label}</Pill>
-                      <code className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[0.6875rem] text-ink-secondary">
+                      <code className="rounded-none bg-surface-muted px-1.5 py-0.5 font-mono text-[0.6875rem] text-ink-secondary">
                         {e.action}
                       </code>
                     </div>
@@ -236,7 +236,7 @@ export function RecentActivityPage() {
                         type="button"
                         onClick={() => setExpandedId(isExpanded ? null : e.id)}
                         aria-label={isExpanded ? "Hide details" : "Show details"}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-surface text-ink-secondary hover:bg-surface-muted"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-none border border-border bg-surface text-ink-secondary hover:bg-surface-muted"
                       >
                         {isExpanded ? (
                           <ExpandLessRounded sx={{ fontSize: 18 }} />
@@ -248,7 +248,7 @@ export function RecentActivityPage() {
                   </div>
                 </div>
                 {isExpanded && hasMeta && (
-                  <pre className="mt-3 overflow-x-auto rounded-lg border border-border-soft bg-surface-muted p-3 text-[0.6875rem] leading-relaxed text-ink-secondary">
+                  <pre className="mt-3 overflow-x-auto rounded-none border border-border-soft bg-surface-muted p-3 text-[0.6875rem] leading-relaxed text-ink-secondary">
                     {JSON.stringify(e.metadata, null, 2)}
                   </pre>
                 )}
@@ -272,7 +272,7 @@ export function RecentActivityPage() {
                 id="audit-page-size"
                 value={limit}
                 onChange={(ev) => setLimit(Number(ev.target.value))}
-                className="rounded-lg border border-border bg-surface px-2 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+                className="rounded-none border border-border bg-surface px-2 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
               >
                 {ADMIN_PAGE_LIMIT_OPTIONS.map((opt) => (
                   <option key={opt} value={opt}>
@@ -326,7 +326,7 @@ function DateInput({ value, onChange }: { value: string; onChange: (v: string) =
       type="date"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+      className="w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
     />
   );
 }
@@ -348,7 +348,7 @@ function PagerButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-none border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
     >
       <Icon sx={{ fontSize: 18 }} />
     </button>
