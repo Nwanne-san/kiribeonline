@@ -334,7 +334,7 @@ export function ArticlesListPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="rounded-xl border border-border bg-surface px-4 py-3 shadow-card">
+      <div className="rounded-none border border-border bg-surface px-4 py-3 shadow-card">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           {/* Status tabs */}
           <div className="flex flex-wrap gap-1.5">
@@ -345,9 +345,9 @@ export function ArticlesListPage() {
                   key={tab.value || "all"}
                   type="button"
                   onClick={() => updateParams({ [PARAM.status]: tab.value })}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                  className={`rounded-none px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
                     active
-                      ? "bg-[#7f0400] text-white"
+                      ? "bg-[#6b1d2a] text-white"
                       : "border border-border bg-surface text-ink-secondary hover:bg-surface-muted"
                   }`}
                 >
@@ -370,16 +370,16 @@ export function ArticlesListPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search articles..."
                 aria-label="Search articles"
-                className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm text-ink placeholder:text-muted-soft focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+                className="w-full rounded-none border border-border bg-surface py-2 pl-9 pr-3 text-sm text-ink placeholder:text-muted-soft focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
               />
             </div>
             <button
               type="button"
               onClick={() => setFilterOpen((v) => !v)}
               aria-pressed={filterOpen}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-none px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
                 filterOpen
-                  ? "border border-[#7f0400] text-[#7f0400]"
+                  ? "border border-[#6b1d2a] text-[#6b1d2a]"
                   : "border border-border bg-surface text-ink-secondary hover:bg-surface-muted"
               }`}
             >
@@ -392,7 +392,7 @@ export function ArticlesListPage() {
 
       {/* Filter panel */}
       {filterOpen && (
-        <div className="animate-fadeIn rounded-xl border border-border bg-surface px-5 py-4 shadow-card">
+        <div className="animate-fadeIn rounded-none border border-border bg-surface px-5 py-4 shadow-card">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FilterSelect
               label="Category"
@@ -425,7 +425,7 @@ export function ArticlesListPage() {
       )}
 
       {/* Table card */}
-      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
+      <div className="overflow-hidden rounded-none border border-border bg-surface shadow-card">
         {/* Bulk action bar */}
         {canEdit && selected.size > 0 && (
           <div className="flex flex-wrap items-center gap-2 border-b border-border-soft bg-surface-alt px-4 py-2.5">
@@ -535,7 +535,7 @@ export function ArticlesListPage() {
                     </td>
                     <td className="px-2 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-surface-muted">
+                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-none bg-surface-muted">
                           {hero ? (
                             <Image
                               src={hero}
@@ -609,7 +609,7 @@ export function ArticlesListPage() {
               id="page-size"
               value={limit}
               onChange={(e) => setLimit(Number(e.target.value))}
-              className="rounded-lg border border-border bg-surface px-2 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+              className="rounded-none border border-border bg-surface px-2 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
             >
               {ADMIN_PAGE_LIMIT_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -673,7 +673,7 @@ function FilterSelect({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+        className="w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
       >
         {placeholder ? <option value="">{placeholder}</option> : null}
         {options.map((opt) => (
@@ -703,7 +703,7 @@ function PagerButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-none border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
     >
       <Icon sx={{ fontSize: 18 }} />
     </button>
@@ -732,7 +732,7 @@ function Checkbox({
       checked={checked}
       onChange={onChange}
       aria-label={ariaLabel}
-      className="h-4 w-4 cursor-pointer rounded border-border text-burgundy accent-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/30"
+      className="h-4 w-4 cursor-pointer rounded-none border-border text-burgundy accent-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/30"
     />
   );
 }

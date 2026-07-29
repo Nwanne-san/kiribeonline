@@ -437,15 +437,26 @@ These are in Payload but not fully wired in admin pages yet — Figma should sho
 
 ### Brand token verification
 
+**The admin uses the public site's palette — there is no separate CMS brand.**
+The Figma Make mockups used a CMS red `#7F0400` and amber `#E6A313`, which made
+the admin read as a different product. `--color-admin-primary` /
+`--color-admin-accent` now alias burgundy and mustard; the token names remain as
+the single lever if the admin ever needs to diverge again.
+
 | Token | Hex | Used in admin |
 |-------|-----|---------------|
-| Burgundy | `#6B1D2A` | Primary buttons, active nav, focus |
-| Burgundy dark | `#4A1420` | Button hover |
-| Mustard | `#C9A227` | Accent only (not primary admin CTAs) |
-| Cream | `#FAF8F5` | Page background |
+| Burgundy | `#6B1D2A` | Primary CTAs, active nav, page titles, breadcrumb |
+| Burgundy dark | `#4A1420` | Primary button hover |
+| Mustard | `#C9A227` | Accent underlines under panel/page titles |
+| Cream | `#FAF8F5` | Page background (same as the public site) |
+| Footer navy | `#101828` | Sidebar background (same token as the public footer) |
 | Ink | `#1A1A1A` | Headlines |
 | Muted | `#6B7280` | Labels, metadata |
+| Sidebar muted | `#99A1AF` | Idle nav labels (same as the public footer links) |
 | Archive hero | `#1C1214` | Login backdrop only |
+
+**Shape:** every admin surface is square-edged (`rounded-none`) to match the
+public site. Circles (`rounded-full`) survive only for avatars and status dots.
 
 ---
 

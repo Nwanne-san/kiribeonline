@@ -1,9 +1,14 @@
 "use client";
 
 import Box from "@mui/material/Box";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import { KiribeImageViewer } from "@/modules/shared/components/media/KiribeImageViewer";
+import { useModalRoute } from "@/utils/hooks";
+
+/** Query param carrying which gallery tile is open, alongside `?modal=image`. */
+const IMAGE_PARAM = "image";
+const IMAGE_MODAL = "image";
 
 export type ArticleGalleryItem = {
   id: string;
@@ -21,9 +26,25 @@ export type ArticleGalleryProps = {
  * Alt text comes from the media docs captured at insert time.
  */
 export function ArticleGallery({ items }: ArticleGalleryProps) {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  // URL-driven (`?modal=image&image=<index>`) so a lightbox is linkable and
+  // closes with the browser Back button.
+  const { modal, openModal, closeModal } = useModalRoute();
+  const searchParams = useSearchParams();
 
   const valid = items.filter((it) => it && it.url);
+
+  const rawIndex = searchParams.get(IMAGE_PARAM);
+  const parsedIndex = rawIndex === null ? Number.NaN : Number(rawIndex);
+  // An out-of-range or non-numeric `?image=` resolves to nothing rather than
+  // rendering an empty lightbox.
+  const activeIndex =
+    modal === IMAGE_MODAL &&
+    Number.isInteger(parsedIndex) &&
+    parsedIndex >= 0 &&
+    parsedIndex < valid.length
+      ? parsedIndex
+      : null;
+
   if (valid.length === 0) return null;
 
   const active = activeIndex !== null ? valid[activeIndex] : null;
@@ -45,7 +66,7 @@ export function ArticleGallery({ items }: ArticleGalleryProps) {
             key={`${item.id}-${index}`}
             component="button"
             type="button"
-            onClick={() => setActiveIndex(index)}
+            onClick={() => openModal(IMAGE_MODAL, { [IMAGE_PARAM]: String(index) })}
             aria-label={item.alt ? `View image: ${item.alt}` : "View image"}
             sx={{
               all: "unset",
@@ -76,7 +97,7 @@ export function ArticleGallery({ items }: ArticleGalleryProps) {
           src={active.url}
           alt={active.alt}
           open={activeIndex !== null}
-          onClose={() => setActiveIndex(null)}
+          onClose={() => closeModal([IMAGE_PARAM])}
         />
       ) : null}
     </Box>

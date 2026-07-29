@@ -55,7 +55,7 @@ const MANAGE_CAPABILITY: Capability = "users:manage";
 
 /** Solid role badge fills (white text) — matches the Figma role chips. */
 const ROLE_BADGE_COLOR: Record<UserRole, string> = {
-  admin: "#7f0400",
+  admin: "#6b1d2a",
   editor: "#2563eb",
   writer: "#0d766e",
   contributor: "#1e2939",
@@ -176,14 +176,14 @@ export function UsersRolesPage() {
       {tab === "members" ? (
         <>
           {/* Filter bar */}
-          <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 shadow-card lg:flex-row lg:items-center">
+          <div className="flex flex-col gap-3 rounded-none border border-border bg-surface p-3 shadow-card lg:flex-row lg:items-center">
             <div className="flex flex-wrap gap-1.5">
               {STATUS_FILTERS.map((value) => (
                 <FilterChip
                   key={`status-${value}`}
                   label={value === "all" ? "All" : value}
                   active={status === value}
-                  activeClassName="bg-[#7f0400] text-white"
+                  activeClassName="bg-[#6b1d2a] text-white"
                   onClick={() => setStatus(value)}
                 />
               ))}
@@ -337,7 +337,7 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-md px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
+      className={`rounded-none px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
         active
           ? activeClassName
           : "border border-border text-ink-secondary hover:bg-surface-muted"
@@ -351,7 +351,7 @@ function FilterChip({
 function RoleBadge({ role }: { role: UserRole }) {
   return (
     <span
-      className="inline-flex items-center rounded px-2 py-0.5 text-[0.6875rem] font-semibold uppercase leading-tight tracking-wide text-white"
+      className="inline-flex items-center rounded-none px-2 py-0.5 text-[0.6875rem] font-semibold uppercase leading-tight tracking-wide text-white"
       style={{ backgroundColor: ROLE_BADGE_COLOR[role] }}
     >
       {ROLE_LABELS[role]}
@@ -631,7 +631,7 @@ function InviteLinkPanel({
         <CloseButton onClose={onClose} />
       </div>
 
-      <div className="flex items-start gap-2 rounded-lg border border-[#fed7aa] bg-[#fffbeb] p-3">
+      <div className="flex items-start gap-2 rounded-none border border-[#fed7aa] bg-[#fffbeb] p-3">
         <WarningAmberRounded sx={{ fontSize: 18 }} className="mt-0.5 shrink-0 text-[#b54708]" />
         <p className="text-xs text-[#b54708]">
           This link is shown <strong>once</strong> and can&apos;t be retrieved
@@ -772,7 +772,7 @@ function UserEditDrawer({
 
         <div className="mt-auto border-t border-border-soft pt-4">
           {confirmRemove ? (
-            <div className="rounded-lg border border-[#fecaca] bg-[#fef2f2] p-3">
+            <div className="rounded-none border border-[#fecaca] bg-[#fef2f2] p-3">
               <p className="text-xs text-[#b42318]">
                 Remove <strong>{user.name ?? user.email}</strong> from the team?
                 This cannot be undone.
@@ -815,7 +815,7 @@ function UserEditDrawer({
 /* ─────────────────────────────────────────────────── Shared overlay UI */
 
 const inputClass =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-burgundy placeholder:text-muted-soft";
+  "w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-burgundy placeholder:text-muted-soft";
 
 function Field({
   label,
@@ -842,7 +842,7 @@ function CloseButton({ onClose }: { onClose: () => void }) {
       type="button"
       onClick={onClose}
       aria-label="Close"
-      className="shrink-0 rounded-md p-1 text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
+      className="shrink-0 rounded-none p-1 text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
     >
       <CloseRounded sx={{ fontSize: 20 }} />
     </button>
@@ -869,7 +869,7 @@ function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-card"
+        className="relative z-10 w-full max-w-md rounded-none border border-border bg-surface p-5 shadow-card"
       >
         {children}
       </div>

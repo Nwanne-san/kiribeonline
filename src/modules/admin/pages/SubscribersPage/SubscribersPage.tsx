@@ -142,16 +142,16 @@ export function SubscribersPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 shadow-card lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 rounded-none border border-border bg-surface p-3 shadow-card lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-1.5">
           {STATUS_TABS.map((t, i) => (
             <button
               key={t.label}
               type="button"
               onClick={() => updateParams({ [PARAM.status]: t.value || null })}
-              className={`rounded-md px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
+              className={`rounded-none px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
                 activeTab === i
-                  ? "bg-[#7f0400] text-white"
+                  ? "bg-[#6b1d2a] text-white"
                   : "border border-border text-ink-secondary hover:bg-surface-muted"
               }`}
             >
@@ -159,7 +159,7 @@ export function SubscribersPage() {
             </button>
           ))}
         </div>
-        <div className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2 lg:w-72">
+        <div className="flex min-w-0 items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2 lg:w-72">
           <SearchRounded sx={{ fontSize: 18 }} className="shrink-0 text-muted-soft" />
           <input
             type="search"
@@ -230,7 +230,7 @@ export function SubscribersPage() {
                 id="subs-page-size"
                 value={limit}
                 onChange={(ev) => setLimit(Number(ev.target.value))}
-                className="rounded-lg border border-border bg-surface px-2 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+                className="rounded-none border border-border bg-surface px-2 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
               >
                 {ADMIN_PAGE_LIMIT_OPTIONS.map((opt) => (
                   <option key={opt} value={opt}>
@@ -284,7 +284,7 @@ function PagerButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-none border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
     >
       <Icon sx={{ fontSize: 18 }} />
     </button>

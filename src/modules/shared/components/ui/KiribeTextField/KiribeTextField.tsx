@@ -30,7 +30,10 @@ export type KiribeTextFieldProps = MuiTextFieldProps & {
 
 const fieldSx = {
   "& .MuiOutlinedInput-root": {
-    borderRadius: 1,
+    // Square by default, matching the buttons and the rest of the form
+    // controls. The `isRounded` pill variant (header search) is a deliberate
+    // exception and still overrides this below.
+    borderRadius: 0,
     "&.Mui-focused fieldset": {
       borderColor: "primary.main",
       borderWidth: 2,
