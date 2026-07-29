@@ -240,7 +240,7 @@ export function SiteHeader({
               */}
               <KiribeButton
                 onClick={openSubscribe}
-                size="small"
+                size="medium"
                 sx={{
                   display: { xs: "none", sm: "inline-flex" },
                   color: "common.white",
