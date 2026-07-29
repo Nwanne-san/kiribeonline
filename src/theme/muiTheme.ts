@@ -161,22 +161,34 @@ export const muiTheme = createTheme({
           boxShadow: "none",
           "&:hover": { boxShadow: "none" },
         },
-        // Padding/type scale per size — mirrors the header CTA at `small`.
-        sizeSmall: {
-          padding: "8px 20px",
-          fontSize: "0.875rem",
-          lineHeight: 1.25,
-        },
-        sizeMedium: {
-          padding: "10px 24px",
-          fontSize: "0.875rem",
-          lineHeight: 1.25,
-        },
-        sizeLarge: {
-          padding: "14px 32px",
-          fontSize: "1rem",
-          lineHeight: 1.25,
-        },
+
+        /* Padding/type scale per size — mirrors the header CTA at `small`.
+           These go in the *variant+size* slots, not the plain `sizeSmall`
+           slot and not a nested `&.MuiButton-sizeSmall` selector:
+
+             - MUI declares its own size+variant combinations (e.g.
+               `size:'small', variant:'contained'` → `padding: '4px 10px';
+               font-size: 13px`) in the component's `variants` array, so a
+               plain `sizeSmall` slot is not guaranteed to win.
+             - A nested `&.MuiButton-sizeSmall` under `root` *does* win, but by
+               two classes of specificity — which also beats call-site `sx`.
+               That silently broke every button that sets its own px/py
+               (e.g. "View All Articles" rendered 24px/14px instead of its
+               declared 32px/0.75rem). `sx` must always win over the theme.
+
+           The combo slots are single-class, so they out-rank MUI's variants
+           while still yielding to `sx`. Verify changes on a `contained`
+           button — `text` has no competing MUI padding and looks fine either
+           way. */
+        containedSizeSmall: { padding: "8px 20px", fontSize: "0.875rem", lineHeight: 1.25 },
+        containedSizeMedium: { padding: "10px 24px", fontSize: "0.875rem", lineHeight: 1.25 },
+        containedSizeLarge: { padding: "14px 32px", fontSize: "1rem", lineHeight: 1.25 },
+        outlinedSizeSmall: { padding: "7px 19px", fontSize: "0.875rem", lineHeight: 1.25 },
+        outlinedSizeMedium: { padding: "9px 23px", fontSize: "0.875rem", lineHeight: 1.25 },
+        outlinedSizeLarge: { padding: "13px 31px", fontSize: "1rem", lineHeight: 1.25 },
+        textSizeSmall: { padding: "8px 12px", fontSize: "0.875rem", lineHeight: 1.25 },
+        textSizeMedium: { padding: "10px 16px", fontSize: "0.875rem", lineHeight: 1.25 },
+        textSizeLarge: { padding: "14px 20px", fontSize: "1rem", lineHeight: 1.25 },
         containedPrimary: {
           "&:hover": {
             backgroundColor: burgundy.dark,
