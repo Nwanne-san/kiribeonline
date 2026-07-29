@@ -1,0 +1,1 @@
+export { PagesAdminPage } from "./PagesAdminPage";
