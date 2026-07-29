@@ -181,7 +181,7 @@ export function AboutContactForm() {
         className="mt-6 inline-flex items-center gap-3 bg-burgundy px-8 py-3 font-headline text-sm uppercase tracking-[0.1em] text-white transition-colors hover:bg-burgundy-dark disabled:opacity-60"
       >
         {isPending ? "Sending…" : "Send Message"}
-        <ArrowForwardIcon sx={{ fontSize: 16 }} />
+        <ArrowForwardIcon className="text-[16px]" />
       </button>
     </form>
   );

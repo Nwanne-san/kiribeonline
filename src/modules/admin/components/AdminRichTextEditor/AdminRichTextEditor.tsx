@@ -22,7 +22,6 @@ import OndemandVideoIcon from "@mui/icons-material/OndemandVideo";
 import RedoIcon from "@mui/icons-material/Redo";
 import UndoIcon from "@mui/icons-material/Undo";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -90,6 +89,7 @@ import {
 } from "lexical";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminCard, AdminFieldLabel } from "@/modules/admin/components/AdminUi";
+import { AdminButton } from "@/modules/admin/components/ui/AdminPrimitives";
 import { KiribeTextField } from "@/modules/shared/components/ui";
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
 import type { AdminMediaRef } from "@/server/modules";
@@ -322,16 +322,7 @@ function Toolbar({
       direction="row"
       spacing={0.25}
       flexWrap="wrap"
-      sx={{
-        rowGap: 0.5,
-        p: 1,
-        borderBottom: "1px solid",
-        borderColor: "divider",
-        bgcolor: "background.paper",
-        position: "sticky",
-        top: 0,
-        zIndex: 1,
-      }}
+      className="gap-y-1 p-2 border-b border-border bg-surface sticky top-0 z-[1]"
     >
       <IconButton
         size="small"
@@ -350,16 +341,16 @@ function Toolbar({
         <RedoIcon fontSize="small" />
       </IconButton>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+      <Divider orientation="vertical" flexItem className="mx-1" />
 
-      <Box sx={{ minWidth: 140 }}>
+      <Box className="min-w-[140px]">
         <KiribeTextField
           select
           size="small"
           fullWidth
           value={blockType}
           onChange={(e) => setBlock(e.target.value)}
-          sx={{ "& .MuiInputBase-root": { fontSize: "0.75rem", height: 32 } }}
+          className="[&_.MuiInputBase-root]:text-xs [&_.MuiInputBase-root]:h-8"
         >
           {BLOCK_OPTIONS.map((opt) => (
             <MenuItem key={opt.value} value={opt.value}>
@@ -369,7 +360,7 @@ function Toolbar({
         </KiribeTextField>
       </Box>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+      <Divider orientation="vertical" flexItem className="mx-1" />
 
       <IconButton
         size="small"
@@ -412,7 +403,7 @@ function Toolbar({
         <CodeIcon fontSize="small" />
       </IconButton>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+      <Divider orientation="vertical" flexItem className="mx-1" />
 
       <IconButton
         size="small"
@@ -437,7 +428,7 @@ function Toolbar({
         <FormatQuoteIcon fontSize="small" />
       </IconButton>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+      <Divider orientation="vertical" flexItem className="mx-1" />
 
       <IconButton
         size="small"
@@ -468,7 +459,7 @@ function Toolbar({
         <FormatAlignJustifyIcon fontSize="small" />
       </IconButton>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+      <Divider orientation="vertical" flexItem className="mx-1" />
 
       <IconButton
         size="small"
@@ -725,8 +716,8 @@ export function AdminRichTextEditor({
   );
 
   return (
-    <AdminCard sx={{ p: 0, overflow: "hidden" }}>
-      <Box sx={{ p: 2, pb: 0 }}>
+    <AdminCard className="p-0 overflow-hidden">
+      <Box className="p-4 pb-0">
         <AdminFieldLabel label={label} required={required} />
       </Box>
       <LexicalComposer initialConfig={initialConfig}>
@@ -740,61 +731,7 @@ export function AdminRichTextEditor({
           onOpenPullQuote={() => setPullQuoteDialog(true)}
           onOpenGallery={() => setGalleryDialog(true)}
         />
-        <Box
-          sx={{
-            minHeight: 360,
-            px: 2,
-            py: 1.5,
-            bgcolor: "background.default",
-            position: "relative",
-            "& .kiribe-lexical-p": { mb: 1.5, lineHeight: 1.7 },
-            "& .kiribe-lexical-h1": { fontSize: "2rem", fontWeight: 700, mt: 2, mb: 1 },
-            "& .kiribe-lexical-h2": { fontSize: "1.5rem", fontWeight: 700, mt: 2, mb: 1 },
-            "& .kiribe-lexical-h3": { fontSize: "1.25rem", fontWeight: 600, mt: 1.5, mb: 1 },
-            "& .kiribe-lexical-h4": { fontSize: "1.125rem", fontWeight: 600, mt: 1.5, mb: 0.75 },
-            "& .kiribe-lexical-h5": { fontSize: "1rem", fontWeight: 600, mt: 1.25, mb: 0.5 },
-            "& .kiribe-lexical-h6": { fontSize: "0.875rem", fontWeight: 600, mt: 1.25, mb: 0.5, textTransform: "uppercase", letterSpacing: "0.05em" },
-            "& .kiribe-lexical-ul, & .kiribe-lexical-ol": { pl: 3, mb: 1.5 },
-            "& .kiribe-lexical-li": { mb: 0.5 },
-            "& .kiribe-lexical-quote": {
-              borderLeft: "3px solid",
-              borderColor: "secondary.main",
-              pl: 2,
-              ml: 0,
-              my: 2,
-              fontStyle: "italic",
-              color: "text.secondary",
-            },
-            "& .kiribe-lexical-code": {
-              display: "block",
-              bgcolor: "#0F172A",
-              color: "#E2E8F0",
-              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-              fontSize: "0.875rem",
-              p: 2,
-              borderRadius: 1,
-              my: 2,
-              overflowX: "auto",
-            },
-            "& .kiribe-lexical-inline-code": {
-              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-              bgcolor: "rgba(0,0,0,0.06)",
-              px: 0.5,
-              py: 0.125,
-              borderRadius: 0.5,
-              fontSize: "0.9em",
-            },
-            "& .kiribe-lexical-link": {
-              color: "primary.main",
-              textDecoration: "underline",
-            },
-            "& .kiribe-lexical-bold": { fontWeight: 700 },
-            "& .kiribe-lexical-italic": { fontStyle: "italic" },
-            "& .kiribe-lexical-underline": { textDecoration: "underline" },
-            "& .kiribe-lexical-strike": { textDecoration: "line-through" },
-            "& hr": { my: 3, border: 0, borderTop: "1px solid", borderColor: "divider" },
-          }}
-        >
+        <Box className="kiribe-lexical-editor min-h-[360px] px-4 py-3 bg-surface relative">
           <RichTextPlugin
             contentEditable={
               <ContentEditable
@@ -805,13 +742,7 @@ export function AdminRichTextEditor({
             placeholder={
               <Box
                 component="span"
-                sx={{
-                  color: "text.secondary",
-                  position: "absolute",
-                  top: 12,
-                  left: 16,
-                  opacity: 0.5,
-                }}
+                className="text-ink-secondary absolute top-3 left-4 opacity-50"
               >
                 Write article content…
               </Box>
@@ -843,7 +774,7 @@ export function AdminRichTextEditor({
         </Box>
       </LexicalComposer>
       {error && (
-        <Box sx={{ px: 2, pb: 2, color: "error.main", fontSize: "0.75rem" }}>
+        <Box className="px-4 pb-4 text-danger text-[0.75rem]">
           {error}
         </Box>
       )}
@@ -900,15 +831,13 @@ export function AdminRichTextEditor({
             }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeLinkDialog}>Cancel</Button>
-          <Button
-            variant="contained"
-            disabled={!linkDialog?.url}
-            onClick={applyLink}
-          >
+        <DialogActions className="gap-2 px-6 pb-4">
+          <AdminButton variant="secondary" onClick={closeLinkDialog}>
+            Cancel
+          </AdminButton>
+          <AdminButton disabled={!linkDialog?.url} onClick={applyLink}>
             Apply
-          </Button>
+          </AdminButton>
         </DialogActions>
       </Dialog>
 

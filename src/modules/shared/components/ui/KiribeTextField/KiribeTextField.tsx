@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { type ChangeEvent, type ReactNode, forwardRef, useState } from "react";
 import { Controller, type Control, type RegisterOptions } from "react-hook-form";
+import { cn } from "@/modules/shared/components/tw";
 
 export type KiribeTextFieldProps = MuiTextFieldProps & {
   errorText?: string;
@@ -26,16 +27,6 @@ export type KiribeTextFieldProps = MuiTextFieldProps & {
   control?: Control;
   name?: string;
   rules?: RegisterOptions;
-};
-
-const fieldSx = {
-  "& .MuiOutlinedInput-root": {
-    borderRadius: 1,
-    "&.Mui-focused fieldset": {
-      borderColor: "primary.main",
-      borderWidth: 2,
-    },
-  },
 };
 
 function KiribeTextFieldInner(
@@ -51,6 +42,7 @@ function KiribeTextFieldInner(
     helperText,
     error,
     InputProps,
+    className,
     sx,
     ...props
   }: KiribeTextFieldProps,
@@ -114,12 +106,13 @@ function KiribeTextFieldInner(
           startAdornment,
           endAdornment,
         }}
-        sx={{
-          ...fieldSx,
-          ...(isRounded ? { "& .MuiOutlinedInput-root": { borderRadius: 999 } } : {}),
-          ...(labelOnTop ? { "& .MuiInputLabel-root": { position: "relative", transform: "none", mb: 0.5 } } : {}),
-          ...sx,
-        }}
+        className={cn(
+          "kiribe-field",
+          isRounded && "kiribe-field-rounded",
+          labelOnTop && "kiribe-field-label-top",
+          className
+        )}
+        sx={sx}
       />
       {(errorText || helperText) && (
         <FormHelperText>{errorText || helperText}</FormHelperText>

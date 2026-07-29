@@ -5,6 +5,7 @@ import {
   RichText,
   type JSXConvertersFunction,
 } from "@payloadcms/richtext-lexical/react";
+import { cn } from "@/modules/shared/components/tw";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import type { MediaAsset } from "@/modules/shared/types/content";
 import { ArticleEmbed } from "@/modules/editorial/components/ArticleEmbed";
@@ -109,7 +110,7 @@ export const richTextConverters: JSXConvertersFunction = ({ defaultConverters })
     // serves right-sized output per the `sizes` attr.
 
     return (
-      <Box component="figure" sx={{ my: 3, mx: 0 }}>
+      <Box component="figure" className="my-6 mx-0">
         {hasDimensions ? (
           <KiribeImage
             src={media}
@@ -132,7 +133,7 @@ export const richTextConverters: JSXConvertersFunction = ({ defaultConverters })
         {media.caption || media.credit ? (
           <Box
             component="figcaption"
-            sx={{ mt: 1, fontSize: "0.8125rem", color: "text.secondary" }}
+            className="mt-2 text-[0.8125rem] text-ink-secondary"
           >
             {media.caption}
             {media.caption && media.credit ? " · " : ""}
@@ -150,14 +151,7 @@ export function RichTextRenderer({ content, className }: RichTextRendererProps) 
 
   return (
     <Box
-      className={className}
-      sx={{
-        "& p": { mb: 2, lineHeight: 1.7 },
-        "& h2, & h3": { mt: 3, mb: 1.5, fontFamily: "var(--font-headline)" },
-        "& a": { color: "primary.main", textDecoration: "underline" },
-        "& img": { maxWidth: "100%", height: "auto", borderRadius: 1 },
-        "& figure": { maxWidth: "100%" },
-      }}
+      className={cn("article-prose", className)}
     >
       <RichText data={content as never} converters={richTextConverters} />
     </Box>

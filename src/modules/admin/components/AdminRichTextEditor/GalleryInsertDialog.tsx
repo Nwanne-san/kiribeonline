@@ -4,7 +4,6 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -15,6 +14,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
 import { MediaLibraryGrid } from "@/modules/admin/components/MediaPicker";
+import { AdminButton } from "@/modules/admin/components/ui/AdminPrimitives";
 import type { AdminMediaRef } from "@/server/modules";
 import type { GalleryItem } from "./GalleryNode";
 
@@ -75,14 +75,14 @@ export function GalleryInsertDialog({ open, onClose, onInsert }: GalleryInsertDi
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>Insert gallery</DialogTitle>
       <DialogContent dividers>
-        <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+        <Typography variant="body2" fontWeight={600} className="mb-2">
           Choose images
         </Typography>
         <MediaLibraryGrid onSelect={toggle} selectedIds={selectedIds} />
 
-        <Divider sx={{ my: 2 }} />
+        <Divider className="my-4" />
 
-        <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+        <Typography variant="body2" fontWeight={600} className="mb-2">
           Selected ({items.length}) — order top to bottom
         </Typography>
         {items.length === 0 ? (
@@ -97,26 +97,15 @@ export function GalleryInsertDialog({ open, onClose, onInsert }: GalleryInsertDi
                 direction="row"
                 spacing={1.5}
                 alignItems="center"
-                sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  p: 1,
-                }}
+                className="border border-border rounded p-2"
               >
                 <Box
                   component="img"
                   src={item.url}
                   alt={item.alt}
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    objectFit: "cover",
-                    borderRadius: 1,
-                    flexShrink: 0,
-                  }}
+                  className="h-12 w-12 shrink-0 rounded object-cover"
                 />
-                <Typography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap>
+                <Typography variant="caption" className="flex-1 min-w-0" noWrap>
                   {item.alt || item.url}
                 </Typography>
                 <IconButton
@@ -148,11 +137,13 @@ export function GalleryInsertDialog({ open, onClose, onInsert }: GalleryInsertDi
           </Stack>
         )}
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button variant="contained" disabled={items.length === 0} onClick={apply}>
+      <DialogActions className="gap-2 px-6 pb-4">
+        <AdminButton variant="secondary" onClick={handleClose}>
+          Cancel
+        </AdminButton>
+        <AdminButton disabled={items.length === 0} onClick={apply}>
           Insert gallery
-        </Button>
+        </AdminButton>
       </DialogActions>
     </Dialog>
   );

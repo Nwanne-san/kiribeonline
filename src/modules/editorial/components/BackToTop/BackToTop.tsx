@@ -100,7 +100,7 @@ export function BackToTop({ showAfterViewports = 1.5 }: BackToTopProps) {
         e.currentTarget.style.boxShadow = "var(--shadow-elevated)";
       }}
     >
-      <KeyboardArrowUpIcon sx={{ fontSize: 24 }} aria-hidden="true" />
+      <KeyboardArrowUpIcon className="text-[24px]" aria-hidden="true" />
     </button>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Box from "@mui/material/Box";
+import { cn } from "@/modules/shared/components/tw";
 import { KiribeLoader } from "@/modules/shared/components/brand";
 import { EmptyState } from "@/modules/shared/components/feedback/EmptyState";
 import {
@@ -54,10 +55,7 @@ export function DefaultErrorElement({
 
 export function DefaultLoadingElement({ className }: { className?: string }) {
   return (
-    <Box
-      className={className}
-      sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}
-    >
+    <Box className={cn("flex justify-center items-center py-16", className)}>
       <KiribeLoader size="md" />
     </Box>
   );

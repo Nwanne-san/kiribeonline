@@ -63,12 +63,12 @@ export function KiribeSnackbarProvider({ children }: { children: ReactNode }) {
         onClose={handleClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleClose} severity={toast.severity} variant="filled" sx={{ width: "100%" }}>
+        <Alert onClose={handleClose} severity={toast.severity} variant="filled" className="w-full">
           {toast.message}
           {toast.description ? (
             <>
               <br />
-              <span style={{ fontSize: "0.875rem", opacity: 0.9 }}>{toast.description}</span>
+              <span className="text-sm opacity-90">{toast.description}</span>
             </>
           ) : null}
         </Alert>

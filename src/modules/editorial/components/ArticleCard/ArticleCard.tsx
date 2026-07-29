@@ -7,6 +7,7 @@ import type { ArticleCardDoc } from "@/lib/content/types";
 import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import { KiribeLink, KiribeTypography, publicRoute } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import { PublicRoutes } from "@/routes/public.routes";
 import { estimateReadingTime, formatDate, resolveAuthorName } from "@/utils/helper";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
@@ -24,55 +25,35 @@ function getCategoryColor(slug?: string) {
   return CATEGORY_COLORS[key]?.bg ?? "#7F0400";
 }
 
-const TWO_LINE_CLAMP = {
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-} as const;
+const cardTitleClass =
+  "card-title font-headline font-normal text-base leading-[1.375rem] text-black transition-colors duration-[var(--duration-fast)] line-clamp-2";
 
-const ONE_LINE_CLAMP = {
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-} as const;
-
-/** Card title — Figma V5: Outfit 16/22, black. */
-const cardTitleSx = {
-  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-  fontWeight: 400,
-  fontSize: "1rem",
-  lineHeight: "1.375rem",
-  color: "#000",
-  transition: "color var(--duration-fast) ease",
-} as const;
-
-const metaTextSx = {
-  fontSize: "0.75rem",
-  lineHeight: "1rem",
-  color: "#99A1AF",
-  whiteSpace: "nowrap",
-} as const;
+const metaTextClass = "text-[0.75rem] leading-4 text-muted-soft whitespace-nowrap";
 
 /** `author · date · read time` row with interpunct separators (Figma V5). */
 function CardMetaRow({
   items,
   gap = 1.5,
-  sx,
+  className,
 }: {
   items: Array<string | undefined>;
   gap?: number;
-  sx?: object;
+  className?: string;
 }) {
   const visible = items.filter((item): item is string => Boolean(item));
   if (visible.length === 0) return null;
   return (
-    <Stack direction="row" alignItems="center" spacing={gap} sx={sx}>
+    <Stack direction="row" alignItems="center" spacing={gap} className={className}>
       {visible.map((item, i) => (
         <Stack key={`${item}-${i}`} direction="row" alignItems="center" spacing={gap}>
-          {i > 0 && <Box component="span" sx={metaTextSx}>·</Box>}
-          <Box component="span" sx={metaTextSx}>{item}</Box>
+          {i > 0 && (
+            <Box component="span" className={metaTextClass}>
+              ·
+            </Box>
+          )}
+          <Box component="span" className={metaTextClass}>
+            {item}
+          </Box>
         </Stack>
       ))}
     </Stack>
@@ -90,166 +71,104 @@ export function ArticleCard({ article, variant = "grid", surface = "plain" }: Ar
     : undefined;
 
   if (variant === "list") {
-    // Figma V5 ListRow — 160×112 thumb, single-line excerpt, chevron affordance.
     return (
       <KiribeLink
         href={href}
         underline="none"
-        sx={{
-          display: "flex",
-          gap: 2.5,
-          alignItems: "center",
-          px: 1,
-          py: 3,
-          transition: "background-color var(--duration-fast) ease",
-          "&:hover": { bgcolor: "var(--color-surface-alt)" },
-          "&:hover .card-title": { color: accent },
-          "&:hover .card-chevron": { color: accent, transform: "translateX(2px)" },
-        }}
+        className="group flex items-center gap-5 px-2 py-6 transition-colors duration-[var(--duration-fast)] hover:bg-surface-alt"
+        style={{ ["--card-accent" as string]: accent }}
       >
-        <Box
-          sx={{
-            position: "relative",
-            width: { xs: 112, sm: 160 },
-            height: { xs: 78, sm: 112 },
-            flexShrink: 0,
-            bgcolor: "#F3F4F6",
-          }}
-        >
+        <Box className="relative h-[78px] w-[112px] shrink-0 bg-surface-muted sm:h-[112px] sm:w-[160px]">
           <KiribeImage
             src={article.heroImage}
             alt={article.heroImage?.alt ?? article.title}
             fill
           />
         </Box>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box className="min-w-0 flex-1">
           {primaryCategory && (
-            <Box sx={{ mb: 1 }}>
+            <Box className="mb-2">
               <CategoryBadge label={primaryCategory.name} color={accent} variant="solid" />
             </Box>
           )}
           <KiribeTypography
-            className="card-title"
-            sx={{ ...cardTitleSx, ...TWO_LINE_CLAMP }}
+            className={cn(cardTitleClass, "group-hover:text-[var(--card-accent)]")}
           >
             {article.title}
           </KiribeTypography>
           {article.excerpt && (
-            <KiribeTypography
-              sx={{
-                mt: 0.5,
-                color: "#6A7282",
-                fontSize: "0.875rem",
-                lineHeight: "1.25rem",
-                ...ONE_LINE_CLAMP,
-              }}
-            >
+            <KiribeTypography className="mt-1 line-clamp-1 text-sm leading-5 text-muted">
               {article.excerpt}
             </KiribeTypography>
           )}
-          <CardMetaRow
-            items={[authorName, dateLabel, readLabel]}
-            sx={{ mt: 1 }}
-          />
+          <CardMetaRow items={[authorName, dateLabel, readLabel]} className="mt-2" />
         </Box>
         <KeyboardArrowRightIcon
-          className="card-chevron"
-          sx={{
-            display: { xs: "none", sm: "block" },
-            fontSize: 20,
-            color: "#99A1AF",
-            flexShrink: 0,
-            transition: "color var(--duration-fast) ease, transform var(--duration-fast) ease",
-          }}
+          className="card-chevron hidden shrink-0 text-[20px] text-muted-soft transition-[color,transform] duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-[var(--card-accent)] sm:block"
         />
       </KiribeLink>
     );
   }
 
   if (surface === "panel") {
-    // Figma V5 related-article card — white panel on gray, badge inside padded body.
     return (
       <KiribeLink
         href={href}
         underline="none"
-        sx={{
-          display: "block",
-          bgcolor: "#fff",
-          "&:hover .card-title": { color: accent },
-        }}
+        className="group block bg-surface"
+        style={{ ["--card-accent" as string]: accent }}
       >
-        <Box sx={{ position: "relative", aspectRatio: "4 / 3", bgcolor: "#F3F4F6" }}>
+        <Box className="relative aspect-[4/3] bg-surface-muted">
           <KiribeImage
             src={article.heroImage}
             alt={article.heroImage?.alt ?? article.title}
             fill
           />
         </Box>
-        <Box sx={{ p: 2.5 }}>
+        <Box className="p-5">
           {primaryCategory && (
             <CategoryBadge label={primaryCategory.name} color={accent} variant="solid" />
           )}
           <KiribeTypography
-            className="card-title"
-            sx={{ ...cardTitleSx, mt: 1.5, ...TWO_LINE_CLAMP }}
+            className={cn(cardTitleClass, "mt-3 group-hover:text-[var(--card-accent)]")}
           >
             {article.title}
           </KiribeTypography>
-          <CardMetaRow items={[authorName, readLabel ?? dateLabel]} sx={{ mt: 1 }} />
+          <CardMetaRow items={[authorName, readLabel ?? dateLabel]} className="mt-2" />
         </Box>
       </KiribeLink>
     );
   }
 
-  // Figma V5 GridCard — 4:3 image with overlaid badge, two-line excerpt, byline meta.
   return (
-    <Box>
+    <Box style={{ ["--card-accent" as string]: accent }}>
       <KiribeLink href={href} underline="none">
-        <Box
-          sx={{
-            position: "relative",
-            aspectRatio: "4 / 3",
-            bgcolor: "#F3F4F6",
-          }}
-        >
+        <Box className="relative aspect-[4/3] bg-surface-muted">
           <KiribeImage
             src={article.heroImage}
             alt={article.heroImage?.alt ?? article.title}
             fill
           />
           {primaryCategory && (
-            <Box sx={{ position: "absolute", top: 12, left: 12 }}>
+            <Box className="absolute top-3 left-3">
               <CategoryBadge label={primaryCategory.name} color={accent} variant="solid" />
             </Box>
           )}
         </Box>
       </KiribeLink>
-      <KiribeLink href={href} underline="none" sx={{ "&:hover .card-title": { color: accent } }}>
+      <KiribeLink href={href} underline="none" className="group">
         <KiribeTypography
-          className="card-title"
-          sx={{ ...cardTitleSx, mt: 2, ...TWO_LINE_CLAMP }}
+          className={cn(cardTitleClass, "mt-4 group-hover:text-[var(--card-accent)]")}
         >
           {article.title}
         </KiribeTypography>
       </KiribeLink>
       {article.excerpt && (
-        <KiribeTypography
-          sx={{
-            mt: 1,
-            color: "#6A7282",
-            fontSize: "0.875rem",
-            lineHeight: 1.625,
-            ...TWO_LINE_CLAMP,
-          }}
-        >
+        <KiribeTypography className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted">
           {article.excerpt}
         </KiribeTypography>
       )}
-      <CardMetaRow
-        items={[authorName, readLabel ?? dateLabel]}
-        gap={2}
-        sx={{ mt: 1.5 }}
-      />
+      <CardMetaRow items={[authorName, readLabel ?? dateLabel]} gap={2} className="mt-3" />
     </Box>
   );
 }

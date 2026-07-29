@@ -17,14 +17,14 @@ export function AdminPageHeader({ title, description, actions }: AdminPageHeader
       justifyContent="space-between"
       alignItems={{ xs: "flex-start", sm: "center" }}
       spacing={2}
-      sx={{ mb: 4 }}
+      className="mb-8"
     >
       <Box>
         <Typography variant="h4" fontWeight={700}>
           {title}
         </Typography>
         {description ? (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography variant="body2" color="text.secondary" className="mt-1">
             {description}
           </Typography>
         ) : null}

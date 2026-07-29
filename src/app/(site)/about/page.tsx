@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSiteSettingsForPublic } from "@/lib/content";
 import { breadcrumbListSchema, JsonLd } from "@/lib/seo/json-ld";
 import { AboutPage } from "@/modules/marketing/pages/AboutPage";
 
@@ -16,7 +17,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
+export default async function Page() {
+  const siteSettings = await getSiteSettingsForPublic();
   return (
     <>
       <JsonLd
@@ -25,7 +27,7 @@ export default function Page() {
           { name: "About", url: "/about" },
         ])}
       />
-      <AboutPage />
+      <AboutPage siteSettings={siteSettings} />
     </>
   );
 }

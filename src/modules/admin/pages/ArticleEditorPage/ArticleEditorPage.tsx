@@ -19,9 +19,9 @@ import {
 } from "react";
 import { ApiMethods } from "../../../../../types/service";
 import { AdminRoutes } from "@/routes/admin.routes";
-import { AdminChipSelect } from "@/modules/admin/components/AdminUi";
 import {
   AdminButton,
+  AdminChipSelect,
   AdminCheckboxRow,
   AdminField,
   AdminInput,
@@ -642,7 +642,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         >
           Articles
         </NextLink>
-        <ChevronRightIcon sx={{ fontSize: 14 }} className="text-muted-soft" />
+        <ChevronRightIcon className="text-[14px] text-muted-soft"/>
         <span className="text-ink-secondary">
           {isEdit ? "Edit article" : "New article"}
         </span>
@@ -664,7 +664,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
 
       {isEdit && status === "in_review" ? (
         <div className="flex items-start gap-3 rounded-lg border border-[#F3D7CB] bg-[#FDF3EF] px-4 py-3 text-sm text-burgundy">
-          <RateReviewOutlined sx={{ fontSize: 20 }} className="mt-0.5 shrink-0" />
+          <RateReviewOutlined className="text-[20px] mt-0.5 shrink-0"/>
           <p className="min-w-0">
             {canPublish
               ? "This article is awaiting your review. Move it to Published or Scheduled when it’s ready — or back to Draft to send it for more work."
@@ -736,9 +736,9 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                 SEO &amp; metadata
               </h2>
               {seoOpen ? (
-                <ExpandLessRounded sx={{ fontSize: 20 }} className="text-muted" />
+                <ExpandLessRounded className="text-[20px] text-muted"/>
               ) : (
-                <ExpandMoreRounded sx={{ fontSize: 20 }} className="text-muted" />
+                <ExpandMoreRounded className="text-[20px] text-muted"/>
               )}
             </button>
             {seoOpen && (
@@ -853,10 +853,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                     className={slugReadOnly ? "pr-9" : ""}
                   />
                   {slugReadOnly ? (
-                    <LockOutlined
-                      sx={{ fontSize: 16 }}
-                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-soft"
-                    />
+                    <LockOutlined className="text-[16px] pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-soft"/>
                   ) : null}
                 </div>
               </AdminField>
@@ -965,7 +962,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         <AdminButton
           type="submit"
           disabled={saving}
-          leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
+          leftIcon={<SaveRounded className="text-[16px]" />}
         >
           {saving ? "Saving…" : "Save"}
         </AdminButton>
@@ -1016,9 +1013,7 @@ function SavedIndicator({
   if (saving) {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-muted">
-        <RefreshOutlined
-          sx={{ fontSize: 14, animation: "spin 1s linear infinite" }}
-        />
+        <RefreshOutlined className="text-[14px] animate-spin" />
         Saving…
       </span>
     );
@@ -1029,7 +1024,7 @@ function SavedIndicator({
   if (lastSavedAt) {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-muted">
-        <CheckOutlined sx={{ fontSize: 14 }} className="text-[#15803d]" />
+        <CheckOutlined className="text-[14px] text-[#15803d]"/>
         Saved · {lastSavedAt}
       </span>
     );

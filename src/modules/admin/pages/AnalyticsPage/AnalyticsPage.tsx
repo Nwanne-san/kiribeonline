@@ -54,7 +54,7 @@ export function AnalyticsPage() {
             <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer">
               <AdminButton
                 variant="secondary"
-                leftIcon={<LaunchRounded sx={{ fontSize: 16 }} />}
+                leftIcon={<LaunchRounded className="text-[16px]" />}
               >
                 Open GA4
               </AdminButton>

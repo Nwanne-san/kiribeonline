@@ -140,7 +140,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
         aria-label={open ? "Close search" : "Open search"}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        sx={{ color: "text.primary", p: 0.75 }}
+        className="text-ink p-1.5"
         size="small"
       >
         {open ? <CloseIcon fontSize="small" /> : <SearchIcon fontSize="small" />}
@@ -149,12 +149,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
       {open && (
         <Box
           onClick={() => setOpen(false)}
-          sx={{
-            position: "fixed",
-            inset: "64px 0 0 0",
-            bgcolor: "rgba(0,0,0,0.4)",
-            zIndex: (theme) => theme.zIndex.appBar - 1,
-          }}
+          className="fixed inset-x-0 bottom-0 top-16 bg-black/40 z-[1099]"
           aria-hidden
         />
       )}
@@ -162,31 +157,13 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
       <Collapse
         in={open}
         timeout={180}
-        sx={{
-          position: "absolute",
-          top: 64,
-          left: 0,
-          right: 0,
-          zIndex: (theme) => theme.zIndex.appBar,
-        }}
+        className="absolute top-16 left-0 right-0 z-[1100]"
       >
         <Box
           onClick={(e) => e.stopPropagation()}
-          sx={{
-            bgcolor: "background.paper",
-            borderBottom: "1px solid",
-            borderColor: "divider",
-            boxShadow: "0 12px 24px rgba(0,0,0,0.08)",
-          }}
+          className="bg-surface border-b border-border shadow-[0_12px_24px_rgba(0,0,0,0.08)]"
         >
-          <Box
-            sx={{
-              maxWidth: "var(--container-editorial)",
-              mx: "auto",
-              px: { xs: 2, md: 4 },
-              py: { xs: 2.5, md: 3 },
-            }}
-          >
+          <Box className="editorial-container py-5 md:py-6">
             <TextField
               inputRef={inputRef}
               fullWidth
@@ -196,10 +173,11 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
               onKeyDown={handleKeyDown}
               placeholder="Search articles… (press Enter for all results)"
               inputProps={{ "aria-label": "Search Kiribé articles" }}
+              className="kiribe-field [&_.MuiOutlinedInput-root]:text-lg [&_.MuiOutlinedInput-root]:font-headline [&_.MuiOutlinedInput-root_fieldset]:border-border [&_.MuiOutlinedInput-root:hover_fieldset]:border-burgundy [&_.MuiOutlinedInput-root.Mui-focused_fieldset]:border-burgundy [&_.MuiOutlinedInput-root.Mui-focused_fieldset]:border [&_.MuiOutlinedInput-input]:py-3.5"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "text.secondary" }} />
+                    <SearchIcon className="text-ink-secondary" />
                   </InputAdornment>
                 ),
                 endAdornment: loading ? (
@@ -208,19 +186,9 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
                   </InputAdornment>
                 ) : undefined,
               }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  fontSize: "1.125rem",
-                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                  "& fieldset": { borderColor: "divider" },
-                  "&:hover fieldset": { borderColor: "primary.main" },
-                  "&.Mui-focused fieldset": { borderColor: "primary.main", borderWidth: 1 },
-                },
-                "& .MuiOutlinedInput-input": { py: 1.75 },
-              }}
             />
 
-            <Box sx={{ mt: 2, minHeight: 80 }}>
+            <Box className="mt-4 min-h-20">
               {!touched && q.trim().length === 0 && (
                 <>
                   <KiribeTypography variant="body2" color="text.secondary">
@@ -228,21 +196,14 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
                   </KiribeTypography>
 
                   {categories.length > 0 && (
-                    <Box sx={{ mt: 3 }}>
+                    <Box className="mt-6">
                       <KiribeTypography
                         component="p"
-                        sx={{
-                          fontSize: "0.6875rem",
-                          fontWeight: 600,
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                          color: "text.secondary",
-                          mb: 1.5,
-                        }}
+                        className="text-[0.6875rem] font-semibold tracking-[0.08em] uppercase text-ink-secondary mb-3"
                       >
                         Browse by category
                       </KiribeTypography>
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                      <Box className="flex flex-wrap gap-2">
                         {categories.map((category) => (
                           <Box
                             key={category.id}
@@ -251,27 +212,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
                               slug: category.slug,
                             })}
                             onClick={() => setOpen(false)}
-                            sx={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              px: 1.75,
-                              py: 0.75,
-                              borderRadius: 999,
-                              border: "1px solid",
-                              borderColor: "divider",
-                              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                              fontSize: "0.75rem",
-                              fontWeight: 500,
-                              letterSpacing: "0.04em",
-                              textTransform: "uppercase",
-                              color: "text.primary",
-                              textDecoration: "none",
-                              transition: "color 120ms ease, border-color 120ms ease",
-                              "&:hover": {
-                                borderColor: "primary.main",
-                                color: "primary.main",
-                              },
-                            }}
+                            className="inline-flex items-center px-3.5 py-1.5 rounded-full border border-border font-headline text-xs font-medium tracking-[0.04em] uppercase text-ink no-underline transition-[color,border-color] duration-[120ms] ease-in-out hover:border-burgundy hover:text-burgundy"
                           >
                             {category.name}
                           </Box>
@@ -296,7 +237,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
 
               {results.length > 0 && (
                 <>
-                <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />} spacing={0}>
+                <Stack divider={<Box className="border-t border-border" />} spacing={0}>
                   {results.map((article) => {
                     const cat = article.categories?.[0];
                     return (
@@ -306,19 +247,10 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
                         onClick={() => setOpen(false)}
                         style={{ textDecoration: "none", color: "inherit" }}
                       >
-                        <Box
-                          sx={{
-                            py: 1.5,
-                            px: 1,
-                            mx: -1,
-                            borderRadius: 1,
-                            transition: "background 120ms ease",
-                            "&:hover": { bgcolor: "action.hover" },
-                          }}
-                        >
+                        <Box className="py-3 px-2 -mx-2 rounded transition-colors duration-[120ms] ease-in-out hover:bg-black/5">
                           <Stack direction="row" alignItems="flex-start" spacing={1.5}>
                             {cat?.name && (
-                              <Box sx={{ flexShrink: 0, mt: 0.5 }}>
+                              <Box className="shrink-0 mt-1">
                                 <CategoryBadge
                                   label={cat.name}
                                   color={getCategoryColor(cat.slug)}
@@ -326,29 +258,15 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
                                 />
                               </Box>
                             )}
-                            <Box sx={{ minWidth: 0 }}>
-                              <KiribeTypography
-                                sx={{
-                                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                                  fontSize: "1rem",
-                                  fontWeight: 600,
-                                  lineHeight: 1.35,
-                                  color: "text.primary",
-                                }}
-                              >
+                            <Box className="min-w-0">
+                              <KiribeTypography className="font-headline text-base font-semibold leading-[1.35] text-ink">
                                 {article.title}
                               </KiribeTypography>
                               {article.excerpt && (
                                 <KiribeTypography
                                   variant="body2"
                                   color="text.secondary"
-                                  sx={{
-                                    mt: 0.5,
-                                    display: "-webkit-box",
-                                    WebkitLineClamp: 1,
-                                    WebkitBoxOrient: "vertical",
-                                    overflow: "hidden",
-                                  }}
+                                  className="mt-1 line-clamp-1"
                                 >
                                   {article.excerpt}
                                 </KiribeTypography>
@@ -366,24 +284,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
                     component={NextLink}
                     href={searchDestination(q.trim())}
                     onClick={() => setOpen(false)}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      mt: 1.5,
-                      pt: 1.5,
-                      borderTop: "1px solid",
-                      borderColor: "divider",
-                      textDecoration: "none",
-                      fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                      fontSize: "0.8125rem",
-                      fontWeight: 600,
-                      letterSpacing: "0.03em",
-                      textTransform: "uppercase",
-                      color: "primary.main",
-                      transition: "color 120ms ease",
-                      "&:hover": { color: "secondary.main" },
-                    }}
+                    className="flex items-center justify-between mt-3 pt-3 border-t border-border no-underline font-headline text-[0.8125rem] font-semibold tracking-[0.03em] uppercase text-burgundy transition-colors duration-[120ms] ease-in-out hover:text-mustard"
                   >
                     <span>
                       View all {total} {total === 1 ? "result" : "results"}

@@ -1,6 +1,6 @@
 "use client";
 
-import Button from "@mui/material/Button";
+import { AdminButton } from "@/modules/admin/components/ui/AdminPrimitives";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -66,7 +66,7 @@ export function EmbedInsertDialog({ open, onClose, onInsert }: EmbedInsertDialog
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
       <DialogTitle>Insert embed</DialogTitle>
       <DialogContent>
-        <DialogContentText sx={{ mb: 2, fontSize: "0.8125rem" }}>
+        <DialogContentText className="mb-4 text-[0.8125rem]">
           Paste a link from YouTube, Vimeo, Instagram, TikTok, or Spotify. The
           embed loads only when a reader clicks it.
         </DialogContentText>
@@ -90,11 +90,13 @@ export function EmbedInsertDialog({ open, onClose, onInsert }: EmbedInsertDialog
           }}
         />
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button variant="contained" disabled={!url.trim()} onClick={apply}>
+      <DialogActions className="gap-2 px-6 pb-4">
+        <AdminButton variant="secondary" onClick={handleClose}>
+          Cancel
+        </AdminButton>
+        <AdminButton disabled={!url.trim()} onClick={apply}>
           Insert
-        </Button>
+        </AdminButton>
       </DialogActions>
     </Dialog>
   );

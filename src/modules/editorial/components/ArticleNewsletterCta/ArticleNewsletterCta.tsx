@@ -7,6 +7,7 @@ import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
 import { KiribeTypography } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import { trackEvent } from "@/modules/shared/components/GoogleAnalytics";
 import { PublicRoutes } from "@/routes/public.routes";
 import { useMutationService } from "@/utils/hooks/useMutationService";
@@ -44,38 +45,22 @@ export function ArticleNewsletterCta() {
   };
 
   return (
-    <Box component="section" sx={{ bgcolor: "#030712", py: { xs: 8, md: 12 } }}>
-      <Box sx={{ maxWidth: 640, mx: "auto", px: 3, textAlign: "center" }}>
-        <KiribeTypography
-          sx={{
-            fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-            fontSize: "0.75rem",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "var(--color-mustard)",
-          }}
-        >
+    <Box component="section" className="bg-[#030712] py-16 md:py-24">
+      <Box className="max-w-[640px] mx-auto px-6 text-center">
+        <KiribeTypography className="font-headline text-xs tracking-[0.1em] uppercase text-mustard">
           Join the Conversation
         </KiribeTypography>
-        <KiribeTypography
-          sx={{
-            mt: 2,
-            fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-            fontWeight: 400,
-            fontSize: { xs: "1.875rem", md: "2.25rem" },
-            color: "#fff",
-          }}
-        >
+        <KiribeTypography className="mt-4 font-headline font-normal text-[1.875rem] md:text-4xl text-white">
           Stay Ahead of the Story
         </KiribeTypography>
-        <Box sx={{ mx: "auto", mt: 2, width: 40, height: 2, bgcolor: "var(--color-mustard)" }} />
-        <KiribeTypography sx={{ mt: 3, color: "var(--color-muted)", fontSize: "1rem", lineHeight: 1.6 }}>
+        <Box className="mx-auto mt-4 w-10 h-0.5 bg-mustard" />
+        <KiribeTypography className="mt-6 text-muted text-base leading-[1.6]">
           Subscribe to Kiribé for premium entertainment journalism, exclusive
           interviews, and cultural commentary delivered weekly.
         </KiribeTypography>
 
         {isSuccess ? (
-          <KiribeTypography sx={{ mt: 4, color: "var(--color-mustard)", fontSize: "1rem" }}>
+          <KiribeTypography className="mt-8 text-mustard text-base">
             Thanks — check your inbox to confirm your subscription.
           </KiribeTypography>
         ) : (
@@ -83,7 +68,7 @@ export function ArticleNewsletterCta() {
             component="form"
             onSubmit={onSubmit}
             noValidate
-            sx={{ mt: 4, maxWidth: 520, mx: "auto" }}
+            className="mt-8 max-w-[520px] mx-auto"
           >
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <Box
@@ -94,69 +79,38 @@ export function ArticleNewsletterCta() {
               placeholder="Your email address"
               aria-label="Your email address"
               aria-invalid={touched && !valid}
-              sx={{
-                flex: 1,
-                bgcolor: "#1E2939",
-                border: "1px solid",
-                borderColor: touched && !valid ? "var(--color-danger)" : "#364153",
-                color: "#fff",
-                px: 2.5,
-                py: 1.5,
-                fontFamily: "var(--font-body)",
-                fontSize: "0.875rem",
-                outline: "none",
-                "&::placeholder": { color: "#6A7282" },
-                "&:focus": { borderColor: "var(--color-mustard)" },
-              }}
+              className={cn(
+                "flex-1 bg-[#1E2939] border text-white px-5 py-3 font-body text-sm outline-none placeholder:text-muted focus:border-mustard",
+                touched && !valid ? "border-danger" : "border-[#364153]"
+              )}
             />
             <Box
               component="button"
               type="submit"
               disabled={isPending || !canSubmit}
-              sx={{
-                bgcolor: "var(--color-mustard)",
-                color: "#fff",
-                border: "none",
-                px: 4,
-                py: 1.5,
-                cursor: "pointer",
-                fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                fontSize: "0.875rem",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                whiteSpace: "nowrap",
-                transition: "background-color var(--duration-fast) ease",
-                "&:hover": { bgcolor: "var(--color-mustard-dark)" },
-                "&:disabled": { opacity: 0.6, cursor: "default" },
-              }}
+              className="bg-mustard text-white border-none px-8 py-3 cursor-pointer font-headline text-sm tracking-[0.1em] uppercase whitespace-nowrap transition-colors duration-[var(--duration-fast)] ease-in-out hover:bg-mustard-dark disabled:opacity-60 disabled:cursor-default"
             >
               {isPending ? "Subscribing…" : "Subscribe Free"}
             </Box>
             </Stack>
 
             <FormControlLabel
-              sx={{ mt: 2.5, mx: 0, alignItems: "flex-start" }}
+              className="mt-5 mx-0 items-start"
               control={
                 <Checkbox
                   checked={consent}
                   onChange={(e) => setConsent(e.target.checked)}
                   size="small"
-                  sx={{
-                    py: 0,
-                    color: "var(--color-muted-soft)",
-                    "&.Mui-checked": { color: "var(--color-mustard)" },
-                  }}
+                  className="py-0 text-muted-soft [&.Mui-checked]:text-mustard"
                 />
               }
               label={
-                <KiribeTypography
-                  sx={{ color: "var(--color-muted)", fontSize: "0.8125rem", lineHeight: 1.5, textAlign: "left" }}
-                >
+                <KiribeTypography className="text-muted text-[0.8125rem] leading-normal text-left">
                   I agree to receive editorial updates and accept the{" "}
                   <Box
                     component={NextLink}
                     href={PublicRoutes.privacy}
-                    sx={{ color: "var(--color-mustard)", textDecoration: "underline" }}
+                    className="text-mustard underline"
                   >
                     privacy policy
                   </Box>

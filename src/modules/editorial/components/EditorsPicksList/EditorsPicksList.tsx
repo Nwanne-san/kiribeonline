@@ -19,41 +19,20 @@ function categoryAccent(slug?: string): string {
   return CATEGORY_COLORS[key]?.text ?? "#C9A227";
 }
 
-const TWO_LINE_CLAMP = {
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-} as const;
-
 export function EditorsPicksList({ picks }: EditorsPicksListProps) {
   return (
     <Stack spacing={0}>
       <KiribeTypography
         variant="h3"
-        sx={{
-          color: "primary.main",
-          fontSize: "1.25rem",
-          letterSpacing: "0.04em",
-          textTransform: "uppercase",
-        }}
+        className="text-burgundy text-[1.25rem] tracking-[0.04em] uppercase"
       >
         Editor&apos;s Picks
       </KiribeTypography>
-      <Box sx={{ width: 48, height: 2, bgcolor: "secondary.main", mt: 1, mb: 2.5 }} />
+      <Box className="w-12 h-0.5 bg-mustard mt-2 mb-5" />
 
       {picks.length === 0 && (
-        <Box
-          sx={{
-            py: 3,
-            border: "1px dashed",
-            borderColor: "divider",
-            borderRadius: 1,
-            textAlign: "center",
-            color: "text.secondary",
-          }}
-        >
-          <KiribeTypography variant="body2" sx={{ color: "inherit" }}>
+        <Box className="py-6 border border-dashed border-border rounded text-center text-ink-secondary">
+          <KiribeTypography variant="body2" className="text-inherit">
             Editor&rsquo;s picks will appear here.
           </KiribeTypography>
         </Box>
@@ -64,26 +43,18 @@ export function EditorsPicksList({ picks }: EditorsPicksListProps) {
           const category = article.categories?.[0];
           const href = publicRoute(PublicRoutes.articleDetail, { slug: article.slug });
           return (
-            <Stack key={article.id} spacing={0.5} sx={{ py: 1.75 }}>
+            <Stack key={article.id} spacing={0.5} className="py-3.5">
               {category && (
                 <KiribeTypography
                   variant="kicker"
-                  sx={{ color: categoryAccent(category.slug), display: "block" }}
+                  className="block"
+                  style={{ color: categoryAccent(category.slug) }}
                 >
                   {category.name}
                 </KiribeTypography>
               )}
               <KiribeLink href={href} underline="hover" color="inherit">
-                <KiribeTypography
-                  sx={{
-                    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                    fontSize: "1rem",
-                    fontWeight: 600,
-                    lineHeight: 1.35,
-                    color: "text.primary",
-                    ...TWO_LINE_CLAMP,
-                  }}
-                >
+                <KiribeTypography className="font-headline text-base font-semibold leading-[1.35] text-ink line-clamp-2">
                   {article.title}
                 </KiribeTypography>
               </KiribeLink>
@@ -95,18 +66,10 @@ export function EditorsPicksList({ picks }: EditorsPicksListProps) {
       <KiribeLink
         href={PublicRoutes.articles}
         underline="hover"
-        sx={{
-          mt: 2.5,
-          color: "primary.main",
-          fontWeight: 600,
-          fontSize: "0.875rem",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 0.5,
-        }}
+        className="mt-5 text-burgundy font-semibold text-sm inline-flex items-center gap-1"
       >
         More News
-        <ArrowForwardIcon sx={{ fontSize: 16 }} />
+        <ArrowForwardIcon className="text-[16px]" />
       </KiribeLink>
     </Stack>
   );

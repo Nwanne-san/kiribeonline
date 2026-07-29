@@ -76,14 +76,16 @@ Always use `PublicRoutes` and `AdminRoutes` from `src/routes/`. No hardcoded pat
 
 ### Styling
 
-We're migrating from MUI 7 → Tailwind v4 + headless primitives. Both stacks coexist during the migration.
+We're migrating from MUI 7 → Tailwind v4 (Branddrive-web style). Keep MUI primitives; put styles in `className`, not `sx`.
 
 - **Design tokens live in `src/theme/tailwind.css`** under `@theme` (Tailwind v4 CSS-first config). Brand colors, fonts, spacing, breakpoints, shadows, radii are all defined there as CSS custom properties.
-- **New components**: prefer Tailwind utilities + small headless primitives. Tokens are accessed via class names (`bg-burgundy`, `text-mustard`, `font-headline`) or `var(--color-burgundy)`.
-- **Existing MUI components stay** until rewritten — they consume the same tokens via `src/theme/muiTheme.ts` so colors stay in sync. Don't add new MUI primitives if you can avoid them.
-- **Kiribe wrappers** (`KiribeTypography`, `KiribeButton`, `EditorialContainer`, `EditorialSection`, `KiribeTextField`, `KiribeLink`) are the seam for the migration. When rewriting them in Tailwind, keep their API identical so callers don't change.
-- Reusable layout shortcuts in `src/theme/tailwind.css`: `editorial-container`, `editorial-section`, `kicker`, `gold-rule`, `line-clamp-2`, `line-clamp-3`.
-- Icons: continue using `@mui/icons-material` for now; we'll swap to `lucide-react` when convenient.
+- **New / migrated components**: MUI `Box`/`Typography`/`Button`/etc. stay; layout and visual styles go in Tailwind `className` + tokens (`bg-burgundy`, `text-mustard`, `font-headline`). Use `cn()` from `@/modules/shared/components/tw`.
+- **Do not add new `sx` for layout, spacing, color, typography, border, or shadow.** Escape hatches only: runtime colors via `style`, or MUI deep slots via `slotProps` + `className` (tiny `sx` as last resort). See `docs/DESIGN.md` §14 mapping table.
+- **Existing MUI theme** (`src/theme/muiTheme.ts`) stays in sync with tokens for unmigrated defaults. Don't add new MUI primitives if you can avoid them.
+- **Kiribe wrappers** (`KiribeTypography`, `KiribeButton`, `EditorialContainer`, `EditorialSection`, `KiribeTextField`, `KiribeLink`) are the seam — Tailwind-backed defaults; keep public APIs stable.
+- **Admin:** prefer `AdminPrimitives` + Tailwind only.
+- Reusable layout shortcuts in `src/theme/tailwind.css`: `editorial-container`, `editorial-section`, `kiribe-field`, `kicker`, `gold-rule`, `line-clamp-2`, `line-clamp-3`.
+- Icons: continue using `@mui/icons-material` for now; size via `fontSize` or `className`, not `sx`.
 
 **Do not** introduce a new component library (no shadcn/Radix/Headless UI install yet — confirm first if needed).
 

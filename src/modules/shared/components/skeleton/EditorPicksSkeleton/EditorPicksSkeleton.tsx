@@ -4,11 +4,11 @@ import { SkeletonBlock } from "../SkeletonBlock";
 export function EditorPicksSkeleton({ count = 5 }: { count?: number }) {
   return (
     <Stack component="aside" spacing={2.5} aria-hidden>
-      <Stack spacing={1} sx={{ pb: 1.5, borderBottom: 1, borderColor: "divider" }}>
+      <Stack spacing={1} className="pb-3 border-b border-border">
         <SkeletonBlock width={144} height={20} />
-        <SkeletonBlock width={32} height={2} sx={{ bgcolor: "secondary.light" }} />
+        <SkeletonBlock width={32} height={2} className="bg-mustard-light" />
       </Stack>
-      <Stack spacing={2.5} component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
+      <Stack spacing={2.5} component="ul" className="list-none m-0 p-0">
         {Array.from({ length: count }).map((_, i) => (
           <Stack key={i} component="li" spacing={1}>
             <SkeletonBlock width={64} height={12} />

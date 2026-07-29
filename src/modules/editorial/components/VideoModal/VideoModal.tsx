@@ -11,6 +11,7 @@ import { useTheme } from "@mui/material/styles";
 import type { PublicReel } from "@/lib/content/query-homepage";
 import { parseReelEmbed } from "@/lib/reels/parse-embed";
 import { KiribeLink, KiribeTypography } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 
 type VideoModalProps = {
   reel: PublicReel | null;
@@ -36,25 +37,22 @@ export function VideoModal({ reel, onClose }: VideoModalProps) {
       maxWidth={false}
       slotProps={{
         paper: {
-          sx: {
-            bgcolor: fullScreen ? "#000" : "transparent",
-            boxShadow: "none",
-            margin: fullScreen ? 0 : { xs: 2, sm: 4 },
-            borderRadius: fullScreen ? 0 : 2,
-            overflow: "hidden",
-            width: fullScreen ? "100%" : "auto",
-          },
+          className: cn(
+            "shadow-none overflow-hidden",
+            fullScreen
+              ? "bg-black m-0 rounded-none w-full"
+              : "bg-transparent m-4 sm:m-8 rounded-lg w-auto"
+          ),
         },
       }}
     >
       <Box
-        sx={{
-          position: "relative",
-          width: fullScreen ? "100vw" : "min(420px, 90vw)",
-          height: fullScreen ? "100vh" : "min(75vh, 746px)",
-          aspectRatio: fullScreen ? "auto" : "9 / 16",
-          bgcolor: "#000",
-        }}
+        className={cn(
+          "relative bg-black",
+          fullScreen
+            ? "w-screen h-screen"
+            : "w-[min(420px,90vw)] h-[min(75vh,746px)] aspect-[9/16]"
+        )}
       >
         {embed?.embedUrl ? (
           <Box
@@ -63,40 +61,26 @@ export function VideoModal({ reel, onClose }: VideoModalProps) {
             title={reel?.title ?? "Video"}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
-            sx={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              border: 0,
-            }}
+            className="absolute inset-0 w-full h-full border-0"
           />
         ) : reel ? (
           <Stack
             alignItems="center"
             justifyContent="center"
             spacing={2}
-            sx={{ position: "absolute", inset: 0, p: 4, textAlign: "center", color: "#fff" }}
+            className="absolute inset-0 p-8 text-center text-white"
           >
-            <KiribeTypography sx={{ color: "inherit", fontSize: "1rem", fontWeight: 600 }}>
+            <KiribeTypography className="text-inherit text-base font-semibold">
               This video can&rsquo;t be embedded.
             </KiribeTypography>
             <KiribeLink
               href={reel.externalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 0.75,
-                color: "#fff",
-                textDecoration: "underline",
-                textUnderlineOffset: 3,
-                fontSize: "0.875rem",
-              }}
+              className="inline-flex items-center gap-1.5 text-white underline underline-offset-[3px] text-sm"
             >
               Open on original site
-              <OpenInNewIcon sx={{ fontSize: 16 }} />
+              <OpenInNewIcon className="text-[16px]" />
             </KiribeLink>
           </Stack>
         ) : null}
@@ -109,18 +93,9 @@ export function VideoModal({ reel, onClose }: VideoModalProps) {
             target="_blank"
             rel="noopener noreferrer"
             size="small"
-            sx={{
-              position: "absolute",
-              top: 12,
-              right: 56,
-              width: 36,
-              height: 36,
-              bgcolor: "rgba(0,0,0,0.55)",
-              color: "#fff",
-              "&:hover": { bgcolor: "rgba(0,0,0,0.75)" },
-            }}
+            className="absolute top-3 right-14 w-9 h-9 bg-black/55 text-white hover:bg-black/75"
           >
-            <OpenInNewIcon sx={{ fontSize: 18 }} />
+            <OpenInNewIcon className="text-[18px]" />
           </IconButton>
         )}
 
@@ -128,18 +103,9 @@ export function VideoModal({ reel, onClose }: VideoModalProps) {
           aria-label="Close video"
           onClick={onClose}
           size="small"
-          sx={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            width: 36,
-            height: 36,
-            bgcolor: "rgba(0,0,0,0.55)",
-            color: "#fff",
-            "&:hover": { bgcolor: "rgba(0,0,0,0.75)" },
-          }}
+          className="absolute top-3 right-3 w-9 h-9 bg-black/55 text-white hover:bg-black/75"
         >
-          <CloseRoundedIcon sx={{ fontSize: 20 }} />
+          <CloseRoundedIcon className="text-[20px]" />
         </IconButton>
       </Box>
     </Dialog>

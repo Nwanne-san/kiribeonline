@@ -13,16 +13,7 @@ type CreatorCardProps = {
 export function CreatorCard({ creator }: CreatorCardProps) {
   return (
     <Stack spacing={1.5}>
-      <Box
-        sx={{
-          position: "relative",
-          width: "100%",
-          aspectRatio: "3 / 4",
-          borderRadius: 2,
-          overflow: "hidden",
-          bgcolor: "action.hover",
-        }}
-      >
+      <Box className="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-black/5">
         <KiribeImage
           src={creator.portrait}
           alt={creator.portrait?.alt ?? creator.name}
@@ -31,36 +22,24 @@ export function CreatorCard({ creator }: CreatorCardProps) {
         />
       </Box>
       <Box>
-        <KiribeTypography
-          variant="cardTitle"
-          sx={{ fontSize: "1.125rem", lineHeight: 1.3 }}
-        >
+        <KiribeTypography variant="cardTitle" className="text-lg leading-[1.3]">
           {creator.name}
         </KiribeTypography>
         <KiribeTypography
           variant="caption"
           color="text.secondary"
-          sx={{ display: "block", mt: 0.25, fontSize: "0.8125rem" }}
+          className="block mt-0.5 text-[0.8125rem]"
         >
           {creator.role}
         </KiribeTypography>
         {creator.badges && creator.badges.length > 0 && (
-          <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mt: 1 }}>
+          <Stack direction="row" flexWrap="wrap" gap={0.5} className="mt-2">
             {creator.badges.map((badge) => (
               <Box
                 key={badge.label}
                 component="span"
-                sx={{
-                  fontSize: "0.6rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  px: 0.75,
-                  py: 0.25,
-                  borderRadius: 0.5,
-                  bgcolor: badge.color ?? "primary.main",
-                  color: "#fff",
-                }}
+                className="text-[0.6rem] font-bold tracking-[0.06em] uppercase px-1.5 py-0.5 rounded text-white"
+                style={{ backgroundColor: badge.color ?? "var(--color-burgundy)" }}
               >
                 {badge.label}
               </Box>

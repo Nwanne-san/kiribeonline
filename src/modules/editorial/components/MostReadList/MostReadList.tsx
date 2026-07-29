@@ -10,6 +10,7 @@ import {
   KiribeTypography,
   publicRoute,
 } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import { PublicRoutes } from "@/routes/public.routes";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
 
@@ -29,22 +30,8 @@ function categoryAccent(slug?: string): string {
   return CATEGORY_COLORS[key]?.text ?? "#C9A227";
 }
 
-const TWO_LINE_CLAMP = {
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-} as const;
-
-/** Big Outfit numerals — burgundy, thin. Distinctive "top-5" leaderboard feel. */
-const numeralBaseSx = {
-  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-  fontWeight: 300,
-  color: "primary.main",
-  lineHeight: 0.9,
-  flexShrink: 0,
-  fontVariantNumeric: "tabular-nums",
-} as const;
+const numeralBaseClass =
+  "font-headline font-light text-burgundy leading-[0.9] shrink-0 tabular-nums opacity-85";
 
 function MostReadRow({
   index,
@@ -59,58 +46,44 @@ function MostReadRow({
   const category = article.categories?.[0];
   const accent = categoryAccent(category?.slug);
   const label = String(index + 1).padStart(2, "0");
-
-  const numeralSx =
-    variant === "homepage"
-      ? { ...numeralBaseSx, fontSize: { xs: "2.5rem", md: "3rem" } }
-      : { ...numeralBaseSx, fontSize: "2rem" };
+  const isHomepage = variant === "homepage";
 
   return (
     <KiribeLink
       href={href}
       underline="none"
       color="inherit"
-      sx={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: variant === "homepage" ? 2.5 : 2,
-        py: variant === "homepage" ? 2 : 1.75,
-        transition: "color var(--duration-fast) ease",
-        "&:hover .most-read-title": { color: accent },
-      }}
+      className={cn(
+        "flex items-start transition-colors duration-[var(--duration-fast)] ease-in-out group",
+        isHomepage ? "gap-5 py-4" : "gap-4 py-3.5"
+      )}
+      style={{ ["--most-read-accent" as string]: accent }}
     >
       <Box
         component="span"
         aria-hidden="true"
-        sx={{ ...numeralSx, opacity: 0.85, minWidth: variant === "homepage" ? 56 : 44 }}
+        className={cn(
+          numeralBaseClass,
+          isHomepage ? "text-[2.5rem] md:text-5xl min-w-14" : "text-[2rem] min-w-11"
+        )}
       >
         {label}
       </Box>
-      <Stack spacing={0.5} sx={{ minWidth: 0, flex: 1 }}>
+      <Stack spacing={0.5} className="min-w-0 flex-1">
         {category && (
           <KiribeTypography
             variant="kicker"
-            sx={{
-              color: categoryAccent(category.slug),
-              display: "block",
-              fontSize: "0.6875rem",
-              letterSpacing: "0.1em",
-            }}
+            className="block text-[0.6875rem] tracking-[0.1em]"
+            style={{ color: categoryAccent(category.slug) }}
           >
             {category.name}
           </KiribeTypography>
         )}
         <KiribeTypography
-          className="most-read-title"
-          sx={{
-            fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-            fontWeight: 500,
-            fontSize: variant === "homepage" ? "1.0625rem" : "0.9375rem",
-            lineHeight: 1.35,
-            color: "text.primary",
-            transition: "color var(--duration-fast) ease",
-            ...TWO_LINE_CLAMP,
-          }}
+          className={cn(
+            "most-read-title font-headline font-medium leading-[1.35] text-ink transition-colors duration-[var(--duration-fast)] ease-in-out line-clamp-2 group-hover:text-[var(--most-read-accent)]",
+            isHomepage ? "text-[1.0625rem]" : "text-[0.9375rem]"
+          )}
         >
           {article.title}
         </KiribeTypography>
@@ -141,27 +114,16 @@ export function MostReadList({
       <Box
         component="aside"
         aria-label={title}
-        sx={{
-          bgcolor: "#F9FAFB",
-          border: "1px solid",
-          borderColor: "divider",
-          p: 3,
-        }}
+        className="bg-surface-alt border border-border p-6"
       >
         <KiribeTypography
           variant="h3"
-          sx={{
-            color: "primary.main",
-            fontSize: "1rem",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            fontWeight: 600,
-          }}
+          className="text-burgundy text-base tracking-[0.08em] uppercase font-semibold"
         >
           {title}
         </KiribeTypography>
-        <Box sx={{ width: 40, height: 2, bgcolor: "secondary.main", mt: 1, mb: 2 }} />
-        <Stack divider={<Box sx={{ height: "1px", bgcolor: "divider" }} />}>
+        <Box className="w-10 h-0.5 bg-mustard mt-2 mb-4" />
+        <Stack divider={<Box className="h-px bg-border" />}>
           {articles.map((article, i) => (
             <MostReadRow key={article.id} index={i} article={article} variant="sidebar" />
           ))}
@@ -172,37 +134,26 @@ export function MostReadList({
 
   // Homepage: split the list across two columns on desktop, single column on mobile
   return (
-    <EditorialSection sx={{ py: { xs: 5, md: 8 }, bgcolor: "background.paper" }}>
+    <EditorialSection className="py-10 md:py-16 bg-surface">
       <EditorialContainer>
-        <Stack direction="row" alignItems="baseline" spacing={2} sx={{ mb: 3 }}>
+        <Stack direction="row" alignItems="baseline" spacing={2} className="mb-6">
           <Box>
             <KiribeTypography
               variant="h3"
               color="primary.main"
-              sx={{ textTransform: "uppercase" }}
+              className="uppercase"
             >
               {title}
             </KiribeTypography>
-            <Box sx={{ width: 48, height: 3, bgcolor: "secondary.main", mt: 0.75 }} />
+            <Box className="w-12 h-[3px] bg-mustard mt-1.5" />
           </Box>
         </Stack>
 
-        <Box
-          sx={{
-            display: "grid",
-            gap: { xs: 0, md: 4 },
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-            borderTop: "1px solid",
-            borderColor: "divider",
-          }}
-        >
+        <Box className="grid gap-0 md:gap-8 grid-cols-1 md:grid-cols-2 border-t border-border">
           {articles.map((article, i) => (
             <Box
               key={article.id}
-              sx={{
-                borderBottom: "1px solid",
-                borderColor: "divider",
-              }}
+              className="border-b border-border"
             >
               <MostReadRow index={i} article={article} variant="homepage" />
             </Box>

@@ -18,3 +18,7 @@ Optional user skills (not separate agents): `review-security`, `review-bugbot` �
 ## List URL state rule
 
 See `.cursor/rules/kiribe-list-url-state.mdc` — editorial list pages must sync `page`, `limit`, `q`, `view`, and `filter` to the URL via shared hooks; limits from `@/constants`.
+
+## Styling
+
+See CLAUDE.md § Styling. Prefer Tailwind `className` on MUI primitives; do not add new layout/visual `sx`. Use `cn()` from `@/modules/shared/components/tw`.

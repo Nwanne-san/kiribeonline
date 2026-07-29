@@ -6,6 +6,7 @@ import Box from "@mui/material/Box";
 import { useState } from "react";
 import { parseEmbed, type ArticleEmbed as ParsedEmbed } from "@/lib/embeds/parse-embed";
 import { KiribeLink, KiribeTypography } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 
 export type ArticleEmbedProps = {
   /** The stored, author-supplied URL. This is the ONLY trusted input. */
@@ -20,6 +21,20 @@ const PLATFORM_LABEL: Record<ParsedEmbed["platform"], string> = {
   spotify: "Spotify",
   "link-card": "Link",
 };
+
+function frameStyle(embed: ParsedEmbed, isAudio: boolean): React.CSSProperties {
+  if (isAudio) {
+    return { position: "relative", width: "100%", height: embed.frameHeight ?? 152 };
+  }
+  const isPortrait = (embed.aspectRatio ?? "16 / 9").startsWith("9 /");
+  return {
+    position: "relative",
+    width: "100%",
+    aspectRatio: embed.aspectRatio ?? "16 / 9",
+    maxWidth: isPortrait ? 360 : "100%",
+    marginInline: "auto",
+  };
+}
 
 /**
  * Public renderer for an embed node.
@@ -44,7 +59,7 @@ export function ArticleEmbed({ url }: ArticleEmbedProps) {
   // an iframe.
   if (embed.layout === "card" || !embed.embedUrl) {
     return (
-      <Box component="figure" sx={{ my: 4, mx: 0 }}>
+      <Box component="figure" className="my-8 mx-0">
         <KiribeLink
           href={embed.externalUrl}
           target="_blank"
@@ -52,35 +67,13 @@ export function ArticleEmbed({ url }: ArticleEmbedProps) {
           underline="none"
           color="inherit"
         >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              p: 2,
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: 2,
-              bgcolor: "background.paper",
-              transition: "border-color 120ms",
-              "@media (prefers-reduced-motion: reduce)": { transition: "none" },
-              "&:hover": { borderColor: "primary.main" },
-            }}
-          >
-            <OpenInNewIcon sx={{ color: "primary.main", fontSize: 20, flexShrink: 0 }} />
-            <Box sx={{ minWidth: 0 }}>
-              <KiribeTypography sx={{ fontWeight: 600, fontSize: "0.9375rem" }}>
+          <Box className="flex items-center gap-3 p-4 border border-border rounded-lg bg-surface transition-[border-color] duration-[120ms] motion-reduce:transition-none hover:border-burgundy">
+            <OpenInNewIcon className="text-burgundy text-[20px] shrink-0" />
+            <Box className="min-w-0">
+              <KiribeTypography className="font-semibold text-[0.9375rem]">
                 {embed.title ?? "Open link"}
               </KiribeTypography>
-              <KiribeTypography
-                sx={{
-                  fontSize: "0.8125rem",
-                  color: "text.secondary",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+              <KiribeTypography className="text-[0.8125rem] text-ink-secondary truncate">
                 {embed.externalUrl}
               </KiribeTypography>
             </Box>
@@ -93,83 +86,28 @@ export function ArticleEmbed({ url }: ArticleEmbedProps) {
   const label = PLATFORM_LABEL[embed.platform];
   const isAudio = embed.layout === "audio";
 
-  // Framing: fixed-height for audio (Spotify), responsive aspect box for video.
-  const frameSx = isAudio
-    ? { position: "relative" as const, width: "100%", height: embed.frameHeight ?? 152 }
-    : {
-        position: "relative" as const,
-        width: "100%",
-        aspectRatio: embed.aspectRatio ?? "16 / 9",
-        maxWidth: (embed.aspectRatio ?? "16 / 9").startsWith("9 /") ? 360 : "100%",
-        mx: "auto",
-        bgcolor: "#0A0A0A",
-        borderRadius: 2,
-        overflow: "hidden",
-      };
-
   if (!activated) {
     return (
-      <Box component="figure" sx={{ my: 4, mx: 0 }}>
+      <Box component="figure" className="my-8 mx-0">
         <Box
           component="button"
           type="button"
           onClick={() => setActivated(true)}
           aria-label={`Load ${label} embed`}
-          sx={{
-            all: "unset",
-            cursor: "pointer",
-            display: "block",
-            width: "100%",
-            "&:focus-visible > div": {
-              outline: "2px solid",
-              outlineColor: "secondary.main",
-              outlineOffset: 2,
-            },
-          }}
+          className="[all:unset] cursor-pointer block w-full focus-visible:[&>div]:outline focus-visible:[&>div]:outline-2 focus-visible:[&>div]:outline-mustard focus-visible:[&>div]:outline-offset-2"
         >
           <Box
-            sx={{
-              ...frameSx,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: isAudio ? "background.paper" : "#111",
-              border: isAudio ? "1px solid" : "none",
-              borderColor: "divider",
-              borderRadius: 2,
-            }}
+            className={cn(
+              "flex items-center justify-center rounded-lg overflow-hidden",
+              isAudio ? "bg-surface border border-border" : "bg-[#111]"
+            )}
+            style={frameStyle(embed, isAudio)}
           >
-            <Box
-              sx={{
-                position: "absolute",
-                top: 10,
-                left: 10,
-                px: 1,
-                py: 0.25,
-                borderRadius: 0.75,
-                bgcolor: "rgba(0,0,0,0.55)",
-                color: "#fff",
-                fontSize: "0.6875rem",
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-              }}
-            >
+            <Box className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/55 text-white text-[0.6875rem] font-bold tracking-[0.06em] uppercase">
               {label}
             </Box>
-            <Box
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                bgcolor: "rgba(255,255,255,0.92)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
-              }}
-            >
-              <PlayArrowIcon sx={{ color: "primary.main", fontSize: 30, ml: 0.25 }} />
+            <Box className="w-14 h-14 rounded-full bg-white/92 flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.3)]">
+              <PlayArrowIcon className="text-burgundy text-[30px] ml-0.5" />
             </Box>
           </Box>
         </Box>
@@ -178,8 +116,11 @@ export function ArticleEmbed({ url }: ArticleEmbedProps) {
   }
 
   return (
-    <Box component="figure" sx={{ my: 4, mx: 0 }}>
-      <Box sx={frameSx}>
+    <Box component="figure" className="my-8 mx-0">
+      <Box
+        className="bg-[#0A0A0A] rounded-lg overflow-hidden"
+        style={frameStyle(embed, isAudio)}
+      >
         <Box
           component="iframe"
           src={embed.embedUrl}
@@ -189,13 +130,7 @@ export function ArticleEmbed({ url }: ArticleEmbedProps) {
           sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
           allow="autoplay; encrypted-media; picture-in-picture; clipboard-write"
           allowFullScreen
-          sx={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            border: 0,
-          }}
+          className="absolute inset-0 w-full h-full border-0"
         />
       </Box>
     </Box>

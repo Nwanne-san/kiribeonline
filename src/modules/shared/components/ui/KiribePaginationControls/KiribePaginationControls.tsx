@@ -10,6 +10,7 @@ import Select from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 import { useCallback } from "react";
 import { PAGE_LIMIT_OPTIONS } from "@/constants";
+import { cn } from "@/modules/shared/components/tw";
 
 export type KiribePaginationControlsProps = {
   currentPage: number;
@@ -58,26 +59,20 @@ export function KiribePaginationControls({
 
   return (
     <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        width: "100%",
-        py: isCondense ? 1 : 2,
-        mt: 4,
-        borderTop: "1px solid",
-        borderColor: "divider",
-      }}
+      className={cn(
+        "mt-8 flex w-full items-center justify-between border-t border-border",
+        isCondense ? "py-2" : "py-4"
+      )}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-        <Typography variant="body2" color="text.secondary">
+      <Box className="flex items-center gap-3">
+        <Typography variant="body2" className="text-ink-secondary">
           {itemLabel}
         </Typography>
         <Select
           value={rowsPerPage}
           onChange={handleRowsPerPageChange}
           size="small"
-          sx={{ minWidth: 72, fontSize: "0.875rem" }}
+          className="min-w-[72px] text-sm"
         >
           {rowsPerPageList.map((val) => (
             <MenuItem key={val} value={val}>
@@ -95,13 +90,10 @@ export function KiribePaginationControls({
           <PaginationItem
             slots={{ previous: ChevronLeftIcon, next: ChevronRightIcon }}
             {...item}
-            sx={{
-              ...(item.selected && {
-                bgcolor: "primary.main",
-                color: "primary.contrastText",
-                "&:hover": { bgcolor: "primary.dark" },
-              }),
-            }}
+            className={cn(
+              item.selected &&
+                "bg-burgundy text-burgundy-contrast hover:bg-burgundy-dark"
+            )}
           />
         )}
       />

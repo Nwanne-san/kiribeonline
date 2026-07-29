@@ -29,7 +29,7 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
   const primaryCategory = heroArticle?.categories?.[0]?.name;
 
   return (
-    <EditorialSection sx={{ pt: { xs: 4, md: 6 }, pb: { xs: 5, md: 8 } }}>
+    <EditorialSection className="pt-8 md:pt-12 pb-10 md:pb-16">
       <EditorialContainer>
         <Grid container spacing={{ xs: 4, base: 6 }}>
           <Grid size={{ xs: 12, base: 8 }}>
@@ -48,7 +48,7 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
                 <KiribeTypography
                   variant="kicker"
                   color="secondary.main"
-                  sx={{ display: "block" }}
+                  className="block"
                 >
                   {primaryCategory ? `Featured · ${primaryCategory}` : "Featured Story"}
                 </KiribeTypography>
@@ -56,11 +56,7 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
                   <KiribeTypography
                     variant="h1"
                     component="h1"
-                    sx={{
-                      fontSize: "clamp(1.875rem, 1.5rem + 1.6vw, 2.75rem)",
-                      lineHeight: 1.15,
-                      letterSpacing: "-0.01em",
-                    }}
+                    className="text-[clamp(1.875rem,1.5rem+1.6vw,2.75rem)] leading-[1.15] tracking-tight"
                   >
                     {heroArticle.title}
                   </KiribeTypography>
@@ -69,7 +65,7 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
                   <KiribeTypography
                     variant="body1"
                     color="text.secondary"
-                    sx={{ fontSize: "1rem", lineHeight: 1.6 }}
+                    className="text-base leading-[1.6]"
                   >
                     {heroArticle.excerpt}
                   </KiribeTypography>
@@ -85,18 +81,14 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
                 <KiribeTypography
                   variant="kicker"
                   color="secondary.main"
-                  sx={{ display: "block" }}
+                  className="block"
                 >
                   Featured Story
                 </KiribeTypography>
                 <KiribeTypography
                   variant="h1"
                   component="h1"
-                  sx={{
-                    fontSize: { xs: "1.875rem", md: "2.5rem" },
-                    lineHeight: 1.15,
-                    color: "text.primary",
-                  }}
+                  className="text-[1.875rem] md:text-[2.5rem] leading-[1.15] text-ink"
                 >
                   Stories worth your time.
                 </KiribeTypography>

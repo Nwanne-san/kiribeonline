@@ -25,30 +25,17 @@ export function ReadNextSection({ articles, title = "Read next" }: ReadNextSecti
     <Box
       component="section"
       aria-labelledby="read-next-heading"
-      sx={{ bgcolor: "background.paper", py: { xs: 6, md: 8 } }}
+      className="bg-surface py-12 md:py-16"
     >
-      <Box sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
+      <Box className="editorial-container">
         <KiribeTypography
           id="read-next-heading"
-          sx={{
-            fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-            fontWeight: 400,
-            fontSize: "1.5rem",
-            letterSpacing: "0.025em",
-            textTransform: "uppercase",
-            color: "primary.main",
-          }}
+          className="font-headline font-normal text-2xl tracking-wide uppercase text-burgundy"
         >
           {title}
         </KiribeTypography>
-        <Box sx={{ mt: 1, mb: 4, width: 48, height: 2, bgcolor: "secondary.main" }} />
-        <Box
-          sx={{
-            display: "grid",
-            gap: 4,
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", base: "1fr 1fr 1fr" },
-          }}
-        >
+        <Box className="mt-2 mb-8 w-12 h-0.5 bg-mustard" />
+        <Box className="grid gap-8 grid-cols-1 md:grid-cols-2 base:grid-cols-3">
           {articles.slice(0, 3).map((article) => (
             <ArticleCard key={article.id} article={article} variant="grid" />
           ))}

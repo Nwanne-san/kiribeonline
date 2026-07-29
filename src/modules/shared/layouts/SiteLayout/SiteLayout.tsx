@@ -22,7 +22,7 @@ export function SiteLayout({
   return (
     <NavigationProgressProvider>
       <SubscribeModalProvider>
-        <Box sx={{ display: "flex", minHeight: "100vh", flexDirection: "column" }}>
+        <Box className="flex min-h-screen flex-col">
           {/*
             Skip-to-content link — visually hidden until keyboard focus lands
             on it. Lets keyboard/AT users bypass the header nav and jump
@@ -32,33 +32,7 @@ export function SiteLayout({
           <Box
             component="a"
             href={`#${MAIN_ID}`}
-            sx={{
-              position: "absolute",
-              left: 8,
-              top: 8,
-              zIndex: 1000,
-              px: 2,
-              py: 1,
-              borderRadius: 1,
-              bgcolor: "var(--color-burgundy)",
-              color: "#fff",
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontSize: "0.875rem",
-              fontWeight: 600,
-              textDecoration: "none",
-              transform: "translateY(-200%)",
-              transition: "transform 120ms ease-out",
-              "&:focus": {
-                transform: "translateY(0)",
-                outline: "2px solid var(--color-mustard)",
-                outlineOffset: 2,
-              },
-              "&:focus-visible": {
-                transform: "translateY(0)",
-                outline: "2px solid var(--color-mustard)",
-                outlineOffset: 2,
-              },
-            }}
+            className="font-headline absolute top-2 left-2 z-[1000] -translate-y-[200%] rounded bg-burgundy px-4 py-2 text-sm font-semibold text-white no-underline transition-transform duration-[120ms] ease-out focus:translate-y-0 focus:outline-2 focus:outline-offset-2 focus:outline-mustard focus-visible:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mustard"
           >
             Skip to content
           </Box>
@@ -68,8 +42,7 @@ export function SiteLayout({
             component="main"
             id={MAIN_ID}
             tabIndex={-1}
-            className="animate-fadeIn"
-            sx={{ flex: 1 }}
+            className="animate-fadeIn flex-1"
           >
             {children}
           </Box>

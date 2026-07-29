@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import { cn } from "@/modules/shared/components/tw";
 
 type CategoryBadgeProps = {
   label: string;
@@ -15,19 +16,13 @@ export function CategoryBadge({ label, color = "#7F0400", variant = "outline" }:
   return (
     <Box
       component="span"
-      sx={{
-        display: "inline-block",
-        fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-        fontSize: "0.75rem",
-        fontWeight: 400,
-        letterSpacing: "0.1em",
-        lineHeight: "1rem",
-        textTransform: "uppercase",
-        px: 1.25,
-        py: 0.5,
-        borderRadius: 0,
+      className={cn(
+        "font-headline inline-block px-2.5 py-1 text-xs leading-4 font-normal tracking-[0.1em] uppercase",
+        !isSolid && "bg-transparent"
+      )}
+      style={{
         border: `1px solid ${color}`,
-        bgcolor: isSolid ? color : "transparent",
+        backgroundColor: isSolid ? color : undefined,
         color: isSolid ? "#fff" : color,
       }}
     >

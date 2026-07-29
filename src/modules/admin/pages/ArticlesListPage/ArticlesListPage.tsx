@@ -325,8 +325,7 @@ export function ArticlesListPage() {
         <AdminButton
           variant="primary"
           size="sm"
-          className="self-start"
-          leftIcon={<AddRounded sx={{ fontSize: 16 }} />}
+          leftIcon={<AddRounded className="self-start text-[16px]"/>}
           onClick={() => router.push(AdminRoutes.articleNew)}
         >
           New Article
@@ -360,10 +359,7 @@ export function ArticlesListPage() {
           {/* Search + filter toggle */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1 lg:w-64 lg:flex-none">
-              <SearchRounded
-                sx={{ fontSize: 18 }}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-soft"
-              />
+              <SearchRounded className="text-[18px] pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-soft"/>
               <input
                 type="search"
                 value={search}
@@ -383,7 +379,7 @@ export function ArticlesListPage() {
                   : "border border-border bg-surface text-ink-secondary hover:bg-surface-muted"
               }`}
             >
-              <FilterListRounded sx={{ fontSize: 16 }} />
+              <FilterListRounded className="text-[16px]" />
               Filter
             </button>
           </div>
@@ -438,7 +434,7 @@ export function ArticlesListPage() {
                 <AdminButton
                   variant="secondary"
                   size="sm"
-                  leftIcon={<CheckCircleOutlined sx={{ fontSize: 16 }} />}
+                  leftIcon={<CheckCircleOutlined className="text-[16px]" />}
                   disabled={bulk.isPending}
                   onClick={() => runBulk("publish")}
                 >
@@ -447,7 +443,7 @@ export function ArticlesListPage() {
                 <AdminButton
                   variant="secondary"
                   size="sm"
-                  leftIcon={<RemoveCircleOutlineOutlined sx={{ fontSize: 16 }} />}
+                  leftIcon={<RemoveCircleOutlineOutlined className="text-[16px]" />}
                   disabled={bulk.isPending}
                   onClick={() => runBulk("unpublish")}
                 >
@@ -456,7 +452,7 @@ export function ArticlesListPage() {
                 <AdminButton
                   variant="secondary"
                   size="sm"
-                  leftIcon={<ArchiveOutlined sx={{ fontSize: 16 }} />}
+                  leftIcon={<ArchiveOutlined className="text-[16px]" />}
                   disabled={bulk.isPending}
                   onClick={() => runBulk("archive")}
                 >
@@ -468,7 +464,7 @@ export function ArticlesListPage() {
               <AdminButton
                 variant="danger"
                 size="sm"
-                leftIcon={<DeleteOutlineOutlined sx={{ fontSize: 16 }} />}
+                leftIcon={<DeleteOutlineOutlined className="text-[16px]" />}
                 disabled={bulk.isPending}
                 onClick={() => runBulk("delete")}
               >
@@ -692,7 +688,7 @@ function PagerButton({
   onClick,
   disabled,
 }: {
-  Icon: React.ComponentType<{ sx?: object }>;
+  Icon: React.ComponentType<{ className?: string; sx?: object }>;
   label: string;
   onClick: () => void;
   disabled?: boolean;
@@ -705,7 +701,7 @@ function PagerButton({
       aria-label={label}
       className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
     >
-      <Icon sx={{ fontSize: 18 }} />
+      <Icon className="text-[18px]" />
     </button>
   );
 }

@@ -160,7 +160,7 @@ export function SubscribersPage() {
           ))}
         </div>
         <div className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2 lg:w-72">
-          <SearchRounded sx={{ fontSize: 18 }} className="shrink-0 text-muted-soft" />
+          <SearchRounded className="text-[18px] shrink-0 text-muted-soft"/>
           <input
             type="search"
             value={search}
@@ -273,7 +273,7 @@ function PagerButton({
   onClick,
   disabled,
 }: {
-  Icon: React.ComponentType<{ sx?: object }>;
+  Icon: React.ComponentType<{ className?: string; sx?: object }>;
   label: string;
   onClick: () => void;
   disabled?: boolean;
@@ -286,7 +286,7 @@ function PagerButton({
       aria-label={label}
       className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
     >
-      <Icon sx={{ fontSize: 18 }} />
+      <Icon className="text-[18px]" />
     </button>
   );
 }

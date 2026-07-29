@@ -24,29 +24,13 @@ export function FeaturedArticleCard({ article }: { article: ArticleCardDoc }) {
     ? `${estimateReadingTime(article.body)} min read`
     : undefined;
 
-  const metaItemSx = {
-    fontSize: "0.75rem",
-    lineHeight: "1rem",
-    color: "#99A1AF",
-  } as const;
-
   return (
     <KiribeLink
       href={href}
       underline="none"
-      sx={{
-        display: "grid",
-        gridTemplateColumns: { xs: "1fr", base: "1fr 1fr" },
-        "&:hover .featured-title": { color: "var(--color-mustard)" },
-      }}
+      className="grid grid-cols-1 base:grid-cols-2 group hover:[&_.featured-title]:text-mustard"
     >
-      <Box
-        sx={{
-          position: "relative",
-          minHeight: { xs: 260, sm: 360, base: "auto" },
-          bgcolor: "#F3F4F6",
-        }}
-      >
+      <Box className="relative min-h-[260px] sm:min-h-[360px] base:min-h-0 bg-surface-muted">
         <KiribeImage
           src={article.heroImage}
           alt={article.heroImage?.alt ?? article.title}
@@ -55,65 +39,39 @@ export function FeaturedArticleCard({ article }: { article: ArticleCardDoc }) {
       </Box>
       <Stack
         justifyContent="center"
-        sx={{ bgcolor: "#030712", p: { xs: 3, md: 5 } }}
+        className="bg-[#030712] p-6 md:p-10"
       >
         {primaryCategory && (
           <Box
-            sx={{
-              alignSelf: "stretch",
-              bgcolor: accent,
-              color: "#fff",
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontSize: "0.75rem",
-              lineHeight: "1rem",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              px: 1.25,
-              py: 0.25,
-              mb: 2,
-            }}
+            className="self-stretch text-white font-headline text-xs leading-4 tracking-[0.1em] uppercase px-2.5 py-0.5 mb-4"
+            style={{ backgroundColor: accent }}
           >
             {primaryCategory.name}
           </Box>
         )}
         <KiribeTypography
-          className="featured-title"
-          sx={{
-            fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-            fontWeight: 400,
-            fontSize: { xs: "1.5rem", md: "1.875rem" },
-            lineHeight: 1.375,
-            color: "#fff",
-            transition: "color var(--duration-fast) ease",
-          }}
+          className="featured-title font-headline font-normal text-2xl md:text-[1.875rem] leading-[1.375] text-white transition-colors duration-[var(--duration-fast)] ease-in-out"
         >
           {article.title}
         </KiribeTypography>
-        <Box sx={{ mt: 2, width: 40, height: 2, bgcolor: "var(--color-mustard)" }} />
+        <Box className="mt-4 w-10 h-0.5 bg-mustard" />
         {article.excerpt && (
-          <KiribeTypography
-            sx={{
-              mt: 2,
-              color: "#D1D5DC",
-              fontSize: "0.875rem",
-              lineHeight: 1.625,
-            }}
-          >
+          <KiribeTypography className="mt-4 text-[#D1D5DC] text-sm leading-[1.625]">
             {article.excerpt}
           </KiribeTypography>
         )}
         {(authorName || readLabel) && (
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={2} className="mt-6">
             {authorName && (
               <Stack direction="row" alignItems="center" spacing={0.75}>
-                <PersonOutlineIcon sx={{ fontSize: 14, color: "#99A1AF" }} />
-                <Box component="span" sx={metaItemSx}>{authorName}</Box>
+                <PersonOutlineIcon className="text-sm text-muted-soft" />
+                <Box component="span" className="text-xs leading-4 text-muted-soft">{authorName}</Box>
               </Stack>
             )}
             {readLabel && (
               <Stack direction="row" alignItems="center" spacing={0.75}>
-                <ScheduleIcon sx={{ fontSize: 14, color: "#99A1AF" }} />
-                <Box component="span" sx={metaItemSx}>{readLabel}</Box>
+                <ScheduleIcon className="text-sm text-muted-soft" />
+                <Box component="span" className="text-xs leading-4 text-muted-soft">{readLabel}</Box>
               </Stack>
             )}
           </Stack>

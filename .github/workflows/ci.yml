@@ -42,6 +42,7 @@ jobs:
       - run: npm ci
       - run: npm run migrate
       - run: npm run typecheck
+      - run: npm run check:sx
       - run: npm run lint
       - run: npm run build
 

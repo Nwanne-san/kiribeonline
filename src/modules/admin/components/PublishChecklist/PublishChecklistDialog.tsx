@@ -3,13 +3,7 @@
 import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
 import ErrorOutlined from "@mui/icons-material/ErrorOutlined";
 import WarningAmberOutlined from "@mui/icons-material/WarningAmberOutlined";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { KiribeButton } from "@/modules/shared/components/ui";
+import { AdminButton } from "@/modules/admin/components/ui/AdminPrimitives";
 
 /**
  * A checklist row surfaced by the publish gate. `hard` items block publish
@@ -65,36 +59,49 @@ export function PublishChecklistDialog({
         ? "Schedule"
         : "Publish";
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ pb: 1 }}>{title}</DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {hardBlocked
-            ? "A few required fields are missing. Fix these before publishing."
-            : hasSoftWarn
-              ? "Publish is possible, but a few recommended fields are empty. Readers will get default social previews."
-              : "All checks look good."}
-        </Typography>
-        <Stack spacing={1.25} component="ul" sx={{ pl: 0, m: 0, listStyle: "none" }}>
-          {items.map((item) => (
-            <ChecklistRow key={item.key} item={item} />
-          ))}
-        </Stack>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2.5 }}>
-        <KiribeButton variant="outlined" onClick={onCancel} disabled={isPending}>
-          Keep editing
-        </KiribeButton>
-        <KiribeButton
-          onClick={onConfirm}
-          disabled={hardBlocked || isPending}
-          aria-disabled={hardBlocked || isPending}
-        >
-          {isPending ? "Saving..." : confirmLabel}
-        </KiribeButton>
-      </DialogActions>
-    </Dialog>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="publish-checklist-title"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-md border border-border bg-surface shadow-elevated"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="border-b border-border px-5 py-4">
+          <h2 id="publish-checklist-title" className="font-headline text-lg font-bold text-ink">
+            {title}
+          </h2>
+        </div>
+        <div className="px-5 py-4">
+          <p className="mb-3 text-sm text-muted">
+            {hardBlocked
+              ? "A few required fields are missing. Fix these before publishing."
+              : hasSoftWarn
+                ? "Publish is possible, but a few recommended fields are empty. Readers will get default social previews."
+                : "All checks look good."}
+          </p>
+          <ul className="m-0 list-none space-y-2.5 p-0">
+            {items.map((item) => (
+              <ChecklistRow key={item.key} item={item} />
+            ))}
+          </ul>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
+          <AdminButton variant="secondary" onClick={onCancel} disabled={isPending}>
+            Keep editing
+          </AdminButton>
+          <AdminButton onClick={onConfirm} disabled={hardBlocked || isPending}>
+            {isPending ? "Saving..." : confirmLabel}
+          </AdminButton>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -105,16 +112,14 @@ function ChecklistRow({ item }: { item: ChecklistItem }) {
       ? ErrorOutlined
       : WarningAmberOutlined;
   const tone = item.ok
-    ? { color: "#15803d" }
+    ? "text-[#15803d]"
     : item.hard
-      ? { color: "#b42318" }
-      : { color: "#b54708" };
+      ? "text-[#b42318]"
+      : "text-[#b54708]";
   return (
-    <Stack component="li" direction="row" spacing={1.25} alignItems="center">
-      <Icon fontSize="small" sx={tone} aria-hidden />
-      <Typography variant="body2" sx={{ ...tone, fontWeight: 500 }}>
-        {item.label}
-      </Typography>
-    </Stack>
+    <li className={`flex items-center gap-2.5 text-sm font-medium ${tone}`}>
+      <Icon fontSize="small" aria-hidden />
+      <span>{item.label}</span>
+    </li>
   );
 }

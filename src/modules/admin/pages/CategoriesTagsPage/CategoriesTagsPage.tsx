@@ -162,7 +162,7 @@ export function CategoriesTagsPage() {
         {canManage && (
           <AdminButton
             variant="primary"
-            leftIcon={<AddRounded sx={{ fontSize: 16 }} />}
+            leftIcon={<AddRounded className="text-[16px]" />}
             onClick={() => setShowCreate((v) => !v)}
             className="self-start"
           >
@@ -180,7 +180,7 @@ export function CategoriesTagsPage() {
               <AdminButton
                 variant="ghost"
                 size="sm"
-                leftIcon={<AddRounded sx={{ fontSize: 14 }} />}
+                leftIcon={<AddRounded className="text-[14px]" />}
                 onClick={() => setShowCreate((v) => !v)}
               >
                 Add New
@@ -205,10 +205,7 @@ export function CategoriesTagsPage() {
               >
                 {canManage && (
                   <DragIndicatorRounded
-                    sx={{ fontSize: 18 }}
-                    className="shrink-0 cursor-grab text-muted-soft active:cursor-grabbing"
-                    aria-hidden
-                  />
+                    aria-hidden className="text-[18px] shrink-0 cursor-grab text-muted-soft active:cursor-grabbing"/>
                 )}
                 <CategoryTag label={cat.name} color={categoryColor(cat)} className="shrink-0" />
                 <span className="min-w-0 flex-1 truncate text-sm text-ink-secondary">
@@ -230,14 +227,14 @@ export function CategoriesTagsPage() {
                     className="shrink-0 rounded p-1 text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
                   >
                     {cat.showInNav === false ? (
-                      <VisibilityOffOutlined sx={{ fontSize: 16 }} />
+                      <VisibilityOffOutlined className="text-[16px]" />
                     ) : (
-                      <VisibilityOutlined sx={{ fontSize: 16 }} />
+                      <VisibilityOutlined className="text-[16px]" />
                     )}
                   </button>
                 ) : (
                   <span className="shrink-0 p-1 text-muted-soft" aria-hidden>
-                    <VisibilityOutlined sx={{ fontSize: 16 }} />
+                    <VisibilityOutlined className="text-[16px]" />
                   </span>
                 )}
               </div>
@@ -359,7 +356,7 @@ function CreateCategoryPanel({
           aria-label="Close"
           className="grid h-8 w-8 place-items-center rounded-lg text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
         >
-          <CloseRounded sx={{ fontSize: 18 }} />
+          <CloseRounded className="text-[18px]" />
         </button>
       }
     >
@@ -437,7 +434,7 @@ function CreateCategoryPanel({
                 style={{ backgroundColor: color }}
               >
                 {brandColor === color && (
-                  <CheckRounded sx={{ fontSize: 18 }} className="text-white" />
+                  <CheckRounded className="text-[18px] text-white"/>
                 )}
               </button>
             ))}
@@ -472,7 +469,7 @@ function CreateCategoryPanel({
         <div className="pt-1">
           <AdminButton
             variant="primary"
-            leftIcon={<SaveOutlined sx={{ fontSize: 16 }} />}
+            leftIcon={<SaveOutlined className="text-[16px]" />}
             onClick={submit}
             disabled={pending || !name.trim()}
             className="w-full"
@@ -509,10 +506,7 @@ function TagControls({
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
           <SearchRounded
-            sx={{ fontSize: 16 }}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-soft"
-            aria-hidden
-          />
+            aria-hidden className="text-[16px] pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-soft"/>
           <input
             className={`${INPUT_CLASS} pl-9`}
             value={search}
@@ -536,7 +530,7 @@ function TagControls({
             onClick={add}
             disabled={pending || !newTag.trim()}
             aria-label="Add tag"
-            leftIcon={<AddRounded sx={{ fontSize: 18 }} />}
+            leftIcon={<AddRounded className="text-[18px]" />}
             className="self-stretch"
           >
             <span className="sr-only">Add tag</span>
@@ -589,7 +583,7 @@ function TagList({
               aria-label={`Delete tag ${tag.name}`}
               className="ml-0.5 grid h-4 w-4 place-items-center rounded-full text-muted-soft transition-colors hover:bg-[#fee4e2] hover:text-[#b42318] disabled:opacity-50"
             >
-              <CloseRounded sx={{ fontSize: 12 }} />
+              <CloseRounded className="text-[12px]" />
             </button>
           )}
         </span>

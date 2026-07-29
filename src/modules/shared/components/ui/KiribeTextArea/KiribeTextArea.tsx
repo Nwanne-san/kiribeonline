@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { type ChangeEvent, forwardRef } from "react";
 import { Controller, type Control, type RegisterOptions } from "react-hook-form";
+import { cn } from "@/modules/shared/components/tw";
 
 export type KiribeTextAreaProps = Omit<TextFieldProps, "multiline"> & {
   errorText?: string;
@@ -17,15 +18,8 @@ export type KiribeTextAreaProps = Omit<TextFieldProps, "multiline"> & {
   rules?: RegisterOptions;
 };
 
-const fieldSx = {
-  "& .MuiOutlinedInput-root.Mui-focused fieldset": {
-    borderColor: "primary.main",
-    borderWidth: 2,
-  },
-};
-
 function KiribeTextAreaInner(
-  { errorText, helperText, error, minRows = 4, sx, ...props }: KiribeTextAreaProps,
+  { errorText, helperText, error, minRows = 4, className, sx, ...props }: KiribeTextAreaProps,
   ref: React.Ref<HTMLDivElement>
 ) {
   const hasError = Boolean(error || errorText);
@@ -40,7 +34,8 @@ function KiribeTextAreaInner(
         error={hasError}
         helperText={undefined}
         variant={props.variant ?? "outlined"}
-        sx={{ ...fieldSx, ...sx }}
+        className={cn("kiribe-field", className)}
+        sx={sx}
       />
       {(errorText || helperText) && (
         <FormHelperText>{errorText || helperText}</FormHelperText>

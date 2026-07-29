@@ -64,7 +64,7 @@ export function InfiniteArticleList({
     <Box>
       {content}
       {hasNextPage && (
-        <Box ref={sentinelRef} sx={{ py: 4, textAlign: "center" }}>
+        <Box ref={sentinelRef} className="py-8 text-center">
           <KiribeButton
             variant="outlined"
             onClick={() => fetchNextPage?.()}

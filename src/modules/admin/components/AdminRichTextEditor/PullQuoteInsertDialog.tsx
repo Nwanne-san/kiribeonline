@@ -1,6 +1,6 @@
 "use client";
 
-import Button from "@mui/material/Button";
+import { AdminButton } from "@/modules/admin/components/ui/AdminPrimitives";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -50,7 +50,7 @@ export function PullQuoteInsertDialog({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Insert pull quote</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
+        <Stack spacing={2} className="mt-2">
           <KiribeTextField
             autoFocus
             fullWidth
@@ -71,11 +71,13 @@ export function PullQuoteInsertDialog({
           />
         </Stack>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button variant="contained" disabled={!quote.trim()} onClick={apply}>
+      <DialogActions className="gap-2 px-6 pb-4">
+        <AdminButton variant="secondary" onClick={handleClose}>
+          Cancel
+        </AdminButton>
+        <AdminButton disabled={!quote.trim()} onClick={apply}>
           Insert
-        </Button>
+        </AdminButton>
       </DialogActions>
     </Dialog>
   );

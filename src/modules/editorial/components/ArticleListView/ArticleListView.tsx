@@ -26,6 +26,7 @@ import {
   KiribePaginationControls,
   KiribeTypography,
 } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import { useListViewMode } from "@/utils/hooks";
 import { MIN_SEARCH_LENGTH, type ListViewMode } from "@/constants";
 import { PublicRoutes } from "@/routes/public.routes";
@@ -81,13 +82,7 @@ function ViewToggle({
     <Box
       role="group"
       aria-label="Article view mode"
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 0.5,
-        p: 0.25,
-        border: "1px solid #E5E7EB",
-      }}
+      className="inline-flex items-center gap-1 p-0.5 border border-border"
     >
       {options.map((opt) => {
         const active = view === opt.value;
@@ -99,21 +94,12 @@ function ViewToggle({
             onClick={() => onChange(opt.value)}
             aria-pressed={active}
             aria-label={opt.ariaLabel}
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              cursor: "pointer",
-              border: "none",
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontSize: "0.75rem",
-              lineHeight: "1rem",
-              letterSpacing: "0.025em",
-              textTransform: "uppercase",
-              bgcolor: active ? "primary.main" : "transparent",
-              color: active ? "common.white" : "#6A7282",
-              transition: "background-color var(--duration-fast) ease",
-              "&:hover": { bgcolor: active ? "primary.main" : "var(--color-surface-alt)" },
-            }}
+            className={cn(
+              "px-3 py-1.5 cursor-pointer border-none font-headline text-xs leading-4 tracking-wide uppercase transition-colors duration-[var(--duration-fast)] ease-in-out",
+              active
+                ? "bg-burgundy text-white hover:bg-burgundy"
+                : "bg-transparent text-muted hover:bg-surface-alt"
+            )}
           >
             {opt.label}
           </Box>
@@ -166,7 +152,7 @@ export function ArticleListView({
   const heading = sectionTitle ?? (hero ? `All ${hero.title} Articles` : "All Articles");
 
   return (
-    <Box sx={{ pb: 10 }}>
+    <Box className="pb-20">
       {hero && (
         <CategoryHero
           title={hero.title}
@@ -178,32 +164,17 @@ export function ArticleListView({
         />
       )}
 
-      <EditorialContainer sx={{ py: { xs: 6, md: 8 } }}>
+      <EditorialContainer className="py-12 md:py-16">
         {activeFilter && (
           <Stack
             direction="row"
             alignItems="center"
             spacing={1}
-            sx={{
-              display: "inline-flex",
-              mb: 4,
-              pl: 1.5,
-              pr: 0.5,
-              py: 0.5,
-              border: "1px solid",
-              borderColor: "primary.main",
-              bgcolor: "var(--color-surface-alt)",
-            }}
+            className="inline-flex mb-8 pl-3 pr-1 py-1 border border-burgundy bg-surface-alt"
           >
             <KiribeTypography
               component="span"
-              sx={{
-                fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                fontSize: "0.75rem",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                color: "primary.main",
-              }}
+              className="font-headline text-xs tracking-[0.05em] uppercase text-burgundy"
             >
               Filtered by {activeFilter.label}
             </KiribeTypography>
@@ -211,16 +182,9 @@ export function ArticleListView({
               href={activeFilter.clearHref}
               underline="none"
               aria-label="Clear filter and browse all articles"
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                p: 0.5,
-                color: "primary.main",
-                "&:hover": { color: "secondary.main" },
-              }}
+              className="inline-flex items-center justify-center p-1 text-burgundy hover:text-mustard"
             >
-              <CloseIcon sx={{ fontSize: "1rem" }} />
+              <CloseIcon className="text-[1rem]" />
             </KiribeLink>
           </Stack>
         )}
@@ -291,11 +255,11 @@ export function ArticleListView({
               return (
                 <>
                   {featuredArticle && (
-                    <Box sx={{ mb: { xs: 6, md: 8 } }}>
+                    <Box className="mb-12 md:mb-16">
                       <KiribeTypography
                         variant="kicker"
                         color="secondary.main"
-                        sx={{ display: "block", mb: 2 }}
+                        className="block mb-4"
                       >
                         Featured
                       </KiribeTypography>
@@ -309,24 +273,15 @@ export function ArticleListView({
                     justifyContent="space-between"
                     alignItems={{ sm: "center" }}
                     spacing={2}
-                    sx={{ pb: 3, mb: 4, borderBottom: "1px solid", borderColor: "divider" }}
+                    className="pb-6 mb-8 border-b border-border"
                   >
                     <Box>
-                      <KiribeTypography
-                        sx={{
-                          fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                          fontWeight: 400,
-                          fontSize: "1.25rem",
-                          lineHeight: 1.4,
-                          letterSpacing: "0.025em",
-                          color: "primary.main",
-                        }}
-                      >
+                      <KiribeTypography className="font-headline font-normal text-xl leading-[1.4] tracking-wide text-burgundy">
                         {heading}
                       </KiribeTypography>
-                      <Box sx={{ mt: 1, width: 32, height: 2, bgcolor: "secondary.main" }} />
+                      <Box className="mt-2 w-8 h-0.5 bg-mustard" />
                       {typeof pagination.totalDocs === "number" && (
-                        <KiribeTypography sx={{ mt: 1.5, fontSize: "0.875rem", color: "#6A7282" }}>
+                        <KiribeTypography className="mt-3 text-sm text-muted">
                           {pagination.totalDocs} {pagination.totalDocs === 1 ? "article" : "articles"}
                         </KiribeTypography>
                       )}

@@ -439,9 +439,9 @@ These are in Payload but not fully wired in admin pages yet — Figma should sho
 
 | Token | Hex | Used in admin |
 |-------|-----|---------------|
-| Burgundy | `#6B1D2A` | Primary buttons, active nav, focus |
-| Burgundy dark | `#4A1420` | Button hover |
-| Mustard | `#C9A227` | Accent only (not primary admin CTAs) |
+| Burgundy | `#7F0400` (admin CMS) / `#6B1D2A` (public) | Admin CTAs use `#7F0400`; public site uses `#6B1D2A` |
+| Burgundy dark / accent hover | `#E6A313` (admin primary hover) | Mustard accent on admin button hover |
+| Mustard | `#C9A227` / `#E6A313` | Accent underlines; admin accent token `#E6A313` |
 | Cream | `#FAF8F5` | Page background |
 | Ink | `#1A1A1A` | Headlines |
 | Muted | `#6B7280` | Labels, metadata |

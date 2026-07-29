@@ -39,7 +39,7 @@ export function ReelsListPage() {
         action={
           <AdminButton
             onClick={() => router.push(AdminRoutes.reelNew)}
-            leftIcon={<AddRounded sx={{ fontSize: 16 }} />}
+            leftIcon={<AddRounded className="text-[16px]" />}
           >
             New reel
           </AdminButton>
@@ -90,7 +90,7 @@ export function ReelsListPage() {
                       <AdminButton
                         variant="secondary"
                         size="sm"
-                        leftIcon={<EditRounded sx={{ fontSize: 14 }} />}
+                        leftIcon={<EditRounded className="text-[14px]" />}
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(

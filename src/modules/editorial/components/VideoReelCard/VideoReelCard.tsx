@@ -10,12 +10,13 @@ import type { PublicReel } from "@/lib/content/query-homepage";
 import { parseReelEmbed } from "@/lib/reels/parse-embed";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import { KiribeLink, KiribeTypography } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  instagram: <InstagramIcon sx={{ fontSize: 14 }} />,
-  youtube: <YouTubeIcon sx={{ fontSize: 14 }} />,
+  instagram: <InstagramIcon className="text-[14px]" />,
+  youtube: <YouTubeIcon className="text-[14px]" />,
   tiktok: (
-    <Box component="span" sx={{ fontSize: "0.65rem", fontWeight: 700 }}>
+    <Box component="span" className="text-[0.65rem] font-bold">
       TT
     </Box>
   ),
@@ -37,13 +38,11 @@ type VideoReelCardProps = {
 
 const SIZE_PRESETS = {
   row: {
-    width: { xs: 180, sm: 200 } as const,
-    height: { xs: 320, sm: 356 } as const,
+    className: "w-[180px] sm:w-[200px] h-[320px] sm:h-[356px]",
     sizes: "200px",
   },
   grid: {
-    width: { xs: "100%", sm: "100%" } as const,
-    height: { xs: 380, sm: 440 } as const,
+    className: "w-full h-[380px] sm:h-[440px]",
     sizes: "(max-width: 600px) 90vw, 260px",
   },
 } as const;
@@ -64,8 +63,7 @@ export function VideoReelCard({ reel, onSelect, size = "row" }: VideoReelCardPro
       >
         <ReelPoster
           reel={reel}
-          width={preset.width}
-          height={preset.height}
+          className={preset.className}
           sizes={preset.sizes}
           showExternalIcon
         />
@@ -79,22 +77,11 @@ export function VideoReelCard({ reel, onSelect, size = "row" }: VideoReelCardPro
       type="button"
       onClick={() => onSelect(reel)}
       aria-label={`Play ${reel.title}`}
-      sx={{
-        all: "unset",
-        cursor: "pointer",
-        display: "block",
-        width: "100%",
-        "&:focus-visible > div": {
-          outline: "2px solid",
-          outlineColor: "secondary.main",
-          outlineOffset: 2,
-        },
-      }}
+      className="[all:unset] cursor-pointer block w-full focus-visible:[&>div]:outline focus-visible:[&>div]:outline-2 focus-visible:[&>div]:outline-mustard focus-visible:[&>div]:outline-offset-2"
     >
       <ReelPoster
         reel={reel}
-        width={preset.width}
-        height={preset.height}
+        className={preset.className}
         sizes={preset.sizes}
       />
     </Box>
@@ -103,27 +90,21 @@ export function VideoReelCard({ reel, onSelect, size = "row" }: VideoReelCardPro
 
 function ReelPoster({
   reel,
-  width,
-  height,
+  className,
   sizes,
   showExternalIcon = false,
 }: {
   reel: PublicReel;
-  width: { xs: number | string; sm: number | string };
-  height: { xs: number; sm: number };
+  className: string;
   sizes: string;
   showExternalIcon?: boolean;
 }) {
   return (
     <Box
-      sx={{
-        position: "relative",
-        width,
-        height,
-        borderRadius: 2,
-        overflow: "hidden",
-        bgcolor: "#0A0A0A",
-      }}
+      className={cn(
+        "relative rounded-lg overflow-hidden bg-[#0A0A0A]",
+        className
+      )}
     >
       <KiribeImage
         src={reel.thumbnail}
@@ -132,102 +113,35 @@ function ReelPoster({
         sizes={sizes}
       />
       <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
+        className="absolute inset-0 pointer-events-none"
+        style={{
           background:
             "linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 55%)",
-          pointerEvents: "none",
         }}
       />
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          pointerEvents: "none",
-        }}
-      >
-        <Box
-          sx={{
-            width: 48,
-            height: 48,
-            borderRadius: "50%",
-            bgcolor: "rgba(255,255,255,0.92)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
-          }}
-        >
+      <Box className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <Box className="w-12 h-12 rounded-full bg-white/92 flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.3)]">
           {showExternalIcon ? (
-            <OpenInNewIcon sx={{ color: "primary.main", fontSize: 22 }} />
+            <OpenInNewIcon className="text-burgundy text-[22px]" />
           ) : (
-            <PlayArrowIcon sx={{ color: "primary.main", fontSize: 26, ml: 0.25 }} />
+            <PlayArrowIcon className="text-burgundy text-[26px] ml-0.5" />
           )}
         </Box>
       </Box>
-      <Box
-        sx={{
-          position: "absolute",
-          top: 8,
-          right: 8,
-          width: 28,
-          height: 28,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: "50%",
-          bgcolor: "rgba(0,0,0,0.45)",
-        }}
-      >
-        <BookmarkBorderIcon sx={{ color: "#fff", fontSize: 16 }} />
+      <Box className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/45">
+        <BookmarkBorderIcon className="text-white text-base" />
       </Box>
-      <Box
-        sx={{
-          position: "absolute",
-          top: 8,
-          left: 8,
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-          bgcolor: "rgba(0,0,0,0.55)",
-          color: "#fff",
-          px: 0.75,
-          py: 0.25,
-          borderRadius: 0.5,
-        }}
-      >
+      <Box className="absolute top-2 left-2 flex items-center gap-1 bg-black/55 text-white px-1.5 py-0.5 rounded">
         {PLATFORM_ICONS[reel.platform] ?? null}
         <KiribeTypography
           component="span"
-          sx={{
-            color: "inherit",
-            fontSize: "0.65rem",
-            fontWeight: 700,
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-          }}
+          className="text-inherit text-[0.65rem] font-bold tracking-[0.05em] uppercase"
         >
           {reel.label}
         </KiribeTypography>
       </Box>
-      <Box sx={{ position: "absolute", bottom: 10, left: 12, right: 12 }}>
-        <KiribeTypography
-          sx={{
-            color: "#fff",
-            fontSize: "0.8125rem",
-            fontWeight: 600,
-            lineHeight: 1.3,
-            textShadow: "0 1px 3px rgba(0,0,0,0.6)",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
+      <Box className="absolute bottom-2.5 left-3 right-3">
+        <KiribeTypography className="text-white text-[0.8125rem] font-semibold leading-[1.3] line-clamp-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">
           {reel.title}
         </KiribeTypography>
       </Box>

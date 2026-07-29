@@ -45,35 +45,14 @@ function AchievementStat({
     EmojiEventsIcon;
   return (
     <Stack direction="row" spacing={1.25} alignItems="flex-start">
-      <Box
-        sx={{
-          width: 32,
-          height: 32,
-          flexShrink: 0,
-          bgcolor: "var(--color-mustard)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Icon sx={{ fontSize: 16, color: "#fff" }} />
+      <Box className="flex h-8 w-8 shrink-0 items-center justify-center bg-mustard">
+        <Icon className="text-[16px] text-white" />
       </Box>
-      <Box sx={{ minWidth: 0 }}>
-        <KiribeTypography
-          sx={{
-            fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-            fontSize: "0.625rem",
-            lineHeight: "0.625rem",
-            letterSpacing: "0.025em",
-            textTransform: "uppercase",
-            color: "var(--color-mustard)",
-          }}
-        >
+      <Box className="min-w-0">
+        <KiribeTypography className="font-headline text-[0.625rem] leading-[0.625rem] tracking-[0.025em] text-mustard uppercase">
           {achievement.label}
         </KiribeTypography>
-        <KiribeTypography
-          sx={{ mt: 0.5, fontSize: "0.75rem", lineHeight: "1rem", color: "#fff" }}
-        >
+        <KiribeTypography className="mt-1 text-xs leading-4 text-white">
           {achievement.value}
         </KiribeTypography>
       </Box>
@@ -83,38 +62,16 @@ function AchievementStat({
 
 /** Featured creator split panel — Figma V5 Spotlight archive. */
 function FeaturedCreatorPanel({ creator }: { creator: PublicCreator }) {
-  // No creator detail route yet — "Full Story" searches the archive for their coverage.
   const fullStoryHref = `${PublicRoutes.articles}?q=${encodeURIComponent(creator.name)}`;
 
   return (
     <Box>
-      <KiribeTypography
-        sx={{
-          fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-          fontSize: "0.75rem",
-          lineHeight: "1rem",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: "var(--color-mustard)",
-        }}
-      >
+      <KiribeTypography className="font-headline text-xs leading-4 tracking-[0.1em] text-mustard uppercase">
         Featured Creator
       </KiribeTypography>
 
-      <Box
-        sx={{
-          mt: 2.5,
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", base: "1fr 1fr" },
-        }}
-      >
-        <Box
-          sx={{
-            position: "relative",
-            minHeight: { xs: 320, sm: 440, base: "auto" },
-            bgcolor: "#F3F4F6",
-          }}
-        >
+      <Box className="mt-5 grid grid-cols-1 base:grid-cols-2">
+        <Box className="relative min-h-[320px] bg-surface-muted sm:min-h-[440px] base:min-h-0">
           <KiribeImage
             src={creator.portrait}
             alt={creator.portrait?.alt ?? creator.name}
@@ -123,49 +80,25 @@ function FeaturedCreatorPanel({ creator }: { creator: PublicCreator }) {
           />
         </Box>
 
-        <Stack justifyContent="center" sx={{ bgcolor: "#030712", p: { xs: 3, md: 5 } }}>
-          <Box sx={{ width: 40, height: 2, bgcolor: "var(--color-mustard)" }} />
+        <Stack justifyContent="center" className="bg-archive-hero p-6 md:p-10">
+          <Box className="h-0.5 w-10 bg-mustard" />
           <KiribeTypography
             variant="h2"
-            sx={{
-              mt: 2.5,
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontWeight: 400,
-              fontSize: { xs: "1.75rem", md: "2.25rem" },
-              lineHeight: 1,
-              color: "#fff",
-            }}
+            className="font-headline mt-5 text-[1.75rem] leading-none font-normal text-white md:text-[2.25rem]"
           >
             {creator.name}
           </KiribeTypography>
-          <KiribeTypography
-            sx={{
-              mt: 1,
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontSize: "0.875rem",
-              lineHeight: "1.25rem",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "var(--color-mustard)",
-            }}
-          >
+          <KiribeTypography className="font-headline mt-2 text-sm leading-5 tracking-[0.1em] text-mustard uppercase">
             {creator.role}
           </KiribeTypography>
           {creator.bio && (
-            <KiribeTypography
-              sx={{
-                mt: 2.5,
-                fontSize: "0.875rem",
-                lineHeight: 1.625,
-                color: "#D1D5DC",
-              }}
-            >
+            <KiribeTypography className="mt-5 text-sm leading-relaxed text-[#D1D5DC]">
               {creator.bio}
             </KiribeTypography>
           )}
 
           {creator.achievements && creator.achievements.length > 0 && (
-            <Grid container spacing={2} sx={{ mt: 3.5 }}>
+            <Grid container spacing={2} className="mt-7">
               {creator.achievements.slice(0, 4).map((achievement) => (
                 <Grid key={achievement.label} size={{ xs: 12, md: 6 }}>
                   <AchievementStat achievement={achievement} />
@@ -177,26 +110,10 @@ function FeaturedCreatorPanel({ creator }: { creator: PublicCreator }) {
           <KiribeLink
             href={fullStoryHref}
             underline="none"
-            sx={{
-              mt: 3.5,
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              bgcolor: "primary.main",
-              color: "#fff",
-              px: 4,
-              py: 2,
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontSize: "0.875rem",
-              lineHeight: "1.25rem",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              transition: "background-color var(--duration-fast) ease",
-              "&:hover": { bgcolor: "var(--color-burgundy-dark)" },
-            }}
+            className="font-headline mt-7 flex items-center gap-3 bg-burgundy px-8 py-4 text-sm leading-5 tracking-[0.1em] text-white uppercase transition-colors duration-[var(--duration-fast)] hover:bg-burgundy-dark"
           >
             Full Story
-            <ArrowForwardIcon sx={{ fontSize: 16 }} />
+            <ArrowForwardIcon className="text-[16px]" />
           </KiribeLink>
         </Stack>
       </Box>
@@ -208,13 +125,7 @@ function FeaturedCreatorPanel({ creator }: { creator: PublicCreator }) {
 function SpotlightCreatorCard({ creator }: { creator: PublicCreator }) {
   return (
     <Box>
-      <Box
-        sx={{
-          position: "relative",
-          aspectRatio: "3 / 4",
-          bgcolor: "#E5E7EB",
-        }}
-      >
+      <Box className="relative aspect-[3/4] bg-border">
         <KiribeImage
           src={creator.portrait}
           alt={creator.portrait?.alt ?? creator.name}
@@ -222,21 +133,10 @@ function SpotlightCreatorCard({ creator }: { creator: PublicCreator }) {
           sizes="(max-width: 600px) 50vw, (max-width: 1200px) 33vw, 280px"
         />
       </Box>
-      <KiribeTypography
-        sx={{
-          mt: 2,
-          fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-          fontWeight: 400,
-          fontSize: "1.125rem",
-          lineHeight: 1.25,
-          color: "#000",
-        }}
-      >
+      <KiribeTypography className="font-headline mt-4 text-lg leading-tight font-normal text-black">
         {creator.name}
       </KiribeTypography>
-      <KiribeTypography
-        sx={{ mt: 1, fontSize: "0.875rem", lineHeight: "1.25rem", color: "#4A5565" }}
-      >
+      <KiribeTypography className="mt-2 text-sm leading-5 text-ink-secondary">
         {creator.role}
       </KiribeTypography>
     </Box>
@@ -250,7 +150,7 @@ export function SpotlightArchivePage({
   const isEmpty = !featuredCreator && moreCreators.length === 0;
 
   return (
-    <Box sx={{ pb: 10 }}>
+    <Box className="pb-20">
       <CategoryHero
         title="Spotlight"
         accentColor={SPOTLIGHT_ACCENT}
@@ -258,7 +158,7 @@ export function SpotlightArchivePage({
         description="In-depth profiles of the directors, actors, and creatives defining contemporary culture."
       />
 
-      <EditorialContainer sx={{ py: { xs: 6, md: 6 } }}>
+      <EditorialContainer className="py-12 md:py-12">
         {isEmpty ? (
           <EmptyState
             illustration={<SpotlightLampIllustration />}
@@ -271,29 +171,13 @@ export function SpotlightArchivePage({
             {featuredCreator && <FeaturedCreatorPanel creator={featuredCreator} />}
 
             {moreCreators.length > 0 && (
-              <Box
-                sx={{
-                  mt: 8,
-                  pt: 6,
-                  borderTop: "1px solid #F3F4F6",
-                }}
-              >
-                <KiribeTypography
-                  sx={{
-                    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                    fontWeight: 400,
-                    fontSize: "1.25rem",
-                    lineHeight: 1.4,
-                    letterSpacing: "0.025em",
-                    textTransform: "uppercase",
-                    color: "primary.main",
-                  }}
-                >
+              <Box className="mt-16 border-t border-surface-muted pt-12">
+                <KiribeTypography className="font-headline text-xl leading-snug font-normal tracking-[0.025em] text-burgundy uppercase">
                   More Creators
                 </KiribeTypography>
-                <Box sx={{ mt: 1, width: 32, height: 2, bgcolor: "secondary.main" }} />
+                <Box className="mt-2 h-0.5 w-8 bg-mustard" />
 
-                <Grid container spacing={4} sx={{ mt: 2 }}>
+                <Grid container spacing={4} className="mt-4">
                   {moreCreators.map((creator) => (
                     <Grid key={creator.id} size={{ xs: 6, md: 4, base: 3 }}>
                       <SpotlightCreatorCard creator={creator} />

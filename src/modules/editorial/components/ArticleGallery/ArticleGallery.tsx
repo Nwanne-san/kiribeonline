@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import { useState } from "react";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import { KiribeImageViewer } from "@/modules/shared/components/media/KiribeImageViewer";
+import { cn } from "@/modules/shared/components/tw";
 
 export type ArticleGalleryItem = {
   id: string;
@@ -27,18 +28,17 @@ export function ArticleGallery({ items }: ArticleGalleryProps) {
   if (valid.length === 0) return null;
 
   const active = activeIndex !== null ? valid[activeIndex] : null;
+  const mdCols = Math.min(valid.length, 3);
 
   return (
-    <Box component="figure" sx={{ my: { xs: 4, md: 5 }, mx: 0 }}>
+    <Box component="figure" className="my-8 md:my-10 mx-0">
       <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "repeat(2, 1fr)",
-            md: `repeat(${Math.min(valid.length, 3)}, 1fr)`,
-          },
-          gap: 1,
-        }}
+        className={cn(
+          "grid gap-2 grid-cols-2",
+          mdCols === 1 && "md:grid-cols-1",
+          mdCols === 2 && "md:grid-cols-2",
+          mdCols === 3 && "md:grid-cols-3"
+        )}
       >
         {valid.map((item, index) => (
           <Box
@@ -47,18 +47,7 @@ export function ArticleGallery({ items }: ArticleGalleryProps) {
             type="button"
             onClick={() => setActiveIndex(index)}
             aria-label={item.alt ? `View image: ${item.alt}` : "View image"}
-            sx={{
-              all: "unset",
-              cursor: "pointer",
-              display: "block",
-              borderRadius: 1,
-              overflow: "hidden",
-              "&:focus-visible": {
-                outline: "2px solid",
-                outlineColor: "secondary.main",
-                outlineOffset: 2,
-              },
-            }}
+            className="[all:unset] cursor-pointer block rounded overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-mustard focus-visible:outline-offset-2"
           >
             <KiribeImage
               src={item.url}

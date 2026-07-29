@@ -241,7 +241,7 @@ export function HomepageBuilderPage() {
           <AdminButton
             onClick={save}
             disabled={isPending || loading}
-            leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
+            leftIcon={<SaveRounded className="text-[16px]" />}
           >
             {isPending ? "Saving…" : "Save"}
           </AdminButton>
@@ -301,7 +301,7 @@ export function HomepageBuilderPage() {
                     size="sm"
                     onClick={addPick}
                     disabled={picks.length >= 5}
-                    leftIcon={<AddRounded sx={{ fontSize: 14 }} />}
+                    leftIcon={<AddRounded className="text-[14px]" />}
                   >
                     Add pick
                   </AdminButton>
@@ -348,7 +348,7 @@ export function HomepageBuilderPage() {
                           </AdminField>
                         </div>
                         <IconRoundBtn onClick={() => removePick(index)} label="Remove pick">
-                          <DeleteOutlineRounded sx={{ fontSize: 16 }} />
+                          <DeleteOutlineRounded className="text-[16px]" />
                         </IconRoundBtn>
                       </div>
                     ))
@@ -366,7 +366,7 @@ export function HomepageBuilderPage() {
                   variant="secondary"
                   size="sm"
                   onClick={addModule}
-                  leftIcon={<AddRounded sx={{ fontSize: 14 }} />}
+                  leftIcon={<AddRounded className="text-[14px]" />}
                 >
                   Add module
                 </AdminButton>
@@ -413,7 +413,7 @@ export function HomepageBuilderPage() {
                           Enabled
                         </label>
                         <IconRoundBtn onClick={() => removeModule(index)} label="Remove module">
-                          <DeleteOutlineRounded sx={{ fontSize: 16 }} />
+                          <DeleteOutlineRounded className="text-[16px]" />
                         </IconRoundBtn>
                       </div>
 
@@ -656,10 +656,10 @@ function MoveButtons({
   return (
     <div className="flex flex-col gap-0.5">
       <IconRoundBtn onClick={onUp} label="Move up" disabled={!canUp}>
-        <ArrowUpwardRounded sx={{ fontSize: 14 }} />
+        <ArrowUpwardRounded className="text-[14px]" />
       </IconRoundBtn>
       <IconRoundBtn onClick={onDown} label="Move down" disabled={!canDown}>
-        <ArrowDownwardRounded sx={{ fontSize: 14 }} />
+        <ArrowDownwardRounded className="text-[14px]" />
       </IconRoundBtn>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import Button, { type ButtonProps } from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import { cn } from "@/modules/shared/components/tw";
 
 type KiribeButtonProps = ButtonProps & {
   /** Gold subscribe-style CTA */
@@ -10,12 +11,16 @@ type KiribeButtonProps = ButtonProps & {
   loadingIndicator?: React.ReactNode;
 };
 
-/** Primary and accent buttons — wraps MUI Button with Kiribe defaults. */
+/**
+ * Primary and accent buttons — wraps MUI Button with Kiribe defaults.
+ * Prefer `className` for visual overrides; `sx` kept for migration back-compat.
+ */
 export function KiribeButton({
   accent,
   variant,
   color,
   children,
+  className,
   sx,
   loading = false,
   loadingIndicator,
@@ -34,6 +39,7 @@ export function KiribeButton({
         variant="contained"
         color="secondary"
         disabled={isDisabled}
+        className={cn(className)}
         sx={sx}
         {...props}
       >
@@ -47,6 +53,7 @@ export function KiribeButton({
       variant={variant ?? "contained"}
       color={color ?? "primary"}
       disabled={isDisabled}
+      className={cn(className)}
       sx={sx}
       {...props}
     >

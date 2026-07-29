@@ -85,7 +85,7 @@ export function CreatorEditorPage({ creatorId }: CreatorEditorPageProps) {
         action={
           <AdminButton
             variant="secondary"
-            leftIcon={<ArrowBackRounded sx={{ fontSize: 16 }} />}
+            leftIcon={<ArrowBackRounded className="text-[16px]" />}
             onClick={() => router.push(AdminRoutes.creators)}
           >
             Back
@@ -148,7 +148,7 @@ export function CreatorEditorPage({ creatorId }: CreatorEditorPageProps) {
         <AdminButton
           onClick={save}
           disabled={!canSave}
-          leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
+          leftIcon={<SaveRounded className="text-[16px]" />}
         >
           {isPending ? "Saving…" : "Save"}
         </AdminButton>

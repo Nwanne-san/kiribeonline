@@ -24,69 +24,42 @@ export function ReelsSection({ reels }: ReelsSectionProps) {
   const [activeReel, setActiveReel] = useState<PublicReel | null>(null);
 
   return (
-    <EditorialSection sx={{ bgcolor: "#F9FAFB", py: { xs: 6, md: 8 } }}>
+    <EditorialSection className="bg-surface-alt py-12 md:py-16">
       <EditorialContainer>
-        <Stack alignItems="center" spacing={1} sx={{ mb: { xs: 3, md: 4 }, textAlign: "center" }}>
+        <Stack alignItems="center" spacing={1} className="mb-6 md:mb-8 text-center">
           <KiribeTypography
             variant="h3"
-            sx={{
-              color: "primary.main",
-              fontSize: { xs: "1.5rem", md: "1.75rem" },
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-            }}
+            className="text-burgundy text-2xl md:text-[1.75rem] tracking-[0.04em] uppercase"
           >
             Reels &amp; Shorts
           </KiribeTypography>
-          <Box sx={{ width: 48, height: 2, bgcolor: "secondary.main" }} />
-          <KiribeTypography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          <Box className="w-12 h-0.5 bg-mustard" />
+          <KiribeTypography variant="body2" color="text.secondary" className="mt-2">
             From our social channels
           </KiribeTypography>
         </Stack>
 
         {hasReels ? (
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              overflowX: "auto",
-              scrollSnapType: "x mandatory",
-              pb: 2,
-              mx: { xs: -2, md: 0 },
-              px: { xs: 2, md: 0 },
-              "&::-webkit-scrollbar": { display: "none" },
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-            }}
-          >
+          <Box className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 md:mx-0 px-4 md:px-0 hide-scrollbar">
             {reels.map((reel) => (
-              <Box key={reel.id} sx={{ flex: "0 0 auto", scrollSnapAlign: "start" }}>
+              <Box key={reel.id} className="shrink-0 snap-start">
                 <VideoReelCard reel={reel} onSelect={setActiveReel} />
               </Box>
             ))}
           </Box>
         ) : (
-          <Box
-            sx={{
-              py: { xs: 4, md: 6 },
-              border: "1px dashed",
-              borderColor: "divider",
-              borderRadius: 1,
-              textAlign: "center",
-              color: "text.secondary",
-            }}
-          >
-            <KiribeTypography variant="body2" sx={{ color: "inherit" }}>
+          <Box className="py-8 md:py-12 border border-dashed border-border rounded text-center text-ink-secondary">
+            <KiribeTypography variant="body2" className="text-inherit">
               Latest reels from our socials will appear here.
             </KiribeTypography>
           </Box>
         )}
 
-        <Stack alignItems="center" sx={{ mt: { xs: 3, md: 4 } }}>
+        <Stack alignItems="center" className="mt-6 md:mt-8">
           <KiribeButton
             component={NextLink}
             href={PublicRoutes.categoryVideos}
-            sx={{ px: 4, py: 1.25, fontSize: "0.75rem", letterSpacing: "0.08em", textTransform: "uppercase" }}
+            className="px-8 py-2.5 text-xs tracking-[0.08em] uppercase"
           >
             Watch More Videos
           </KiribeButton>

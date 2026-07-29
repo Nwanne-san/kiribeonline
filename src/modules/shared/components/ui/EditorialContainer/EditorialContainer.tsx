@@ -1,18 +1,31 @@
 "use client";
 
 import Container, { ContainerProps } from "@mui/material/Container";
+import { cn } from "@/modules/shared/components/tw";
 
 /**
  * Max-width editorial content wrapper — prefer over raw Box or div.
  *
- * The width itself comes from the `MuiContainer` root override in
- * `src/theme/muiTheme.ts` (1200px, mirroring `--container-editorial`), so this
- * deliberately does not pass `maxWidth` — doing so would reintroduce MUI's
- * breakpoint-derived width and put it back out of step with Tailwind surfaces.
+ * Width + horizontal padding come from `.editorial-container` in
+ * `src/theme/tailwind.css` (mirrors `--container-editorial`). Prefer
+ * `className` overrides; `sx` is accepted for back-compat during migration.
  */
-export function EditorialContainer({ children, sx, ...props }: ContainerProps) {
+export function EditorialContainer({
+  children,
+  className,
+  sx,
+  disableGutters = true,
+  maxWidth = false,
+  ...props
+}: ContainerProps) {
   return (
-    <Container sx={{ px: { xs: 2, md: 4 }, ...sx }} {...props}>
+    <Container
+      disableGutters={disableGutters}
+      maxWidth={maxWidth}
+      className={cn("editorial-container", className)}
+      sx={sx}
+      {...props}
+    >
       {children}
     </Container>
   );

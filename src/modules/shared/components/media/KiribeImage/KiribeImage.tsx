@@ -2,6 +2,7 @@
 
 import Box from "@mui/material/Box";
 import Image, { type ImageProps } from "next/image";
+import { cn } from "@/modules/shared/components/tw";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
 import type { MediaAsset, MediaSizeName } from "@/modules/shared/types/content";
 
@@ -84,15 +85,12 @@ export function KiribeImage({
   if (!resolved) {
     return (
       <Box
-        sx={{
-          bgcolor: "action.hover",
-          ...(fill
-            ? { position: "absolute", inset: 0 }
-            : {
-                width: "100%",
-                ...(aspect ? { pt: aspectRatios[aspect] } : { minHeight: 120 }),
-              }),
-        }}
+        className={cn(
+          "bg-black/5",
+          fill ? "absolute inset-0" : "w-full",
+          !fill && !aspect && "min-h-[120px]"
+        )}
+        style={!fill && aspect ? { paddingTop: aspectRatios[aspect] } : undefined}
         aria-label={alt}
       />
     );
@@ -133,12 +131,8 @@ export function KiribeImage({
   if (aspect) {
     return (
       <Box
-        sx={{
-          position: "relative",
-          width: "100%",
-          pt: aspectRatios[aspect],
-          overflow: "hidden",
-        }}
+        className="relative w-full overflow-hidden"
+        style={{ paddingTop: aspectRatios[aspect] }}
       >
         <Image
           src={resolved}

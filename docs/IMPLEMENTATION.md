@@ -32,6 +32,7 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [ ] Figma MCP connected with file access
 - [ ] Color/spacing tokens confirmed in `src/theme/tailwind.css`
 - [x] Shared layout components (`SiteHeader`, `SiteFooter`)
+- [x] MUI `sx` → Tailwind `className` migration (Branddrive-web style; see `docs/DESIGN.md` §14). Gate: `npm run check:sx`
 
 ---
 
@@ -54,9 +55,14 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 - [x] Category/tag management
 - [x] Media library
 - [x] Homepage builder + Editor's Picks + per-category layout
-- [x] Site settings editor
+- [x] Site settings editor (site name, logo, SEO defaults, social links)
 - [x] Analytics (viewCount tables + GA4 link)
 - [x] Audit log viewer (filters, pagination, metadata expand — `audit:view` capability)
+- [x] Editorial Calendar (`/admin/calendar` — scheduled articles month grid)
+- [x] SEO hub (`/admin/seo` — defaults + top articles; homepage deep-link)
+- [x] Pages admin UI stub (`/admin/pages` — UI parity; Payload collection TBD)
+- [x] Navigation & Footer admin UI (`/admin/navigation` — chrome defaults; persist TBD)
+- [x] Admin design system: CMS red `#7F0400`, accent `#E6A313`, sharp `AdminButton`
 
 ### 2.3 Content delivery
 - [x] Server-rendered article detail pages

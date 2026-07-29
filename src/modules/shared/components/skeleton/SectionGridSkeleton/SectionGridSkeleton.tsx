@@ -11,11 +11,11 @@ type SectionGridSkeletonProps = {
 
 export function SectionGridSkeleton({ columns = 3, count = 3 }: SectionGridSkeletonProps) {
   return (
-    <Box component="section" sx={{ py: 6 }} aria-hidden>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 4 }}>
+    <Box component="section" className="py-12" aria-hidden>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-end" className="mb-8">
         <Stack spacing={1}>
           <SkeletonBlock width={128} height={32} />
-          <SkeletonBlock width={40} height={2} sx={{ bgcolor: "secondary.light" }} />
+          <SkeletonBlock width={40} height={2} className="bg-mustard-light" />
         </Stack>
         <SkeletonBlock width={96} height={16} />
       </Stack>

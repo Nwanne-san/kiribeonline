@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -17,7 +16,8 @@ import EditOutlined from "@mui/icons-material/EditOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import { DataRenderer, EmptyState, useKiribeToast } from "@/modules/shared/components/feedback";
 import { EmptyMediaIllustration } from "@/modules/shared/components/illustrations";
-import { KiribeButton, KiribeTextField } from "@/modules/shared/components/ui";
+import { KiribeTextField } from "@/modules/shared/components/ui";
+import { AdminButton } from "@/modules/admin/components/ui/AdminPrimitives";
 import { ApiMethods } from "../../../../../types/service";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import { useMutationService } from "@/utils/hooks/useMutationService";
@@ -28,6 +28,7 @@ import {
   DEFAULT_DEBOUNCE_MS,
   MAX_UPLOAD_BYTES,
 } from "@/constants";
+import { cn } from "@/modules/shared/components/tw";
 import {
   downscaleImage,
   readImageDimensions,
@@ -125,18 +126,8 @@ export function MediaLibraryGrid({
 
   return (
     <Stack spacing={1.5}>
-      <Box sx={{ position: "relative" }}>
-        <SearchRounded
-          sx={{
-            position: "absolute",
-            left: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: 18,
-            color: "text.secondary",
-            pointerEvents: "none",
-          }}
-        />
+      <Box className="relative">
+        <SearchRounded className="absolute left-2.5 top-1/2 -translate-y-1/2 text-lg text-ink-secondary pointer-events-none" />
         <Box
           component="input"
           type="search"
@@ -146,22 +137,7 @@ export function MediaLibraryGrid({
           }
           placeholder="Search by filename or alt text"
           aria-label="Search media"
-          sx={{
-            width: "100%",
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 1,
-            py: 1,
-            pl: 4.5,
-            pr: 1.5,
-            font: "inherit",
-            fontSize: "0.875rem",
-            outline: "none",
-            "&:focus": {
-              borderColor: "primary.main",
-              boxShadow: (theme) => `0 0 0 2px ${theme.palette.primary.main}20`,
-            },
-          }}
+          className="w-full border border-border rounded py-2 pl-9 pr-3 text-sm outline-none focus:border-burgundy focus:ring-2 focus:ring-burgundy/20"
         />
       </Box>
 
@@ -210,47 +186,26 @@ export function MediaLibraryGrid({
                           select();
                         }
                       }}
-                      sx={{
-                        position: "relative",
-                        cursor: "pointer",
-                        border: "2px solid",
-                        borderColor: isSelected ? "primary.main" : "divider",
-                        borderRadius: 1,
-                        overflow: "hidden",
-                        aspectRatio: "1 / 1",
-                        "&:hover": { borderColor: "primary.main" },
-                        "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" },
-                      }}
+                      className={cn(
+                        "relative cursor-pointer border-2 rounded overflow-hidden aspect-square hover:border-burgundy focus-visible:outline focus-visible:outline-2 focus-visible:outline-burgundy",
+                        isSelected ? "border-burgundy" : "border-border"
+                      )}
                     >
                       {item.url ? (
                         <Box
                           component="img"
                           src={item.url}
                           alt={item.alt ?? item.filename ?? ""}
-                          sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          className="w-full h-full object-cover block"
                         />
                       ) : (
-                        <Box sx={{ p: 1 }}>
+                        <Box className="p-2">
                           <Typography variant="caption">{item.filename}</Typography>
                         </Box>
                       )}
                       {multiSelect && isSelected ? (
-                        <Box
-                          sx={{
-                            position: "absolute",
-                            top: 4,
-                            right: 4,
-                            width: 22,
-                            height: 22,
-                            borderRadius: "50%",
-                            bgcolor: "primary.main",
-                            color: "primary.contrastText",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <CheckIcon sx={{ fontSize: 16 }} />
+                        <Box className="absolute top-1 right-1 w-[22px] h-[22px] rounded-full bg-burgundy text-white flex items-center justify-center">
+                          <CheckIcon className="text-[16px]" />
                         </Box>
                       ) : null}
                       {editable ? (
@@ -262,25 +217,9 @@ export function MediaLibraryGrid({
                             event.stopPropagation();
                             setEditing(item);
                           }}
-                          sx={{
-                            position: "absolute",
-                            bottom: 4,
-                            right: 4,
-                            width: 24,
-                            height: 24,
-                            borderRadius: "50%",
-                            border: "none",
-                            bgcolor: "rgba(255,255,255,0.92)",
-                            color: "text.primary",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                            "&:hover": { bgcolor: "#fff" },
-                          }}
+                          className="absolute bottom-1 right-1 w-6 h-6 rounded-full border-none bg-white/92 text-ink flex items-center justify-center cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.2)] hover:bg-white"
                         >
-                          <EditOutlined sx={{ fontSize: 14 }} />
+                          <EditOutlined className="text-[14px]" />
                         </Box>
                       ) : null}
                     </Box>
@@ -294,28 +233,28 @@ export function MediaLibraryGrid({
                 direction="row"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{ mt: 2, pt: 1.5, borderTop: "1px solid", borderColor: "divider" }}
+                className="mt-4 pt-3 border-t border-border"
               >
                 <Typography variant="caption" color="text.secondary">
                   Page {page} of {totalPages} · {totalDocs} image{totalDocs === 1 ? "" : "s"}
                 </Typography>
                 <Stack direction="row" spacing={1}>
-                  <Button
-                    size="small"
-                    variant="outlined"
+                  <AdminButton
+                    size="sm"
+                    variant="secondary"
                     disabled={page <= 1 || searching}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                   >
                     Previous
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
+                  </AdminButton>
+                  <AdminButton
+                    size="sm"
+                    variant="secondary"
                     disabled={page >= totalPages || searching}
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   >
                     Next
-                  </Button>
+                  </AdminButton>
                 </Stack>
               </Stack>
             ) : null}
@@ -409,18 +348,10 @@ export function MediaMetadataDialog({
               component="img"
               src={item.url}
               alt={item.alt ?? item.filename ?? ""}
-              sx={{
-                width: { xs: "100%", sm: 160 },
-                height: { xs: 180, sm: 160 },
-                objectFit: "cover",
-                borderRadius: 1,
-                border: "1px solid",
-                borderColor: "divider",
-                flexShrink: 0,
-              }}
+              className="w-full sm:w-40 h-[180px] sm:h-40 object-cover rounded border border-border shrink-0"
             />
           ) : null}
-          <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
+          <Stack spacing={2} className="flex-1 min-w-0">
             {item.filename ? (
               <Typography variant="caption" color="text.secondary" noWrap title={item.filename}>
                 {item.filename}
@@ -456,13 +387,13 @@ export function MediaMetadataDialog({
           </Stack>
         </Stack>
       </DialogContent>
-      <Stack direction="row" spacing={1} sx={{ px: 3, py: 2, justifyContent: "flex-end" }}>
-        <Button onClick={onClose} disabled={isPending}>
+      <Stack direction="row" spacing={1} className="px-6 py-4 justify-end">
+        <AdminButton variant="secondary" onClick={onClose} disabled={isPending}>
           Cancel
-        </Button>
-        <KiribeButton onClick={handleSave} loading={isPending} disabled={!canSave}>
-          Save changes
-        </KiribeButton>
+        </AdminButton>
+        <AdminButton onClick={handleSave} disabled={isPending || !canSave}>
+          {isPending ? "Saving..." : "Save changes"}
+        </AdminButton>
       </Stack>
     </Dialog>
   );
@@ -557,7 +488,7 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
   };
 
   return (
-    <Stack spacing={2} sx={{ mt: 1 }}>
+    <Stack spacing={2} className="mt-2">
       <Box
         role="button"
         tabIndex={0}
@@ -580,22 +511,10 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
           const file = event.dataTransfer.files?.[0];
           if (file) void acceptFile(file);
         }}
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 1,
-          px: 3,
-          py: 4,
-          textAlign: "center",
-          borderRadius: 1,
-          border: "2px dashed",
-          borderColor: isDragging ? "primary.main" : "divider",
-          bgcolor: isDragging ? "action.hover" : "background.default",
-          cursor: "pointer",
-          transition: "border-color 120ms, background-color 120ms",
-          "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" },
-        }}
+        className={cn(
+          "flex flex-col items-center gap-2 px-6 py-8 text-center rounded border-2 border-dashed cursor-pointer transition-[border-color,background-color] duration-[120ms] focus-visible:outline focus-visible:outline-2 focus-visible:outline-burgundy",
+          isDragging ? "border-burgundy bg-black/5" : "border-border bg-surface"
+        )}
       >
         <CloudUploadOutlined color="action" />
         <Typography variant="body2" fontWeight={600}>
@@ -623,18 +542,10 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
               component="img"
               src={previewUrl}
               alt="Selected preview"
-              sx={{
-                width: 72,
-                height: 72,
-                objectFit: "cover",
-                borderRadius: 1,
-                border: "1px solid",
-                borderColor: "divider",
-                flexShrink: 0,
-              }}
+              className="w-[72px] h-[72px] object-cover rounded border border-border shrink-0"
             />
           ) : null}
-          <Box sx={{ minWidth: 0 }}>
+          <Box className="min-w-0">
             <Typography variant="body2" noWrap title={selected.name}>
               {selected.name}
             </Typography>
@@ -654,13 +565,12 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
         required
         helperText="Describe the image for screen readers."
       />
-      <KiribeButton
+      <AdminButton
         onClick={handleUpload}
-        loading={isPending || isPreparing}
-        disabled={!selected || !alt.trim()}
+        disabled={isPending || isPreparing || !selected || !alt.trim()}
       >
-        Upload
-      </KiribeButton>
+        {isPending || isPreparing ? "Uploading..." : "Upload"}
+      </AdminButton>
     </Stack>
   );
 }
@@ -676,31 +586,17 @@ export function MediaPicker({ label, value, onChange, helperText }: MediaPickerP
 
   return (
     <Box>
-      <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+      <Typography variant="body2" fontWeight={600} className="mb-2">
         {label}
       </Typography>
       <Stack direction="row" spacing={2} alignItems="center">
-        <Box
-          sx={{
-            width: 96,
-            height: 96,
-            borderRadius: 1,
-            border: "1px solid",
-            borderColor: "divider",
-            overflow: "hidden",
-            bgcolor: "background.default",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
+        <Box className="w-24 h-24 rounded border border-border overflow-hidden bg-surface flex items-center justify-center shrink-0">
           {value?.url ? (
             <Box
               component="img"
               src={value.url}
               alt={value.alt ?? ""}
-              sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+              className="w-full h-full object-cover"
             />
           ) : (
             <Typography variant="caption" color="text.secondary">
@@ -709,18 +605,18 @@ export function MediaPicker({ label, value, onChange, helperText }: MediaPickerP
           )}
         </Box>
         <Stack spacing={1}>
-          <Button variant="outlined" size="small" onClick={() => setOpen(true)}>
+          <AdminButton size="sm" variant="secondary" onClick={() => setOpen(true)}>
             {value ? "Change image" : "Choose image"}
-          </Button>
+          </AdminButton>
           {value ? (
-            <Button color="error" size="small" onClick={() => onChange(null)}>
+            <AdminButton size="sm" variant="danger" onClick={() => onChange(null)}>
               Remove
-            </Button>
+            </AdminButton>
           ) : null}
         </Stack>
       </Stack>
       {helperText ? (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+        <Typography variant="caption" color="text.secondary" className="mt-1 block">
           {helperText}
         </Typography>
       ) : null}
@@ -728,7 +624,7 @@ export function MediaPicker({ label, value, onChange, helperText }: MediaPickerP
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
         <DialogTitle>Select image</DialogTitle>
         <DialogContent dividers>
-          <Tabs value={tab} onChange={(_, next) => setTab(next)} sx={{ mb: 2 }}>
+          <Tabs value={tab} onChange={(_, next) => setTab(next)} className="mb-4">
             <Tab label="Library" />
             <Tab label="Upload" />
           </Tabs>

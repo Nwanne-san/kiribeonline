@@ -27,6 +27,7 @@ import {
   KiribeTypography,
   publicRoute,
 } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import { PublicRoutes } from "@/routes/public.routes";
 import { estimateReadingTime, formatDate, resolveAuthorName } from "@/utils/helper";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
@@ -61,70 +62,6 @@ function categoryColor(slug?: string) {
 function authorInitial(name: string) {
   return name.trim().charAt(0).toUpperCase() || "K";
 }
-
-const proseSx = {
-  "& h2": {
-    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-    fontWeight: 400,
-    fontSize: "clamp(1.5rem, 1.37rem + 0.55vw, 1.875rem)",
-    lineHeight: 1.3,
-    color: "primary.main",
-    mt: 6,
-    mb: 2,
-  },
-  "& h3": {
-    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-    fontWeight: 400,
-    fontSize: "1.375rem",
-    color: "primary.main",
-    mt: 4,
-    mb: 1.5,
-  },
-  "& p": {
-    fontFamily: "var(--font-body), 'Open Sans', sans-serif",
-    fontSize: "1.125rem",
-    lineHeight: 1.65,
-    color: "#1E2939",
-    mb: 3,
-  },
-  "& a": { color: "primary.main", textDecoration: "underline" },
-  "& blockquote": {
-    borderLeft: "4px solid var(--color-mustard)",
-    pl: 3,
-    my: 4,
-    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-    fontSize: "1.5rem",
-    lineHeight: 1.4,
-    color: "primary.main",
-  },
-  "& ul, & ol": {
-    pl: 3,
-    mb: 3,
-    "& li": { fontSize: "1.125rem", color: "#1E2939", mb: 1, lineHeight: 1.6 },
-  },
-  "& img": { width: "100%", height: "auto", my: 4 },
-  "& figure": { my: 4 },
-  "& figcaption": { fontSize: "0.875rem", fontStyle: "italic", color: "#6A7282", mt: 1 },
-  /* CMS-authored embeds (iframes, video) may declare intrinsic widths wider
-     than the 832px reading column — cap them so a wide YouTube or Twitter
-     embed can't force a horizontal scrollbar on phones. */
-  "& iframe, & video, & object, & embed": {
-    display: "block",
-    maxWidth: "100%",
-    my: 3,
-  },
-  /* Tables and <pre> can be genuinely wider than the column (code blocks,
-     data tables). Wrap them so they scroll *inside* the article instead of
-     pushing the whole page. Uses the parent `& > table` selector so raw
-     rich-text tables get the same treatment even without a wrapper element. */
-  "& > table, & > pre, & .table-wrap": {
-    display: "block",
-    maxWidth: "100%",
-    overflowX: "auto",
-    WebkitOverflowScrolling: "touch",
-    my: 3,
-  },
-} as const;
 
 function ArticleDetailContent({
   article,
@@ -171,43 +108,35 @@ function ArticleDetailContent({
       <BackToTop />
 
       {/* ── Breadcrumb ───────────────────────────────────────── */}
-      <Box sx={{ bgcolor: "#F9FAFB", borderBottom: "1px solid", borderColor: "divider" }}>
-        <Box sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
+      <Box className="bg-surface-alt border-b border-border">
+        <Box className="editorial-container">
           <Stack
             direction="row"
             alignItems="center"
             spacing={1}
-            sx={{ py: 1, overflow: "hidden" }}
+            className="py-2 overflow-hidden"
           >
             <KiribeLink
               href={PublicRoutes.home}
               underline="none"
-              sx={{ fontSize: "1rem", color: "#6A7282", "&:hover": { color: "primary.main" } }}
+              className="text-base text-muted hover:text-burgundy"
             >
               Home
             </KiribeLink>
             {primaryCategory && (
               <>
-                <Box component="span" sx={{ color: "#D1D5DC", fontSize: "0.75rem" }}>/</Box>
+                <Box component="span" className="text-muted-soft text-xs">/</Box>
                 <KiribeLink
                   href={publicRoute(PublicRoutes.categoryDetail, { slug: primaryCategory.slug })}
                   underline="none"
-                  sx={{ fontSize: "1rem", color: "#6A7282", "&:hover": { color: "primary.main" } }}
+                  className="text-base text-muted hover:text-burgundy"
                 >
                   {primaryCategory.name}
                 </KiribeLink>
               </>
             )}
-            <Box component="span" sx={{ color: "#D1D5DC", fontSize: "0.75rem" }}>/</Box>
-            <KiribeTypography
-              sx={{
-                fontSize: "0.75rem",
-                color: "#99A1AF",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
+            <Box component="span" className="text-muted-soft text-xs">/</Box>
+            <KiribeTypography className="text-xs text-muted-soft truncate">
               {article.title}
             </KiribeTypography>
           </Stack>
@@ -215,18 +144,9 @@ function ArticleDetailContent({
       </Box>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <Box
-        sx={{
-          position: "relative",
-          overflow: "hidden",
-          bgcolor: "#101828",
-          display: "flex",
-          alignItems: "flex-end",
-          minHeight: { xs: 460, md: 640 },
-        }}
-      >
+      <Box className="relative overflow-hidden bg-footer flex items-end min-h-[460px] md:min-h-[640px]">
         {article.heroImage && (
-          <Box sx={{ position: "absolute", inset: 0, opacity: 0.8 }}>
+          <Box className="absolute inset-0 opacity-80">
             <KiribeImage
               src={article.heroImage}
               alt={article.heroImage.alt ?? article.title}
@@ -236,25 +156,17 @@ function ArticleDetailContent({
           </Box>
         )}
         <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
+          className="absolute inset-0"
+          style={{
             background:
               "linear-gradient(0deg, #030712 0%, rgba(16,24,40,0.6) 50%, rgba(0,0,0,0) 100%)",
           }}
         />
         <Box
-          sx={{
-            position: "relative",
-            width: "100%",
-            maxWidth: BODY_WIDTH,
-            mx: "auto",
-            px: { xs: 3, md: 4 },
-            pt: { xs: 12, md: 16 },
-            pb: { xs: 6, md: 10 },
-          }}
+          className="relative w-full mx-auto px-6 md:px-8 pt-12 md:pt-16 pb-6 md:pb-10"
+          style={{ maxWidth: BODY_WIDTH }}
         >
-          <Stack direction="row" spacing={1} sx={{ mb: 2.5, flexWrap: "wrap", gap: 1 }}>
+          <Stack direction="row" spacing={1} className="mb-5 flex-wrap gap-2">
             {primaryCategory && (
               <CategoryBadge label={primaryCategory.name} color={accent} variant="solid" />
             )}
@@ -262,17 +174,7 @@ function ArticleDetailContent({
               <Box
                 key={cat.id}
                 component="span"
-                sx={{
-                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                  fontSize: "0.75rem",
-                  lineHeight: "1rem",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  px: 1.5,
-                  py: 0.5,
-                  border: "1px solid rgba(255,255,255,0.4)",
-                  color: "rgba(255,255,255,0.8)",
-                }}
+                className="font-headline text-xs leading-4 tracking-[0.1em] uppercase px-1.5 py-0.5 border border-white/40 text-white/80"
               >
                 {cat.name}
               </Box>
@@ -282,13 +184,7 @@ function ArticleDetailContent({
           <KiribeTypography
             variant="h1"
             component="h1"
-            sx={{
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontWeight: 400,
-              fontSize: "var(--text-display)",
-              lineHeight: 1.25,
-              color: "#fff",
-            }}
+            className="font-headline font-normal text-[length:var(--text-display)] leading-tight text-white"
           >
             {article.title}
           </KiribeTypography>
@@ -297,48 +193,26 @@ function ArticleDetailContent({
             direction="row"
             spacing={2.5}
             alignItems="center"
-            sx={{ mt: 2.5, flexWrap: "wrap", gap: 1.5, color: "rgba(255,255,255,0.7)" }}
+            className="mt-2.5 flex-wrap gap-1.5 text-white/70"
           >
             <Stack direction="row" spacing={1} alignItems="center">
-              <Box
-                sx={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  bgcolor: "var(--color-mustard)",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: "var(--font-body), 'Open Sans', sans-serif",
-                  fontWeight: 700,
-                  fontSize: "0.75rem",
-                  flexShrink: 0,
-                }}
-              >
+              <Box className="w-6 h-6 rounded-full bg-mustard text-white flex items-center justify-center font-body font-bold text-xs shrink-0">
                 {authorInitial(authorName)}
               </Box>
-              <KiribeTypography
-                sx={{
-                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                  fontWeight: 700,
-                  fontSize: "0.875rem",
-                  color: "#fff",
-                }}
-              >
+              <KiribeTypography className="font-headline font-bold text-sm text-white">
                 {authorName}
               </KiribeTypography>
             </Stack>
-            <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.3)" }} />
+            <Box className="w-1 h-1 rounded-full bg-white/30" />
             {article.publishedAt && (
-              <KiribeTypography sx={{ fontSize: "0.875rem", color: "inherit" }}>
+              <KiribeTypography className="text-sm text-inherit">
                 {formatDate(article.publishedAt)}
               </KiribeTypography>
             )}
-            <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.3)" }} />
+            <Box className="w-1 h-1 rounded-full bg-white/30" />
             <Stack direction="row" spacing={0.75} alignItems="center">
-              <ScheduleIcon sx={{ fontSize: 14 }} />
-              <KiribeTypography sx={{ fontSize: "0.875rem", color: "inherit" }}>
+              <ScheduleIcon className="text-[14px]" />
+              <KiribeTypography className="text-sm text-inherit">
                 {readingTime} min read
               </KiribeTypography>
             </Stack>
@@ -347,48 +221,33 @@ function ArticleDetailContent({
       </Box>
 
       {/* ── Body ─────────────────────────────────────────────── */}
-      <Box sx={{ maxWidth: BODY_WIDTH, mx: "auto", px: { xs: 3, md: 4 } }}>
+      <Box className="mx-auto px-6 md:px-8" style={{ maxWidth: BODY_WIDTH }}>
         {article.excerpt && (
-          <Box sx={{ pt: { xs: 5, md: 6 }, pb: 4, borderBottom: "1px solid", borderColor: "divider" }}>
-            <Box sx={{ width: 48, height: 4, bgcolor: "var(--color-mustard)", mb: 3 }} />
+          <Box className="pt-10 md:pt-12 pb-8 border-b border-border">
+            <Box className="w-12 h-1 bg-mustard mb-3" />
             <KiribeTypography
               // `data-speakable` marks this block as the standfirst that
               // voice/AI assistants should read (see NewsArticle
               // `speakable.cssSelector` in `src/lib/seo/json-ld.tsx`).
               data-speakable="excerpt"
-              sx={{
-                fontFamily: "var(--font-body), 'Open Sans', sans-serif",
-                fontWeight: 300,
-                fontSize: "clamp(1.125rem, 1.02rem + 0.5vw, 1.5rem)",
-                lineHeight: 1.625,
-                color: "#364153",
-              }}
+              className="font-body font-light text-[clamp(1.125rem,1.02rem+0.5vw,1.5rem)] leading-[1.625] text-ink-secondary"
             >
               {article.excerpt}
             </KiribeTypography>
           </Box>
         )}
 
-        <Box sx={{ py: { xs: 4, md: 5 }, ...proseSx }}>
+        <Box className={cn("article-prose py-8 md:py-10")}>
           <RichText data={article.body as never} converters={richTextConverters} />
         </Box>
 
         {/* Tags */}
         {article.tags?.length > 0 && (
-          <Box sx={{ py: 4, borderTop: "1px solid", borderColor: "divider" }}>
-            <KiribeTypography
-              sx={{
-                fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                fontSize: "0.75rem",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#99A1AF",
-                mb: 2,
-              }}
-            >
+          <Box className="py-8 border-t border-border">
+            <KiribeTypography className="font-headline text-xs tracking-[0.1em] uppercase text-muted-soft mb-2">
               Tags
             </KiribeTypography>
-            <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+            <Stack direction="row" className="flex-wrap gap-2">
               {article.tags.map((tag) => (
                 <KiribeLink
                   key={tag.id}
@@ -409,40 +268,19 @@ function ArticleDetailContent({
         <ArticleShareRow title={article.title} />
 
         {/* Editorial author card */}
-        <Box sx={{ pt: 4, borderTop: "1px solid", borderColor: "divider" }}>
-          <Stack direction="row" spacing={2.5} sx={{ bgcolor: "#F9FAFB", p: 3 }}>
-            <Box
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                bgcolor: "primary.main",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                fontWeight: 700,
-                fontSize: "1.25rem",
-              }}
-            >
+        <Box className="pt-8 border-t border-border">
+          <Stack direction="row" spacing={2.5} className="bg-surface-alt p-6">
+            <Box className="w-14 h-14 rounded-full bg-burgundy text-white flex items-center justify-center shrink-0 font-headline font-bold text-xl">
               {authorInitial(authorName)}
             </Box>
             <Box>
-              <KiribeTypography
-                sx={{
-                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                  fontSize: "1.125rem",
-                  color: "#000",
-                }}
-              >
+              <KiribeTypography className="font-headline text-lg text-black">
                 {authorName}
               </KiribeTypography>
-              <KiribeTypography sx={{ mt: 0.25, fontSize: "0.875rem", color: "var(--color-mustard)" }}>
+              <KiribeTypography className="mt-0.5 text-sm text-mustard">
                 Contributor
               </KiribeTypography>
-              <KiribeTypography sx={{ mt: 1.5, fontSize: "0.875rem", lineHeight: 1.625, color: "#4A5565" }}>
+              <KiribeTypography className="mt-3 text-sm leading-[1.625] text-ink-secondary">
                 {authorName} is a contributor to Kiribé, covering culture, cinema,
                 and the intersection of art and society across the African
                 continent and beyond.
@@ -454,35 +292,20 @@ function ArticleDetailContent({
 
       {/* ── Most read (below body, sidebar variant) ──────────── */}
       {mostReadArticles.length > 0 && (
-        <Box sx={{ maxWidth: BODY_WIDTH, mx: "auto", px: { xs: 3, md: 4 }, mt: { xs: 4, md: 6 } }}>
+        <Box className="mx-auto px-6 md:px-8 mt-6 md:mt-8" style={{ maxWidth: BODY_WIDTH }}>
           <MostReadList articles={mostReadArticles} variant="sidebar" />
         </Box>
       )}
 
       {/* ── Related articles ─────────────────────────────────── */}
       {relatedArticles.length > 0 && (
-        <Box component="section" sx={{ bgcolor: "#F9FAFB", py: { xs: 8, md: 8 }, mt: { xs: 4, md: 4 } }}>
-          <Box sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
-            <KiribeTypography
-              sx={{
-                fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                fontWeight: 400,
-                fontSize: "1.5rem",
-                letterSpacing: "0.025em",
-                textTransform: "uppercase",
-                color: "primary.main",
-              }}
-            >
+        <Box component="section" className="bg-surface-alt py-16 mt-6 md:mt-8">
+          <Box className="editorial-container">
+            <KiribeTypography className="font-headline font-normal text-2xl tracking-wide uppercase text-burgundy">
               Related Articles
             </KiribeTypography>
-            <Box sx={{ mt: 1, mb: 4, width: 48, height: 2, bgcolor: "var(--color-mustard)" }} />
-            <Box
-              sx={{
-                display: "grid",
-                gap: 4,
-                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", base: "1fr 1fr 1fr" },
-              }}
-            >
+            <Box className="mt-1 mb-8 w-12 h-0.5 bg-mustard" />
+            <Box className="grid gap-8 grid-cols-1 md:grid-cols-2 base:grid-cols-3">
               {relatedArticles.map((related) => (
                 <ArticleCard key={related.id} article={related} variant="grid" surface="panel" />
               ))}

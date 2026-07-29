@@ -32,88 +32,49 @@ export function CategoryHero({
   return (
     <Box
       component="section"
-      sx={{
-        position: "relative",
-        overflow: "hidden",
-        bgcolor: "#030712",
-        display: "flex",
-        alignItems: "flex-end",
-        minHeight: { xs: 240, md: 288 },
-      }}
+      className="relative overflow-hidden bg-[#030712] flex items-end min-h-[240px] md:min-h-[288px]"
     >
       <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          ...(image
-            ? {
-                backgroundImage: `url(${image})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
+        className="absolute inset-0 bg-cover bg-center"
+        style={
+          image
+            ? { backgroundImage: `url(${image})` }
             : {
                 background: `radial-gradient(circle at 75% 20%, ${accent}55, transparent 60%), #030712`,
-              }),
-        }}
+              }
+        }
       />
       <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
+        className="absolute inset-0"
+        style={{
           background:
             "linear-gradient(90deg, rgba(3,7,18,0.9) 0%, rgba(3,7,18,0.6) 50%, rgba(0,0,0,0) 100%)",
         }}
       />
-      <EditorialContainer sx={{ position: "relative", pt: { xs: 8, md: 10 }, pb: 5 }}>
+      <EditorialContainer className="relative pt-16 md:pt-20 pb-5">
         {accentLabel ? (
           <Box
             component="span"
-            sx={{
-              display: "inline-block",
-              bgcolor: accent,
-              color: "#fff",
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontSize: "0.75rem",
-              lineHeight: "1rem",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              px: 1.5,
-              py: 0.5,
-            }}
+            className="inline-block text-white font-headline text-xs leading-4 tracking-[0.1em] uppercase px-1.5 py-0.5"
+            style={{ backgroundColor: accent }}
           >
             {accentLabel}
           </Box>
         ) : (
           kicker && (
-            <KiribeTypography variant="kicker" color="secondary.main" sx={{ display: "block" }}>
+            <KiribeTypography variant="kicker" color="secondary.main" className="block">
               {kicker}
             </KiribeTypography>
           )
         )}
         <KiribeTypography
           variant="h1"
-          sx={{
-            mt: 2,
-            color: "common.white",
-            fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-            fontWeight: 400,
-            fontSize: { xs: "2.25rem", md: "3rem" },
-            lineHeight: 1,
-            textTransform: "capitalize",
-          }}
+          className="mt-4 text-white font-headline font-normal text-4xl md:text-5xl leading-none capitalize"
         >
           {title}
         </KiribeTypography>
         {description && (
-          <KiribeTypography
-            sx={{
-              mt: 1.5,
-              maxWidth: 576,
-              color: "#D1D5DC",
-              fontSize: "1rem",
-              lineHeight: 1.625,
-            }}
-          >
+          <KiribeTypography className="mt-3 max-w-[576px] text-[#D1D5DC] text-base leading-[1.625]">
             {description}
           </KiribeTypography>
         )}

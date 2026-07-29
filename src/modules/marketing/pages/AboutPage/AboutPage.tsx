@@ -16,6 +16,10 @@ import TwitterIcon from "@mui/icons-material/Twitter";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import YouTubeIcon from "@mui/icons-material/YouTube";
 import { PublicRoutes } from "@/routes/public.routes";
+import type { SiteSettings } from "@/modules/shared/types/content";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import FacebookIcon from "@mui/icons-material/Facebook";
+import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import { AboutContactForm } from "./AboutContactForm";
 
 /* ── Small shared pieces ─────────────────────────────────────── */
@@ -131,15 +135,32 @@ const CONTACT = [
   { Icon: HandshakeOutlinedIcon, kicker: "Advertising", email: "partnerships@kiribe.com", desc: "Sponsorship, native content, and brand partnerships." },
 ];
 
-const SOCIALS = [
-  { Icon: TwitterIcon, label: "Twitter", href: "#" },
-  { Icon: InstagramIcon, label: "Instagram", href: "#" },
-  { Icon: YouTubeIcon, label: "YouTube", href: "#" },
-];
+const SOCIAL_ICON_MAP: Record<string, typeof TwitterIcon> = {
+  twitter: TwitterIcon,
+  x: TwitterIcon,
+  instagram: InstagramIcon,
+  youtube: YouTubeIcon,
+  facebook: FacebookIcon,
+  linkedin: LinkedInIcon,
+  tiktok: MusicNoteIcon,
+};
+
+function resolveAboutSocials(socialLinks?: SiteSettings["socialLinks"]) {
+  if (!socialLinks?.length) return [];
+  return socialLinks
+    .map((link) => {
+      const key = (link.platform ?? "").toLowerCase().replace(/\s+/g, "");
+      const Icon = SOCIAL_ICON_MAP[key];
+      if (!Icon || !link.url) return null;
+      return { Icon, label: link.platform ?? key, href: link.url };
+    })
+    .filter((item): item is { Icon: typeof TwitterIcon; label: string; href: string } => Boolean(item));
+}
 
 /* ── Page ────────────────────────────────────────────────────── */
 
-export function AboutPage() {
+export function AboutPage({ siteSettings }: { siteSettings?: SiteSettings }) {
+  const socials = resolveAboutSocials(siteSettings?.socialLinks);
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -238,7 +259,7 @@ export function AboutPage() {
                   key={label}
                   className="inline-flex items-center gap-2 border border-border px-4 py-2 font-headline text-xs uppercase tracking-[0.1em] text-ink-secondary"
                 >
-                  <Icon sx={{ fontSize: 18 }} className="text-mustard" />
+                  <Icon className="text-[18px] text-mustard"/>
                   {label}
                 </span>
               ))}
@@ -271,7 +292,7 @@ export function AboutPage() {
                 className="flex gap-5 border-l-4 border-mustard bg-white p-8"
               >
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center bg-burgundy text-white">
-                  <Icon sx={{ fontSize: 24 }} />
+                  <Icon className="text-[24px]" />
                 </span>
                 <div>
                   <h3 className="font-headline text-xl font-normal text-black">
@@ -338,10 +359,7 @@ export function AboutPage() {
               <ul className="mt-8 space-y-5">
                 {ETHICS.map((item) => (
                   <li key={item} className="flex gap-4">
-                    <CheckIcon
-                      sx={{ fontSize: 20 }}
-                      className="mt-0.5 shrink-0 text-mustard"
-                    />
+                    <CheckIcon className="text-[20px] mt-0.5 shrink-0 text-mustard"/>
                     <p className="font-body text-base leading-relaxed text-[#d1d5dc]">
                       {item}
                     </p>
@@ -398,7 +416,7 @@ export function AboutPage() {
               className="inline-flex shrink-0 items-center gap-2 bg-burgundy px-8 py-3 font-headline text-sm uppercase tracking-[0.1em] text-white transition-colors hover:bg-burgundy-dark"
             >
               Pitch an Article
-              <ArrowForwardIcon sx={{ fontSize: 16 }} />
+              <ArrowForwardIcon className="text-[16px]" />
             </NextLink>
           </div>
         </div>
@@ -417,7 +435,7 @@ export function AboutPage() {
                   className="flex gap-5 border-l-4 border-burgundy bg-white p-6"
                 >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-burgundy text-white">
-                    <Icon sx={{ fontSize: 20 }} />
+                    <Icon className="text-[20px]" />
                   </span>
                   <div>
                     <Kicker>{kicker}</Kicker>
@@ -432,23 +450,27 @@ export function AboutPage() {
                 </div>
               ))}
 
-              <div className="bg-white p-6">
-                <p className="font-headline text-xs uppercase tracking-[0.1em] text-muted-soft">
-                  Follow Us
-                </p>
-                <div className="mt-5 flex gap-3">
-                  {SOCIALS.map(({ Icon, label, href }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      aria-label={label}
-                      className="flex h-10 w-10 items-center justify-center border border-border text-ink-secondary transition-colors hover:border-burgundy hover:text-burgundy"
-                    >
-                      <Icon sx={{ fontSize: 18 }} />
-                    </a>
-                  ))}
+              {socials.length > 0 ? (
+                <div className="bg-white p-6">
+                  <p className="font-headline text-xs uppercase tracking-[0.1em] text-muted-soft">
+                    Follow Us
+                  </p>
+                  <div className="mt-5 flex gap-3">
+                    {socials.map(({ Icon, label, href }) => (
+                      <a
+                        key={label}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={label}
+                        className="flex h-10 w-10 items-center justify-center border border-border text-ink-secondary transition-colors hover:border-burgundy hover:text-burgundy"
+                      >
+                        <Icon className="text-[18px]" />
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </div>
 
             {/* Right: form */}

@@ -42,12 +42,12 @@ export function ContactPage() {
     <EditorialSection>
       <EditorialContainer>
         <KiribeTypography variant="h3">Contact</KiribeTypography>
-        <KiribeTypography variant="body1" color="text.secondary" sx={{ mt: 1, mb: 4 }}>
+        <KiribeTypography variant="body1" color="text.secondary" className="mt-2 mb-8">
           Questions, tips, or partnership ideas? Send us a note.
         </KiribeTypography>
 
         <Box component="form" onSubmit={onSubmit} noValidate>
-          <Stack spacing={3} sx={{ maxWidth: 560 }}>
+          <Stack spacing={3} className="max-w-[560px]">
             <FormTextField
               control={control}
               name="name"
@@ -78,7 +78,7 @@ export function ContactPage() {
               required
               minRows={5}
             />
-            <Box sx={{ display: "none" }} aria-hidden="true">
+            <Box className="none" aria-hidden="true">
               <FormTextField control={control} name="website" label="Website" />
             </Box>
             <KiribeButton type="submit" loading={isPending}>

@@ -18,33 +18,19 @@ type SpotlightProfileProps = {
 export function SpotlightProfile({ creator }: SpotlightProfileProps) {
   if (!creator) {
     return (
-      <EditorialSection sx={{ bgcolor: "#F9FAFB", py: { xs: 6, md: 8 } }}>
-        <Stack alignItems="center" spacing={1} sx={{ textAlign: "center", mb: 3 }}>
+      <EditorialSection className="bg-surface-alt py-12 md:py-16">
+        <Stack alignItems="center" spacing={1} className="mb-6 text-center">
           <KiribeTypography
             variant="h3"
-            sx={{
-              color: "primary.main",
-              fontSize: { xs: "1.5rem", md: "1.75rem" },
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-            }}
+            className="text-2xl tracking-[0.04em] text-burgundy uppercase md:text-[1.75rem]"
           >
             Spotlight
           </KiribeTypography>
-          <Box sx={{ width: 48, height: 2, bgcolor: "secondary.main" }} />
+          <Box className="h-0.5 w-12 bg-mustard" />
         </Stack>
         <EditorialContainer>
-          <Box
-            sx={{
-              py: { xs: 6, md: 10 },
-              border: "1px dashed",
-              borderColor: "divider",
-              borderRadius: 1,
-              textAlign: "center",
-              color: "text.secondary",
-            }}
-          >
-            <KiribeTypography variant="body2" sx={{ color: "inherit" }}>
+          <Box className="rounded border border-dashed border-border py-12 text-center text-ink-secondary md:py-20">
+            <KiribeTypography variant="body2" className="text-inherit">
               The Spotlight profile will feature here once selected by the editor.
             </KiribeTypography>
           </Box>
@@ -54,35 +40,21 @@ export function SpotlightProfile({ creator }: SpotlightProfileProps) {
   }
 
   return (
-    <EditorialSection sx={{ bgcolor: "#F9FAFB", py: { xs: 0, md: 0 } }}>
-      <Stack alignItems="center" spacing={1} sx={{ py: { xs: 5, md: 7 }, textAlign: "center" }}>
+    <EditorialSection className="bg-surface-alt py-0">
+      <Stack alignItems="center" spacing={1} className="py-10 text-center md:py-14">
         <KiribeTypography
           variant="h3"
-          sx={{
-            color: "primary.main",
-            fontSize: { xs: "1.5rem", md: "1.75rem" },
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-          }}
+          className="text-2xl tracking-[0.04em] text-burgundy uppercase md:text-[1.75rem]"
         >
           Spotlight
         </KiribeTypography>
-        <Box sx={{ width: 48, height: 2, bgcolor: "secondary.main" }} />
+        <Box className="h-0.5 w-12 bg-mustard" />
       </Stack>
 
-      <EditorialContainer sx={{ pb: { xs: 6, md: 10 } }}>
+      <EditorialContainer className="pb-12 md:pb-20">
         <Grid container spacing={{ xs: 4, base: 0 }} alignItems="stretch">
           <Grid size={{ xs: 12, base: 6 }}>
-            <Box
-              sx={{
-                position: "relative",
-                width: "100%",
-                aspectRatio: "4 / 5",
-                borderRadius: { xs: 2, base: "8px 0 0 8px" },
-                overflow: "hidden",
-                bgcolor: "#1A1A1A",
-              }}
-            >
+            <Box className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-ink base:rounded-l-lg base:rounded-r-none">
               <KiribeImage
                 src={creator.portrait}
                 alt={creator.portrait?.alt ?? creator.name}
@@ -92,35 +64,14 @@ export function SpotlightProfile({ creator }: SpotlightProfileProps) {
               {creator.quote && (
                 <>
                   <Box
-                    sx={{
-                      position: "absolute",
-                      inset: 0,
+                    className="pointer-events-none absolute inset-0"
+                    style={{
                       background:
                         "linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 55%)",
-                      pointerEvents: "none",
                     }}
                   />
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      left: { xs: 20, md: 32 },
-                      right: { xs: 20, md: 32 },
-                      bottom: { xs: 20, md: 32 },
-                      borderLeft: "3px solid",
-                      borderColor: "secondary.main",
-                      pl: { xs: 1.5, md: 2 },
-                    }}
-                  >
-                    <KiribeTypography
-                      sx={{
-                        color: "#fff",
-                        fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                        fontSize: { xs: "1.125rem", md: "1.5rem" },
-                        fontWeight: 500,
-                        lineHeight: 1.35,
-                        fontStyle: "italic",
-                      }}
-                    >
+                  <Box className="absolute right-5 bottom-5 left-5 border-l-[3px] border-mustard pl-3 md:right-8 md:bottom-8 md:left-8 md:pl-4">
+                    <KiribeTypography className="font-headline text-lg leading-[1.35] font-medium text-white italic md:text-2xl">
                       &ldquo;{creator.quote}&rdquo;
                     </KiribeTypography>
                   </Box>
@@ -132,70 +83,42 @@ export function SpotlightProfile({ creator }: SpotlightProfileProps) {
           <Grid size={{ xs: 12, base: 6 }}>
             <Stack
               spacing={2.5}
-              sx={{
-                bgcolor: "background.paper",
-                p: { xs: 3, md: 5 },
-                borderRadius: { xs: 2, base: "0 8px 8px 0" },
-                height: "100%",
-                justifyContent: "center",
-              }}
+              className="h-full justify-center rounded-lg bg-surface p-6 md:rounded-l-none md:rounded-r-lg md:p-10"
             >
               <Box>
                 <KiribeTypography
                   variant="h2"
-                  sx={{
-                    color: "primary.main",
-                    fontSize: "clamp(2rem, 1.6rem + 1.8vw, 3rem)",
-                    lineHeight: 1.1,
-                    letterSpacing: "-0.01em",
-                  }}
+                  className="text-[clamp(2rem,1.6rem+1.8vw,3rem)] leading-[1.1] tracking-[-0.01em] text-burgundy"
                 >
                   {creator.name}
                 </KiribeTypography>
-                <KiribeTypography
-                  sx={{
-                    color: "text.primary",
-                    fontSize: { xs: "1rem", md: "1.125rem" },
-                    fontWeight: 500,
-                    mt: 0.5,
-                  }}
-                >
+                <KiribeTypography className="mt-1 text-base font-medium text-ink md:text-lg">
                   {creator.role}
                 </KiribeTypography>
               </Box>
 
-              <Box sx={{ width: 96, height: 2, bgcolor: "secondary.main" }} />
+              <Box className="h-0.5 w-24 bg-mustard" />
 
               {creator.bio && (
                 <KiribeTypography
                   variant="body1"
-                  color="text.secondary"
-                  sx={{ fontSize: "1rem", lineHeight: 1.65 }}
+                  className="text-base leading-[1.65] text-ink-secondary"
                 >
                   {creator.bio}
                 </KiribeTypography>
               )}
 
               {creator.achievements && creator.achievements.length > 0 && (
-                <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid container spacing={2} className="mt-2">
                   {creator.achievements.slice(0, 4).map((item) => (
                     <Grid key={item.label} size={{ xs: 6 }}>
                       <Stack spacing={0.25}>
-                        <KiribeTypography
-                          sx={{
-                            color: "primary.main",
-                            fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                            fontSize: { xs: "1.5rem", md: "1.75rem" },
-                            fontWeight: 700,
-                            lineHeight: 1.1,
-                          }}
-                        >
+                        <KiribeTypography className="font-headline text-2xl leading-[1.1] font-bold text-burgundy md:text-[1.75rem]">
                           {item.value}
                         </KiribeTypography>
                         <KiribeTypography
                           variant="caption"
-                          color="text.secondary"
-                          sx={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
+                          className="tracking-[0.05em] text-ink-secondary uppercase"
                         >
                           {item.label}
                         </KiribeTypography>

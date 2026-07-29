@@ -6,7 +6,7 @@ export function ArticleCardGridSkeleton() {
   return (
     <Box component="article" aria-hidden>
       <Stack spacing={1.5}>
-        <SkeletonBlock variant="rectangular" sx={{ width: "100%", aspectRatio: "16/10" }} />
+        <SkeletonBlock variant="rectangular" className="w-full aspect-[16/10]" />
         <SkeletonBlock width={56} height={12} />
         <SkeletonBlock width="100%" height={24} />
         <SkeletonBlock width="85%" height={24} />

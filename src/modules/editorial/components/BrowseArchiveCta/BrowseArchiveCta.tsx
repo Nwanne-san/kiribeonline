@@ -12,33 +12,22 @@ import { PublicRoutes } from "@/routes/public.routes";
 
 export function BrowseArchiveCta() {
   return (
-    <EditorialSection sx={{ py: { xs: 5, md: 7 }, bgcolor: "background.paper" }}>
+    <EditorialSection className="py-10 md:py-14 bg-surface">
       <EditorialContainer>
-        <Stack spacing={2} alignItems="center" sx={{ textAlign: "center" }}>
-          <KiribeTypography variant="kicker" color="text.secondary" sx={{ display: "block" }}>
+        <Stack spacing={2} alignItems="center" className="text-center">
+          <KiribeTypography variant="kicker" color="text.secondary" className="block">
             Explore the full archive
           </KiribeTypography>
           <KiribeTypography
             variant="h2"
-            sx={{
-              color: "primary.main",
-              fontSize: { xs: "1.75rem", md: "2rem" },
-              letterSpacing: "-0.01em",
-            }}
+            className="text-burgundy text-[1.75rem] md:text-[2rem] tracking-tight"
           >
             Browse All Articles
           </KiribeTypography>
           <KiribeButton
             component={NextLink}
             href={PublicRoutes.articles}
-            sx={{
-              mt: 1,
-              px: 4,
-              py: 1.25,
-              fontSize: "0.75rem",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-            }}
+            className="mt-2 px-8 py-2.5 text-[0.75rem] tracking-[0.08em] uppercase"
           >
             View All Articles
           </KiribeButton>

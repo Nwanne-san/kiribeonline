@@ -86,7 +86,7 @@ export function ReelEditorPage({ reelId }: ReelEditorPageProps) {
         action={
           <AdminButton
             variant="secondary"
-            leftIcon={<ArrowBackRounded sx={{ fontSize: 16 }} />}
+            leftIcon={<ArrowBackRounded className="text-[16px]" />}
             onClick={() => router.push(AdminRoutes.reels)}
           >
             Back
@@ -156,7 +156,7 @@ export function ReelEditorPage({ reelId }: ReelEditorPageProps) {
         <AdminButton
           onClick={save}
           disabled={!canSave}
-          leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
+          leftIcon={<SaveRounded className="text-[16px]" />}
         >
           {isPending ? "Saving…" : "Save"}
         </AdminButton>

@@ -12,6 +12,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import { KiribeTypography } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import { trackEvent } from "@/modules/shared/components/GoogleAnalytics";
 import { PublicRoutes } from "@/routes/public.routes";
 import { useMutationService } from "@/utils/hooks/useMutationService";
@@ -72,53 +73,29 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
       aria-labelledby="subscribe-modal-title"
       slotProps={{
         paper: {
-          sx: {
-            m: 2,
-            maxWidth: 512,
-            borderRadius: 0,
-            overflow: "visible",
-            boxShadow: "0px 25px 50px -12px rgba(0,0,0,0.25)",
-          },
+          className:
+            "m-4 max-w-[512px] rounded-none overflow-visible shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.25)]",
         },
       }}
     >
       {/* Burgundy top bar */}
-      <Box sx={{ height: 6, bgcolor: "primary.main" }} />
+      <Box className="h-1.5 bg-burgundy" />
 
       {/* Close button */}
       <IconButton
         aria-label="Close"
         onClick={onClose}
-        sx={{ position: "absolute", top: 12, right: 12, color: "#6A7282" }}
+        className="absolute top-3 right-3 text-muted"
       >
-        <CloseIcon sx={{ fontSize: 20 }} />
+        <CloseIcon className="text-[20px]" />
       </IconButton>
 
-      <Box sx={{ p: 5 }}>
+      <Box className="p-10">
         <Stack direction="row" alignItems="center" spacing={1}>
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              bgcolor: "primary.main",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <MailOutlineIcon sx={{ fontSize: 16, color: "#fff" }} />
+          <Box className="w-8 h-8 bg-burgundy flex items-center justify-center shrink-0">
+            <MailOutlineIcon className="text-base text-white" />
           </Box>
-          <KiribeTypography
-            sx={{
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontSize: "0.75rem",
-              lineHeight: "1rem",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "primary.main",
-            }}
-          >
+          <KiribeTypography className="font-headline text-xs leading-4 tracking-[0.1em] uppercase text-burgundy">
             Newsletter
           </KiribeTypography>
         </Stack>
@@ -126,35 +103,20 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
         <KiribeTypography
           id="subscribe-modal-title"
           component="h2"
-          sx={{
-            mt: 2,
-            fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-            fontWeight: 400,
-            fontSize: "1.875rem",
-            lineHeight: 1.25,
-            color: "#101828",
-          }}
+          className="mt-4 font-headline font-normal text-[1.875rem] leading-tight text-[#101828]"
         >
           Stay in the Story
         </KiribeTypography>
 
-        <KiribeTypography
-          sx={{
-            mt: 1.5,
-            fontFamily: "var(--font-body), 'Open Sans', sans-serif",
-            fontSize: "1rem",
-            lineHeight: 1.625,
-            color: "#4A5565",
-          }}
-        >
+        <KiribeTypography className="mt-3 font-body text-base leading-[1.625] text-ink-secondary">
           Join the Kiribé inner circle — curated film, television, and culture
           stories delivered to your inbox every week. No noise, only what matters.
         </KiribeTypography>
 
-        <Box sx={{ mt: 3, width: 48, height: 2, bgcolor: "var(--color-mustard)" }} />
+        <Box className="mt-6 w-12 h-0.5 bg-mustard" />
 
         {isSuccess ? (
-          <KiribeTypography sx={{ mt: 3, color: "primary.main", fontSize: "1rem", lineHeight: 1.6 }}>
+          <KiribeTypography className="mt-6 text-burgundy text-base leading-[1.6]">
             Thanks — check your inbox to confirm your subscription.
           </KiribeTypography>
         ) : (
@@ -164,7 +126,7 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
               onSubmit={onSubmit}
               noValidate
               direction="row"
-              sx={{ mt: 3 }}
+              className="mt-6"
             >
               <Box
                 component="input"
@@ -174,73 +136,39 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
                 placeholder="Your email address"
                 aria-label="Your email address"
                 aria-invalid={touched && !valid}
-                sx={{
-                  flex: 1,
-                  minWidth: 0,
-                  border: "1px solid",
-                  borderColor: touched && !valid ? "var(--color-danger)" : "#D1D5DC",
-                  borderRight: "none",
-                  color: "#101828",
-                  px: 2,
-                  py: 1.5,
-                  fontFamily: "var(--font-body), 'Open Sans', sans-serif",
-                  fontSize: "0.875rem",
-                  outline: "none",
-                  "&::placeholder": { color: "#99A1AF" },
-                  "&:focus": { borderColor: "primary.main" },
-                }}
+                className={cn(
+                  "flex-1 min-w-0 border border-r-0 text-[#101828] px-4 py-3 font-body text-sm outline-none placeholder:text-muted-soft focus:border-burgundy",
+                  touched && !valid ? "border-danger" : "border-[#D1D5DC]"
+                )}
               />
               <Box
                 component="button"
                 type="submit"
                 disabled={isPending || !canSubmit}
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 1,
-                  bgcolor: "primary.main",
-                  color: "#fff",
-                  border: "none",
-                  px: 2.5,
-                  py: 1.5,
-                  cursor: "pointer",
-                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                  fontSize: "0.875rem",
-                  lineHeight: "1.25rem",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  whiteSpace: "nowrap",
-                  transition: "background-color var(--duration-fast) ease",
-                  "&:hover": { bgcolor: "var(--color-burgundy-dark)" },
-                  "&:disabled": { opacity: 0.6, cursor: "default" },
-                }}
+                className="inline-flex items-center gap-2 bg-burgundy text-white border-none px-5 py-3 cursor-pointer font-headline text-sm leading-5 tracking-[0.1em] uppercase whitespace-nowrap transition-colors duration-[var(--duration-fast)] ease-in-out hover:bg-burgundy-dark disabled:opacity-60 disabled:cursor-default"
               >
                 {isPending ? "…" : "Subscribe"}
-                {!isPending && <ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                {!isPending && <ArrowForwardIcon className="text-[16px]" />}
               </Box>
             </Stack>
 
             <FormControlLabel
-              sx={{ mt: 2, mx: 0, alignItems: "flex-start" }}
+              className="mt-4 mx-0 items-start"
               control={
                 <Checkbox
                   checked={consent}
                   onChange={(e) => setConsent(e.target.checked)}
                   size="small"
-                  sx={{
-                    py: 0,
-                    color: "#99A1AF",
-                    "&.Mui-checked": { color: "primary.main" },
-                  }}
+                  className="py-0 text-muted-soft [&.Mui-checked]:text-burgundy"
                 />
               }
               label={
-                <KiribeTypography sx={{ fontSize: "0.8125rem", lineHeight: 1.5, color: "#4A5565", textAlign: "left" }}>
+                <KiribeTypography className="text-[0.8125rem] leading-normal text-ink-secondary text-left">
                   I agree to receive editorial updates and accept the{" "}
                   <Box
                     component={NextLink}
                     href={PublicRoutes.privacy}
-                    sx={{ color: "primary.main", textDecoration: "underline" }}
+                    className="text-burgundy underline"
                   >
                     privacy policy
                   </Box>
@@ -249,26 +177,16 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
               }
             />
 
-            <KiribeTypography sx={{ mt: 1.5, fontSize: "0.75rem", lineHeight: "1rem", color: "#99A1AF" }}>
+            <KiribeTypography className="mt-3 text-xs leading-4 text-muted-soft">
               No spam, unsubscribe anytime. Your privacy is respected.
             </KiribeTypography>
 
-            <Box sx={{ mt: 1.5, textAlign: "center" }}>
+            <Box className="mt-3 text-center">
               <Box
                 component="button"
                 type="button"
                 onClick={onClose}
-                sx={{
-                  border: "none",
-                  bgcolor: "transparent",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-body), 'Open Sans', sans-serif",
-                  fontSize: "0.75rem",
-                  lineHeight: "1rem",
-                  color: "#99A1AF",
-                  textDecoration: "underline",
-                  "&:hover": { color: "#6A7282" },
-                }}
+                className="border-none bg-transparent cursor-pointer font-body text-xs leading-4 text-muted-soft underline hover:text-muted"
               >
                 No thanks, I&apos;ll pass for now
               </Box>
@@ -278,7 +196,7 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
       </Box>
 
       {/* Gold bottom bar */}
-      <Box sx={{ height: 4, bgcolor: "var(--color-mustard)" }} />
+      <Box className="h-1 bg-mustard" />
     </Dialog>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import MuiLink, { type LinkProps as MuiLinkProps } from "@mui/material/Link";
-import type { SxProps, Theme } from "@mui/material/styles";
 import NextLink from "next/link";
+import { cn } from "@/modules/shared/components/tw";
 import { PublicRoutes } from "@/routes/public.routes";
 
 type KiribeLinkVariant = "default" | "navLink" | "footerLink";
@@ -17,34 +17,25 @@ function isExternalUrl(href: string): boolean {
   return href.startsWith("http://") || href.startsWith("https://") || href.startsWith("mailto:");
 }
 
-const variantSx: Record<KiribeLinkVariant, SxProps<Theme>> = {
-  default: {},
-  navLink: {
-    fontSize: "0.75rem",
-    fontWeight: 600,
-    letterSpacing: "0.05em",
-    textTransform: "uppercase",
-    color: "text.primary",
-    "&:hover": { color: "primary.main" },
-  },
-  footerLink: {
-    fontSize: "0.875rem",
-    color: "rgba(255,255,255,0.75)",
-    "&:hover": { color: "common.white" },
-  },
+const variantClass: Record<KiribeLinkVariant, string> = {
+  default: "",
+  navLink:
+    "text-xs font-semibold tracking-[0.05em] uppercase text-ink hover:text-burgundy",
+  footerLink: "text-sm text-white/75 hover:text-white",
 };
 
-/** Next.js Link + MUI Link with Kiribe nav/footer variants. */
+/** Next.js Link + MUI Link with Kiribe nav/footer variants. Prefer `className` over `sx`. */
 export function KiribeLink({
   href,
   external,
   linkVariant = "default",
   children,
+  className,
   sx,
   ...props
 }: KiribeLinkProps) {
   const isExternal = external ?? isExternalUrl(href);
-  const mergedSx: SxProps<Theme> = [variantSx[linkVariant], ...(Array.isArray(sx) ? sx : sx ? [sx] : [])];
+  const mergedClassName = cn(variantClass[linkVariant], className);
 
   if (isExternal) {
     return (
@@ -53,7 +44,8 @@ export function KiribeLink({
         target="_blank"
         rel="noopener noreferrer"
         underline={props.underline ?? "hover"}
-        sx={mergedSx}
+        className={mergedClassName}
+        sx={sx}
         {...props}
       >
         {children}
@@ -66,7 +58,8 @@ export function KiribeLink({
       component={NextLink}
       href={href}
       underline={props.underline ?? "hover"}
-      sx={mergedSx}
+      className={mergedClassName}
+      sx={sx}
       {...props}
     >
       {children}

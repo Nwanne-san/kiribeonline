@@ -15,6 +15,7 @@ import {
   EditorialContainer,
   KiribeTypography,
 } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import { trackEvent } from "@/modules/shared/components/GoogleAnalytics";
 import { PublicRoutes } from "@/routes/public.routes";
 import { useMutationService } from "@/utils/hooks/useMutationService";
@@ -30,10 +31,14 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // theme primary (#6B1D2A). Keep this literal here.
 const NEWSLETTER_BG = "#710A0A";
 const MUSTARD = "#C9A227";
-const MUSTARD_DARK = "#A88620";
 const BURGUNDY = "#7F0400";
 
 type Status = "idle" | "pending" | "confirmed";
+
+const sectionClass = "text-white py-16 md:py-20 scroll-mt-20";
+
+const mustardButtonClass =
+  "font-headline text-sm font-bold tracking-[0.06em] uppercase px-6 rounded hover:opacity-90";
 
 function SubscribeBandInner() {
   const params = useSearchParams();
@@ -110,47 +115,25 @@ function SubscribeBandInner() {
       <Box
         id="newsletter"
         component="section"
-        sx={{
-          bgcolor: NEWSLETTER_BG,
-          color: "common.white",
-          py: { xs: 8, md: 10 },
-          scrollMarginTop: 80,
-        }}
+        className={sectionClass}
+        style={{ backgroundColor: NEWSLETTER_BG }}
       >
         <EditorialContainer>
-          <Stack spacing={3} alignItems="center" sx={{ textAlign: "center", maxWidth: 640, mx: "auto" }}>
-            <Box
-              sx={{
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                bgcolor: MUSTARD,
-                display: "grid",
-                placeItems: "center",
-              }}
-            >
+          <Stack spacing={3} alignItems="center" className="text-center max-w-[640px] mx-auto">
+            <Box className="w-16 h-16 rounded-full grid place-items-center" style={{ backgroundColor: MUSTARD }}>
               {isConfirmed ? (
-                <CheckCircleIcon sx={{ color: BURGUNDY, fontSize: 32 }} />
+                <CheckCircleIcon style={{ color: BURGUNDY, fontSize: 32 }} />
               ) : (
-                <MailOutlineIcon sx={{ color: BURGUNDY, fontSize: 30 }} />
+                <MailOutlineIcon style={{ color: BURGUNDY, fontSize: 30 }} />
               )}
             </Box>
             <KiribeTypography
               variant="h2"
-              sx={{
-                color: "common.white",
-                fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                fontSize: { xs: "1.75rem", md: "1.875rem" },
-                fontWeight: 700,
-                letterSpacing: "-0.01em",
-              }}
+              className="text-white font-headline text-[1.75rem] md:text-[1.875rem] font-bold tracking-tight"
             >
               {isConfirmed ? "You're on the list" : "Check your inbox"}
             </KiribeTypography>
-            <KiribeTypography
-              variant="body1"
-              sx={{ color: "rgba(255,255,255,0.85)", fontSize: "1rem", lineHeight: 1.6 }}
-            >
+            <KiribeTypography variant="body1" className="text-white/85 text-base leading-[1.6]">
               {message}
             </KiribeTypography>
             <Button
@@ -160,19 +143,8 @@ function SubscribeBandInner() {
               }}
               variant="contained"
               disableElevation
-              sx={{
-                bgcolor: MUSTARD,
-                color: BURGUNDY,
-                fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                fontSize: "0.875rem",
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                px: 3,
-                py: 1.25,
-                borderRadius: 1,
-                "&:hover": { bgcolor: MUSTARD_DARK },
-              }}
+              className={cn(mustardButtonClass, "py-2.5")}
+              style={{ backgroundColor: MUSTARD, color: BURGUNDY }}
             >
               Subscribe another email
             </Button>
@@ -186,54 +158,29 @@ function SubscribeBandInner() {
     <Box
       id="newsletter"
       component="section"
-      sx={{
-        bgcolor: NEWSLETTER_BG,
-        color: "common.white",
-        py: { xs: 8, md: 10 },
-        scrollMarginTop: 80,
-      }}
+      className={sectionClass}
+      style={{ backgroundColor: NEWSLETTER_BG }}
     >
       <EditorialContainer>
-        <Stack spacing={2.5} alignItems="center" sx={{ textAlign: "center", maxWidth: 640, mx: "auto" }}>
-          <Box
-            sx={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              bgcolor: MUSTARD,
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <MailOutlineIcon sx={{ color: BURGUNDY, fontSize: 30 }} />
+        <Stack spacing={2.5} alignItems="center" className="text-center max-w-[640px] mx-auto">
+          <Box className="w-16 h-16 rounded-full grid place-items-center" style={{ backgroundColor: MUSTARD }}>
+            <MailOutlineIcon style={{ color: BURGUNDY, fontSize: 30 }} />
           </Box>
 
           <KiribeTypography
             variant="h2"
-            sx={{
-              color: "common.white",
-              fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-              fontSize: { xs: "1.75rem", md: "1.875rem" },
-              fontWeight: 700,
-              letterSpacing: "-0.01em",
-            }}
+            className="text-white font-headline text-[1.75rem] md:text-[1.875rem] font-bold tracking-tight"
           >
             Subscribe to Kiribe Online
           </KiribeTypography>
 
-          <KiribeTypography
-            variant="body1"
-            sx={{ color: "rgba(255,255,255,0.85)", fontSize: "1rem", lineHeight: 1.6, maxWidth: 560 }}
-          >
+          <KiribeTypography variant="body1" className="text-white/85 text-base leading-[1.6] max-w-[560px]">
             Get the latest in film, television, and culture delivered to your inbox. Join our
             community of readers who appreciate thoughtful entertainment journalism.
           </KiribeTypography>
 
           {message && (
-            <KiribeTypography
-              variant="caption"
-              sx={{ color: "#FECACA", fontSize: "0.875rem", mt: -1 }}
-            >
+            <KiribeTypography variant="caption" className="text-[#FECACA] text-sm -mt-1">
               {message}
             </KiribeTypography>
           )}
@@ -242,7 +189,7 @@ function SubscribeBandInner() {
             component="form"
             onSubmit={handleSubmit}
             noValidate
-            sx={{ width: "100%", maxWidth: 480, mt: 1 }}
+            className="w-full max-w-[480px] mt-2"
           >
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
               <TextField
@@ -255,27 +202,12 @@ function SubscribeBandInner() {
                 error={Boolean(emailError)}
                 helperText={emailError ?? undefined}
                 inputProps={{ "aria-label": "Email address", inputMode: "email", autoComplete: "email" }}
-                sx={{
-                  bgcolor: "common.white",
-                  borderRadius: 1,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 1,
-                    "& fieldset": { borderColor: "transparent" },
-                    "&:hover fieldset": { borderColor: "transparent" },
-                    "&.Mui-focused fieldset": { borderColor: MUSTARD, borderWidth: 1 },
-                  },
-                  "& .MuiOutlinedInput-input": {
-                    py: 1.5,
-                    px: 1.75,
-                    fontSize: "0.9375rem",
-                    color: "#1A1A1A",
-                  },
-                  "& .MuiFormHelperText-root": {
-                    color: "#FECACA",
-                    textAlign: "left",
-                    mx: 0,
-                    mt: 0.5,
-                    fontWeight: 500,
+                className="bg-white rounded [&_.MuiOutlinedInput-root]:rounded [&_.MuiOutlinedInput-root_fieldset]:border-transparent [&_.MuiOutlinedInput-root:hover_fieldset]:border-transparent [&_.MuiOutlinedInput-input]:py-3 [&_.MuiOutlinedInput-input]:px-3.5 [&_.MuiOutlinedInput-input]:text-[0.9375rem] [&_.MuiOutlinedInput-input]:text-[#1A1A1A] [&_.MuiFormHelperText-root]:text-[#FECACA] [&_.MuiFormHelperText-root]:text-left [&_.MuiFormHelperText-root]:mx-0 [&_.MuiFormHelperText-root]:mt-1 [&_.MuiFormHelperText-root]:font-medium"
+                slotProps={{
+                  input: {
+                    className: cn(
+                      emailError ? "" : "[&_.MuiOutlinedInput-root.Mui-focused_fieldset]:border-[#C9A227]"
+                    ),
                   },
                 }}
               />
@@ -284,26 +216,8 @@ function SubscribeBandInner() {
                 variant="contained"
                 disableElevation
                 disabled={isPending || !canSubmit}
-                sx={{
-                  bgcolor: MUSTARD,
-                  color: BURGUNDY,
-                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                  fontSize: "0.875rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  px: 3,
-                  py: 1.5,
-                  borderRadius: 1,
-                  flexShrink: 0,
-                  whiteSpace: "nowrap",
-                  "&:hover": { bgcolor: MUSTARD_DARK },
-                  "&.Mui-disabled": {
-                    bgcolor: MUSTARD,
-                    color: BURGUNDY,
-                    opacity: 0.6,
-                  },
-                }}
+                className={cn(mustardButtonClass, "py-3 shrink-0 whitespace-nowrap disabled:opacity-60")}
+                style={{ backgroundColor: MUSTARD, color: BURGUNDY }}
               >
                 {isPending ? "Subscribing…" : "Subscribe"}
               </Button>
@@ -316,30 +230,26 @@ function SubscribeBandInner() {
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
                 size="small"
-                sx={{
-                  color: "rgba(255,255,255,0.5)",
-                  "&.Mui-checked": { color: MUSTARD },
-                  py: 0.25,
-                }}
+                className="text-white/50 py-0.5 [&.Mui-checked]:text-mustard"
               />
             }
             label={
-              <KiribeTypography variant="caption" sx={{ color: "rgba(255,255,255,0.85)", fontSize: "0.8125rem" }}>
+              <KiribeTypography variant="caption" className="text-white/85 text-[0.8125rem]">
                 I agree to receive editorial updates and accept the{" "}
                 <Box
                   component={NextLink}
                   href={PublicRoutes.privacy}
-                  sx={{ color: MUSTARD, textDecoration: "underline" }}
+                  className="text-mustard underline"
                 >
                   privacy policy
                 </Box>
                 .
               </KiribeTypography>
             }
-            sx={{ alignItems: "center", mx: 0 }}
+            className="items-center mx-0"
           />
 
-          <KiribeTypography variant="caption" sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.75rem", mt: 0.5 }}>
+          <KiribeTypography variant="caption" className="text-white/60 text-xs mt-1">
             We respect your privacy. Unsubscribe at any time.
           </KiribeTypography>
         </Stack>

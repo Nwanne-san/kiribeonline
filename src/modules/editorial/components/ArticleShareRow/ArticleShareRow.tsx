@@ -11,24 +11,11 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { KiribeTypography } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import { trackEvent } from "@/modules/shared/components/GoogleAnalytics";
 
-const pillSx = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 1,
-  px: 2,
-  py: 1,
-  border: "none",
-  cursor: "pointer",
-  color: "#fff",
-  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-  fontSize: "0.75rem",
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  transition: "opacity var(--duration-fast) ease",
-  "&:hover": { opacity: 0.9 },
-} as const;
+const pillClass =
+  "inline-flex items-center gap-2 px-4 py-2 border-none cursor-pointer text-white font-headline text-xs tracking-[0.1em] uppercase transition-opacity duration-[var(--duration-fast)] ease-in-out hover:opacity-90";
 
 export function ArticleShareRow({ title }: { title: string }) {
   const [copied, setCopied] = useState(false);
@@ -75,20 +62,11 @@ export function ArticleShareRow({ title }: { title: string }) {
   };
 
   return (
-    <Box sx={{ py: 4, borderTop: "1px solid", borderColor: "divider" }}>
-      <KiribeTypography
-        sx={{
-          fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-          fontSize: "0.75rem",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: "var(--color-muted)",
-          mb: 2,
-        }}
-      >
+    <Box className="py-8 border-t border-border">
+      <KiribeTypography className="font-headline text-xs tracking-[0.1em] uppercase text-muted mb-4">
         Share
       </KiribeTypography>
-      <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
+      <Stack direction="row" spacing={1.5} className="flex-wrap gap-3">
         {/*
           WhatsApp first — primary sharing channel for this audience. The
           `wa.me` universal link routes to the native app on mobile and to
@@ -101,9 +79,9 @@ export function ArticleShareRow({ title }: { title: string }) {
           onClick={() =>
             openShare("whatsapp", `https://wa.me/?text=${encodedTitle}%20${encoded()}`)
           }
-          sx={{ ...pillSx, bgcolor: "#25D366" }}
+          className={cn(pillClass, "bg-[#25D366]")}
         >
-          <WhatsAppIcon sx={{ fontSize: 16 }} />
+          <WhatsAppIcon className="text-[16px]" />
           WhatsApp
         </Box>
         <Box
@@ -113,9 +91,9 @@ export function ArticleShareRow({ title }: { title: string }) {
           onClick={() =>
             openShare("x", `https://twitter.com/intent/tweet?url=${encoded()}&text=${encodedTitle}`)
           }
-          sx={{ ...pillSx, bgcolor: "#000" }}
+          className={cn(pillClass, "bg-black")}
         >
-          <TwitterIcon sx={{ fontSize: 16 }} />
+          <TwitterIcon className="text-[16px]" />
           X
         </Box>
         <Box
@@ -125,9 +103,9 @@ export function ArticleShareRow({ title }: { title: string }) {
           onClick={() =>
             openShare("facebook", `https://www.facebook.com/sharer/sharer.php?u=${encoded()}`)
           }
-          sx={{ ...pillSx, bgcolor: "#1447E6" }}
+          className={cn(pillClass, "bg-[#1447E6]")}
         >
-          <FacebookIcon sx={{ fontSize: 16 }} />
+          <FacebookIcon className="text-[16px]" />
           Facebook
         </Box>
         <Box
@@ -140,24 +118,22 @@ export function ArticleShareRow({ title }: { title: string }) {
               `https://www.linkedin.com/sharing/share-offsite/?url=${encoded()}`
             )
           }
-          sx={{ ...pillSx, bgcolor: "#155DFC" }}
+          className={cn(pillClass, "bg-[#155DFC]")}
         >
-          <LinkedInIcon sx={{ fontSize: 16 }} />
+          <LinkedInIcon className="text-[16px]" />
           LinkedIn
         </Box>
         <Box
           component="button"
           type="button"
           onClick={handleCopy}
-          sx={{
-            ...pillSx,
-            bgcolor: "transparent",
-            color: copied ? "primary.main" : "#4A5565",
-            border: "1px solid",
-            borderColor: copied ? "primary.main" : "#D1D5DC",
-          }}
+          className={cn(
+            pillClass,
+            "bg-transparent border border-solid",
+            copied ? "text-burgundy border-burgundy" : "text-ink-secondary border-[#D1D5DC]"
+          )}
         >
-          {copied ? <CheckIcon sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
+          {copied ? <CheckIcon className="text-[16px]" /> : <ContentCopyIcon className="text-[16px]" />}
           {copied ? "Copied" : "Copy Link"}
         </Box>
         {/*
@@ -171,15 +147,12 @@ export function ArticleShareRow({ title }: { title: string }) {
             type="button"
             aria-label="Share via device"
             onClick={handleNativeShare}
-            sx={{
-              ...pillSx,
-              bgcolor: "transparent",
-              color: "#4A5565",
-              border: "1px solid",
-              borderColor: "#D1D5DC",
-            }}
+            className={cn(
+              pillClass,
+              "bg-transparent text-ink-secondary border border-solid border-[#D1D5DC]"
+            )}
           >
-            <IosShareIcon sx={{ fontSize: 16 }} />
+            <IosShareIcon className="text-[16px]" />
             Share
           </Box>
         )}

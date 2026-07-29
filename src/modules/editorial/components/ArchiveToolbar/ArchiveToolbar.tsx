@@ -28,14 +28,14 @@ export function ArchiveToolbar({
   title,
 }: ArchiveToolbarProps) {
   return (
-    <Stack spacing={2} sx={{ mb: 3 }}>
+    <Stack spacing={2} className="mb-6">
       <Stack
         direction={{ xs: "column", md: "row" }}
         spacing={2}
         alignItems={{ md: "center" }}
         justifyContent="space-between"
       >
-        <Box sx={{ flex: 1, maxWidth: { md: 400 } }}>
+        <Box className="flex-1 md:max-w-[400px]">
           <KiribeTextField
             fullWidth
             size="small"

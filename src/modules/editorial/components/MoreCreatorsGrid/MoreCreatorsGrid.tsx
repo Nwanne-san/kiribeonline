@@ -20,7 +20,7 @@ export function MoreCreatorsGrid({ creators }: MoreCreatorsGridProps) {
   const hasCreators = creators.length > 0;
 
   return (
-    <EditorialSection sx={{ py: { xs: 5, md: 8 }, bgcolor: "background.paper" }}>
+    <EditorialSection className="py-10 md:py-16 bg-surface">
       <EditorialContainer>
         <SectionHeader title="More Creators" viewAllHref={PublicRoutes.about} />
 
@@ -33,17 +33,8 @@ export function MoreCreatorsGrid({ creators }: MoreCreatorsGridProps) {
             ))}
           </Grid>
         ) : (
-          <Box
-            sx={{
-              py: { xs: 4, md: 6 },
-              border: "1px dashed",
-              borderColor: "divider",
-              borderRadius: 1,
-              textAlign: "center",
-              color: "text.secondary",
-            }}
-          >
-            <KiribeTypography variant="body2" sx={{ color: "inherit" }}>
+          <Box className="py-8 md:py-12 border border-dashed border-border rounded text-center text-ink-secondary">
+            <KiribeTypography variant="body2" className="text-inherit">
               Featured creators will appear here.
             </KiribeTypography>
           </Box>

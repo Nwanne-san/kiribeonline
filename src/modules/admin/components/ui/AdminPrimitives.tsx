@@ -93,22 +93,25 @@ export type AdminButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type AdminButtonSize = "sm" | "md";
 
 const BTN_VARIANT: Record<AdminButtonVariant, string> = {
-  primary: "bg-[#7f0400] text-white hover:bg-[#6b0300] border border-transparent",
+  // Figma Make CMS: sharp corners, primary → mustard on hover
+  primary:
+    "bg-admin-primary text-white hover:bg-admin-accent hover:text-admin-primary border border-transparent",
   secondary:
-    "bg-surface text-ink-secondary border border-border hover:bg-surface-muted hover:text-ink",
-  ghost: "bg-transparent text-ink-secondary border border-transparent hover:bg-surface-muted",
+    "bg-surface text-ink-secondary border border-border hover:border-admin-primary hover:text-admin-primary",
+  ghost:
+    "bg-transparent text-ink-secondary border border-transparent hover:bg-surface-muted hover:text-admin-primary",
   danger: "bg-[#b42318] text-white hover:bg-[#98211a] border border-transparent",
 };
 
 const BTN_SIZE: Record<AdminButtonSize, string> = {
-  sm: "h-8 px-3 text-[0.6875rem] gap-1.5",
-  md: "h-10 px-4 text-xs gap-2",
+  sm: "h-8 px-3 text-[0.6875rem] gap-1.5 tracking-widest",
+  md: "h-10 px-4 text-xs gap-2 tracking-widest",
 };
 
 /**
- * The single admin button. Uppercase, tracked label with an optional leading
- * icon — matches the Figma CTAs ("New Article", "Upload", "Invite User").
- * Use `primary` for the main action, `secondary` for outline buttons.
+ * The single admin button. Uppercase, tracked, sharp-edged — matches Figma Make
+ * CTAs ("New Article", "Upload", "Invite User"). Use `primary` for the main
+ * action, `secondary` for outline buttons.
  */
 export function AdminButton({
   variant = "primary",
@@ -127,7 +130,7 @@ export function AdminButton({
   return (
     <button
       type={type}
-      className={`inline-flex shrink-0 items-center justify-center rounded-lg font-semibold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${BTN_VARIANT[variant]} ${BTN_SIZE[size]} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-none font-headline font-semibold uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${BTN_VARIANT[variant]} ${BTN_SIZE[size]} ${className}`}
       {...rest}
     >
       {leftIcon}
@@ -161,7 +164,7 @@ export function AdminPanel({
     >
       {title ? (
         <header className="flex items-center justify-between gap-3 border-b border-border-soft px-5 py-4">
-          <h2 className="relative pb-1 font-headline text-[0.8125rem] font-bold uppercase tracking-[0.12em] text-burgundy after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-8 after:bg-mustard after:content-['']">
+          <h2 className="relative pb-1 font-headline text-[0.8125rem] font-bold uppercase tracking-[0.12em] text-admin-primary after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-8 after:bg-admin-accent after:content-['']">
             {title}
           </h2>
           {action}
@@ -241,7 +244,7 @@ export function InitialAvatar({
   const initial = name?.trim()?.charAt(0)?.toUpperCase() || "?";
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-burgundy text-xs font-semibold text-white ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-admin-primary text-xs font-semibold text-white ${className}`}
     >
       {initial}
     </span>
@@ -257,6 +260,57 @@ export function formatCompact(n: number): string {
   }
   const m = n / 1_000_000;
   return `${m % 1 === 0 ? m : m.toFixed(1)}M`;
+}
+
+/**
+ * Multi-select chip group for taxonomy (categories / tags) on the article editor.
+ * Sharp-edged chips; active fill uses each option's brand color.
+ */
+export function AdminChipSelect({
+  label,
+  options,
+  value,
+  onChange,
+  getColor,
+}: {
+  label: string;
+  options: { id: string; name: string; brandColor?: string | null }[];
+  value: string[];
+  onChange: (ids: string[]) => void;
+  getColor?: (opt: { id: string; name: string; brandColor?: string | null }) => string;
+}) {
+  const toggle = (id: string) => {
+    onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id]);
+  };
+
+  return (
+    <div className="rounded-none border border-border bg-surface p-4">
+      <div className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">
+        {label}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((opt) => {
+          const active = value.includes(opt.id);
+          const color = getColor?.(opt) ?? opt.brandColor ?? "#6B7280";
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => toggle(opt.id)}
+              className="rounded-none px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors"
+              style={{
+                border: `1px solid ${active ? color : "#e5e7eb"}`,
+                backgroundColor: active ? color : "#fff",
+                color: active ? "#fff" : "#6b7280",
+              }}
+            >
+              {opt.name}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 /* ────────────────────────────────────────────────── Page + form primitives */
@@ -278,7 +332,7 @@ export function AdminPageHeader({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h1 className="relative inline-block pb-2 font-headline text-2xl font-bold text-burgundy after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-12 after:bg-mustard after:content-['']">
+        <h1 className="relative inline-block pb-2 font-headline text-2xl font-bold text-admin-primary after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-12 after:bg-admin-accent after:content-['']">
           {title}
         </h1>
         {subtitle ? <p className="mt-2 text-sm text-muted">{subtitle}</p> : null}
@@ -330,7 +384,7 @@ export function AdminField({
 }
 
 const CONTROL_BASE =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted-soft focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20 disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted-soft focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60";
 const CONTROL_ERROR = "border-[#b42318] focus:border-[#b42318] focus:ring-[#b42318]/20";
 
 /** Standard admin text input. Add `invalid` to switch to the error border. */
@@ -399,10 +453,10 @@ export function AdminCheckboxRow({
   hint?: ReactNode;
 } & InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border bg-surface px-3 py-2.5 hover:bg-surface-muted">
+    <label className="flex cursor-pointer items-start gap-2.5 rounded-none border border-border bg-surface px-3 py-2.5 hover:bg-surface-muted">
       <input
         type="checkbox"
-        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-burgundy focus:ring-2 focus:ring-burgundy/20"
+        className="mt-0.5 h-4 w-4 shrink-0 rounded-none border-border text-admin-primary focus:ring-2 focus:ring-admin-primary/20"
         {...rest}
       />
       <span className="min-w-0 flex-1">

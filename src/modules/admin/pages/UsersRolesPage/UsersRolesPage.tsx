@@ -155,7 +155,7 @@ export function UsersRolesPage() {
         {canManage && (
           <AdminButton
             variant="primary"
-            leftIcon={<PersonAddAlt1Rounded sx={{ fontSize: 16 }} />}
+            leftIcon={<PersonAddAlt1Rounded className="text-[16px]" />}
             onClick={() => setInviteOpen(true)}
           >
             Invite User
@@ -260,10 +260,7 @@ export function UsersRolesPage() {
                       </td>
                       <td className="px-5 py-3 text-right">
                         {canManage && (
-                          <ChevronRightRounded
-                            sx={{ fontSize: 18 }}
-                            className="text-muted-soft"
-                          />
+                          <ChevronRightRounded className="text-[18px] text-muted-soft"/>
                         )}
                       </td>
                     </tr>
@@ -416,10 +413,7 @@ function GroupRows({ group, caps }: { group: string; caps: Capability[] }) {
               <td key={r} className="px-2 py-2.5 text-center">
                 {granted ? (
                   <CheckRounded
-                    sx={{ fontSize: 18 }}
-                    className="text-[#0d766e]"
-                    aria-label="Granted"
-                  />
+                    aria-label="Granted" className="text-[18px] text-[#0d766e]"/>
                 ) : (
                   <span className="text-muted-soft" aria-label="Not granted">
                     —
@@ -557,7 +551,7 @@ function InviteUserModal({ onClose }: { onClose: () => void }) {
             variant="primary"
             type="submit"
             disabled={!emailValid || inviteMutation.isPending}
-            leftIcon={<PersonAddAlt1Rounded sx={{ fontSize: 16 }} />}
+            leftIcon={<PersonAddAlt1Rounded className="text-[16px]" />}
           >
             {inviteMutation.isPending ? "Sending…" : "Send Invite"}
           </AdminButton>
@@ -632,7 +626,7 @@ function InviteLinkPanel({
       </div>
 
       <div className="flex items-start gap-2 rounded-lg border border-[#fed7aa] bg-[#fffbeb] p-3">
-        <WarningAmberRounded sx={{ fontSize: 18 }} className="mt-0.5 shrink-0 text-[#b54708]" />
+        <WarningAmberRounded className="text-[18px] mt-0.5 shrink-0 text-[#b54708]"/>
         <p className="text-xs text-[#b54708]">
           This link is shown <strong>once</strong> and can&apos;t be retrieved
           later. Copy it now{expiry ? ` — it expires ${expiry}.` : "."}
@@ -654,7 +648,7 @@ function InviteLinkPanel({
           <AdminButton
             variant="secondary"
             onClick={copy}
-            leftIcon={<ContentCopyRounded sx={{ fontSize: 15 }} />}
+            leftIcon={<ContentCopyRounded className="text-[15px]" />}
           >
             {copied ? "Copied" : "Copy"}
           </AdminButton>
@@ -783,7 +777,7 @@ function UserEditDrawer({
                   size="sm"
                   disabled={busy}
                   onClick={() => removeMutation.mutate({ id: user.id })}
-                  leftIcon={<DeleteOutlineRounded sx={{ fontSize: 15 }} />}
+                  leftIcon={<DeleteOutlineRounded className="text-[15px]" />}
                 >
                   {removeMutation.isPending ? "Removing…" : "Confirm Remove"}
                 </AdminButton>
@@ -801,7 +795,7 @@ function UserEditDrawer({
               variant="danger"
               size="sm"
               onClick={() => setConfirmRemove(true)}
-              leftIcon={<DeleteOutlineRounded sx={{ fontSize: 15 }} />}
+              leftIcon={<DeleteOutlineRounded className="text-[15px]" />}
             >
               Remove Member
             </AdminButton>
@@ -844,7 +838,7 @@ function CloseButton({ onClose }: { onClose: () => void }) {
       aria-label="Close"
       className="shrink-0 rounded-md p-1 text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
     >
-      <CloseRounded sx={{ fontSize: 20 }} />
+      <CloseRounded className="text-[20px]" />
     </button>
   );
 }

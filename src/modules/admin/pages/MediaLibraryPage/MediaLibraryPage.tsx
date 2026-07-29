@@ -246,7 +246,7 @@ export function MediaLibraryPage() {
         <AdminButton
           variant="primary"
           onClick={() => inputRef.current?.click()}
-          leftIcon={<AddRounded sx={{ fontSize: 16 }} />}
+          leftIcon={<AddRounded className="text-[16px]" />}
         >
           Upload files
         </AdminButton>
@@ -267,10 +267,7 @@ export function MediaLibraryPage() {
 
       {/* Search */}
       <div className="relative">
-        <SearchRounded
-          sx={{ fontSize: 18 }}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-soft"
-        />
+        <SearchRounded className="text-[18px] pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-soft"/>
         <input
           type="search"
           value={searchInput}
@@ -331,7 +328,7 @@ export function MediaLibraryPage() {
                 <AdminButton
                   variant="secondary"
                   size="sm"
-                  leftIcon={<EditOutlined sx={{ fontSize: 14 }} />}
+                  leftIcon={<EditOutlined className="text-[14px]" />}
                   onClick={() => handleEdit(item)}
                 >
                   Edit
@@ -374,7 +371,7 @@ export function MediaLibraryPage() {
             : "border-border bg-surface hover:border-burgundy/50 hover:bg-surface-alt"
         }`}
       >
-        <CloudUploadOutlined sx={{ fontSize: 40 }} className="text-muted-soft" />
+        <CloudUploadOutlined className="text-[40px] text-muted-soft"/>
         <div className="font-semibold uppercase tracking-wide text-ink-secondary">
           Drag &amp; drop or click to upload
         </div>
@@ -401,7 +398,7 @@ export function MediaLibraryPage() {
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-12 text-center">
-            <PermMediaOutlined sx={{ fontSize: 40 }} className="text-muted-soft" />
+            <PermMediaOutlined className="text-[40px] text-muted-soft"/>
             <p className="text-sm font-semibold text-ink">
               {debouncedValue ? "No matches" : "No media yet"}
             </p>
@@ -496,7 +493,7 @@ function MediaTile({
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-muted-soft">
-          <BrokenImageOutlined sx={{ fontSize: 28 }} />
+          <BrokenImageOutlined className="text-[28px]" />
         </div>
       )}
 
@@ -528,7 +525,7 @@ function MediaTile({
               aria-label="Open original in new tab"
               className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/90 text-ink transition-colors hover:bg-white"
             >
-              <OpenInNewRounded sx={{ fontSize: 15 }} />
+              <OpenInNewRounded className="text-[15px]" />
             </a>
           ) : null}
           <TileAction
@@ -563,7 +560,7 @@ function TileAction({
 }: {
   label: string;
   onClick: () => void;
-  Icon: React.ComponentType<{ sx?: object }>;
+  Icon: React.ComponentType<{ className?: string; sx?: object }>;
   disabled?: boolean;
   danger?: boolean;
 }) {
@@ -581,7 +578,7 @@ function TileAction({
         danger ? "text-[#b42318]" : "text-ink"
       }`}
     >
-      <Icon sx={{ fontSize: 15 }} />
+      <Icon className="text-[15px]" />
     </button>
   );
 }

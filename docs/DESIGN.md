@@ -438,14 +438,36 @@ All images: lazy load, `alt` from CMS, Next.js Image + R2.
 | All Articles | `src/modules/editorial/pages/ArticlesPage/` |
 | Layout wrapper | `src/modules/shared/layouts/SiteLayout/` |
 
-### MUI usage rules
+### MUI usage rules (Branddrive-web style)
 
-1. **Layout:** `Box`, `Stack`, `Grid`, `Container` — not raw `div` + Tailwind for structure
-2. **Text:** `KiribeTypography` / MUI `Typography` with theme variants (`kicker`, `sectionTitle`, `navLink`, `cardTitle`)
-3. **Forms:** MUI `TextField`, `Button`, `IconButton`
-4. **Sections:** `EditorialSection` + `EditorialContainer`
-5. **Loading:** MUI `Skeleton` via shared skeleton components
-6. **Icons:** `@mui/icons-material` first; custom brand SVGs via `SvgIcon`
+Keep MUI primitives (`Box`, `Stack`, `Typography`, `Button`, `Dialog`, etc.). Put **layout and visual styles in Tailwind `className`**, not `sx`. Use `cn()` from `@/modules/shared/components/tw`.
+
+1. **Layout:** MUI `Box` / `Stack` / `Grid` / `Container` OK — styles via `className` + tokens, not `sx`
+2. **Text:** `KiribeTypography` / MUI `Typography` + `className` (theme variants still OK as defaults)
+3. **Forms:** MUI controls OK; chrome via `className`; deep input internals via shared `.kiribe-field` classes in `tailwind.css`
+4. **Sections:** `EditorialSection` + `EditorialContainer` (Tailwind-backed defaults)
+5. **Loading:** MUI `Skeleton` via shared skeleton components — style with `className`
+6. **Icons:** `@mui/icons-material` first; size via `fontSize` prop or `className`, not `sx`
+7. **New admin UI:** `AdminPrimitives` + Tailwind only
+
+**Banned for new / migrated code:** layout, spacing, color, typography, border, or shadow via `sx`. Prefer design tokens (`bg-burgundy`, `text-ink-secondary`, `border-border`, …) over hardcoded hex.
+
+**Allowed escape hatches:** runtime category accents (`style={{ color }}` or CSS vars); MUI deep slots via `slotProps` + `className` (tiny `sx` only as last resort). Kiribe wrappers may still forward `sx={sx}` for back-compat — do not add new `sx={{ ... }}` object literals. CI gate: `npm run check:sx`.
+
+### sx → className mapping
+
+| MUI `sx` / palette | Tailwind |
+|--------------------|----------|
+| `primary.main` / burgundy | `text-burgundy` / `bg-burgundy` |
+| `secondary.main` / mustard | `text-mustard` / `bg-mustard` |
+| `text.secondary` | `text-ink-secondary` / `text-muted` |
+| `divider` | `border-border` |
+| `bgcolor: 'background.paper'` | `bg-surface` / `bg-cream` |
+| `px: { xs: 2, md: 4 }` | `px-4 md:px-8` |
+| `display: 'flex', gap: 2` | `flex gap-4` |
+| `&:hover` color | `hover:text-burgundy` |
+
+Tokens live in [`src/theme/tailwind.css`](../src/theme/tailwind.css). Keep [`muiTheme.ts`](../src/theme/muiTheme.ts) in sync for unmigrated MUI defaults until the purge is complete.
 
 ---
 
@@ -468,4 +490,14 @@ Custom Kiribé admin UI (not Payload Studio). Full Figma Make prompt and review 
 | Figma Make (paste prompts) | [Kiribe Website — Figma Make](https://www.figma.com/make/iBC8YfVwanBDq1nh1VTS9f) — `iBC8YfVwanBDq1nh1VTS9f` |
 | Reference design file | [Kiribé Admin Dashboard](https://www.figma.com/design/5IYjhGgnhtcsgDvDOKN5O8) — `5IYjhGgnhtcsgDvDOKN5O8`, Admin page |
 
-Admin uses the same V5 tokens (burgundy, cream, Outfit/Open Sans) but a utilitarian workbench layout: 240px sidebar, cream content area, white cards. Login uses archive-hero dark `#1C1214` backdrop only.
+Admin uses the same V5 tokens (Outfit/Open Sans, cream canvas) but a utilitarian workbench layout: 240px sidebar, cream content area, white cards. Login uses archive-hero dark `#1C1214` backdrop only.
+
+**Admin-specific brand (Figma Make CMS):**
+
+| Token | Hex | Usage |
+|-------|-----|--------|
+| Admin primary | `#7F0400` | Primary buttons, active nav, page titles |
+| Admin accent | `#E6A313` | Primary button hover, gold rules under titles |
+| Public burgundy | `#6B1D2A` | Public site only — do not use for admin CTAs |
+
+Buttons are sharp-edged (`rounded-none`), uppercase, tracked. Tokens: `--color-admin-primary`, `--color-admin-accent` in `src/theme/tailwind.css`.

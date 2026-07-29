@@ -50,7 +50,7 @@ export function KiribeImageViewer({
           onClick={() => {
             if (!controlledOpen) setInternalOpen(true);
           }}
-          sx={{ cursor: "pointer" }}
+          className="cursor-pointer"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
@@ -70,27 +70,18 @@ export function KiribeImageViewer({
         fullWidth
         slotProps={{
           paper: {
-            sx: {
-              bgcolor: "rgba(0,0,0,0.92)",
-              boxShadow: "none",
-            },
+            className: "bg-black/90 shadow-none",
           },
         }}
       >
         <IconButton
           onClick={handleClose}
           aria-label="Close image viewer"
-          sx={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            color: "common.white",
-            zIndex: 1,
-          }}
+          className="absolute top-2 right-2 z-[1] text-white"
         >
           <CloseIcon />
         </IconButton>
-        <Box sx={{ position: "relative", width: "100%", pt: "56.25%" }}>
+        <Box className="relative w-full pt-[56.25%]">
           <KiribeImage src={src} alt={alt} fill style={{ objectFit: "contain" }} sizes="100vw" />
         </Box>
       </Dialog>

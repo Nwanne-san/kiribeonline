@@ -40,7 +40,7 @@ export function CreatorsListPage() {
         action={
           <AdminButton
             onClick={() => router.push(AdminRoutes.creatorNew)}
-            leftIcon={<AddRounded sx={{ fontSize: 16 }} />}
+            leftIcon={<AddRounded className="text-[16px]" />}
           >
             New creator
           </AdminButton>
@@ -79,7 +79,7 @@ export function CreatorsListPage() {
                     <td className="px-2 py-3">
                       {creator.featuredOnHomepage ? (
                         <Pill tone="brand">
-                          <StarRounded sx={{ fontSize: 12, mr: 0.5 }} />
+                          <StarRounded className="text-[12px] mr-1" />
                           Featured
                         </Pill>
                       ) : (
@@ -90,7 +90,7 @@ export function CreatorsListPage() {
                       <AdminButton
                         variant="secondary"
                         size="sm"
-                        leftIcon={<EditRounded sx={{ fontSize: 14 }} />}
+                        leftIcon={<EditRounded className="text-[14px]" />}
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(

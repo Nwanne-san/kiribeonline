@@ -172,16 +172,16 @@ export function AdminDashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <AdminButton leftIcon={<AddRounded sx={{ fontSize: 16 }} />} onClick={() => router.push(AdminRoutes.articleNew)}>
+          <AdminButton leftIcon={<AddRounded className="text-[16px]" />} onClick={() => router.push(AdminRoutes.articleNew)}>
             New Article
           </AdminButton>
-          <AdminButton variant="secondary" leftIcon={<FileUploadOutlined sx={{ fontSize: 16 }} />} onClick={() => router.push(AdminRoutes.media)}>
+          <AdminButton variant="secondary" leftIcon={<FileUploadOutlined className="text-[16px]" />} onClick={() => router.push(AdminRoutes.media)}>
             Upload Media
           </AdminButton>
-          <AdminButton variant="secondary" leftIcon={<SellOutlined sx={{ fontSize: 16 }} />} onClick={() => router.push(AdminRoutes.categories)}>
+          <AdminButton variant="secondary" leftIcon={<SellOutlined className="text-[16px]" />} onClick={() => router.push(AdminRoutes.categories)}>
             Add Category
           </AdminButton>
-          <AdminButton variant="secondary" leftIcon={<HomeOutlined sx={{ fontSize: 16 }} />} onClick={() => router.push(AdminRoutes.homepage)}>
+          <AdminButton variant="secondary" leftIcon={<HomeOutlined className="text-[16px]" />} onClick={() => router.push(AdminRoutes.homepage)}>
             Homepage
           </AdminButton>
         </div>
@@ -292,7 +292,7 @@ export function AdminDashboardPage() {
       <div className="grid gap-5 lg:grid-cols-2">
         <AdminPanel
           title="Scheduled Posts"
-          action={<PanelLink label="Open Calendar" onClick={() => router.push(AdminRoutes.articles)} />}
+          action={<PanelLink label="Open Calendar" onClick={() => router.push(AdminRoutes.calendar)} />}
           bodyClassName={scheduledLoading ? "" : "divide-y divide-border-soft"}
         >
           {scheduledLoading && <ListSkeleton rows={3} />}
@@ -336,7 +336,7 @@ function PanelLink({ label, onClick }: { label: string; onClick: () => void }) {
       className="inline-flex items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-burgundy transition-colors hover:text-burgundy-light"
     >
       {label}
-      <NorthEastRounded sx={{ fontSize: 13 }} />
+      <NorthEastRounded className="text-[13px]" />
     </button>
   );
 }

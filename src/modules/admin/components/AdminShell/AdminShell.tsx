@@ -24,7 +24,7 @@ import { NAV_GROUPS, isNavActive, type NavGroup, type NavItem } from "./nav";
 
 const COLLAPSE_KEY = "kiribe.admin.sidebarCollapsed";
 
-const ACTIVE_ITEM = "bg-[#7f0400] text-white";
+const ACTIVE_ITEM = "bg-admin-primary text-white";
 const IDLE_ITEM = "text-gray-400 hover:bg-white/[0.06] hover:text-white";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -353,19 +353,19 @@ function TopBar({
         className="hidden shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] sm:flex"
       >
         <span className="text-muted">Kiribé CMS</span>
-        <ChevronRightRounded sx={{ fontSize: 14 }} className="text-muted-soft" />
-        <span className="text-burgundy">{activeLabel}</span>
+        <ChevronRightRounded className="text-[14px] text-muted-soft"/>
+        <span className="text-admin-primary">{activeLabel}</span>
       </nav>
 
       <form
-        className="ml-auto hidden min-w-0 max-w-md flex-1 items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2 md:flex lg:ml-6 lg:mr-auto"
+        className="ml-auto hidden min-w-0 max-w-md flex-1 items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2 md:flex lg:ml-6 lg:mr-auto"
         onSubmit={(e) => {
           e.preventDefault();
           const q = inputRef.current?.value.trim();
           if (q) onSearch(q);
         }}
       >
-        <SearchRounded sx={{ fontSize: 18 }} className="shrink-0 text-muted-soft" />
+        <SearchRounded className="text-[18px] shrink-0 text-muted-soft"/>
         <input
           ref={inputRef}
           type="search"
@@ -378,17 +378,17 @@ function TopBar({
         <button
           type="button"
           onClick={onNewArticle}
-          className="hidden items-center gap-1.5 rounded-lg bg-[#7f0400] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#6b0300] sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-none bg-admin-primary px-3 py-2 font-headline text-xs font-semibold uppercase tracking-widest text-white transition-colors hover:bg-admin-accent hover:text-admin-primary sm:inline-flex"
         >
-          <AddRounded sx={{ fontSize: 16 }} />
+          <AddRounded className="text-[16px]" />
           New Article
         </button>
         <button
           type="button"
           onClick={onUpload}
-          className="hidden items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-secondary transition-colors hover:bg-surface-muted sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-none border border-border px-3 py-2 font-headline text-xs font-semibold uppercase tracking-widest text-ink-secondary transition-colors hover:border-admin-primary hover:text-admin-primary sm:inline-flex"
         >
-          <FileUploadOutlined sx={{ fontSize: 16 }} />
+          <FileUploadOutlined className="text-[16px]" />
           Upload
         </button>
 

@@ -10,17 +10,17 @@ type SectionHeaderProps = {
 
 export function SectionHeader({ title, viewAllHref, showGoldRule = true }: SectionHeaderProps) {
   return (
-    <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 3 }}>
+    <Stack direction="row" justifyContent="space-between" alignItems="baseline" className="mb-6">
       <Box>
-        <KiribeTypography variant="h3" color="primary.main" sx={{ textTransform: "uppercase" }}>
+        <KiribeTypography variant="h3" color="primary.main" className="uppercase">
           {title}
         </KiribeTypography>
         {showGoldRule && (
-          <Box sx={{ width: 48, height: 3, bgcolor: "secondary.main", mt: 0.75 }} />
+          <Box className="w-12 h-[3px] bg-mustard mt-1.5" />
         )}
       </Box>
       {viewAllHref && (
-        <KiribeLink href={viewAllHref} underline="hover" sx={{ fontWeight: 600, fontSize: "0.75rem", letterSpacing: "0.08em" }}>
+        <KiribeLink href={viewAllHref} underline="hover" className="font-semibold text-[0.75rem] tracking-[0.08em]">
           VIEW ALL &gt;
         </KiribeLink>
       )}

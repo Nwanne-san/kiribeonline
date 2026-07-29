@@ -10,38 +10,13 @@ import {
   KiribeTypography,
   publicRoute,
 } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import { PublicRoutes } from "@/routes/public.routes";
 
 type PrevNextArticleNavProps = {
   prev: AdjacentArticle | null;
   next: AdjacentArticle | null;
 };
-
-const TWO_LINE_CLAMP = {
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-} as const;
-
-const kickerSx = {
-  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-  fontSize: "0.6875rem",
-  fontWeight: 600,
-  letterSpacing: "0.12em",
-  textTransform: "uppercase",
-  color: "#99A1AF",
-} as const;
-
-const titleSx = {
-  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-  fontWeight: 500,
-  fontSize: { xs: "0.9375rem", md: "1rem" },
-  lineHeight: 1.35,
-  color: "text.primary",
-  transition: "color var(--duration-fast) ease",
-  ...TWO_LINE_CLAMP,
-} as const;
 
 function Slot({
   article,
@@ -60,44 +35,22 @@ function Slot({
       underline="none"
       color="inherit"
       aria-label={`${label}: ${article.title}`}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
-        py: 2.5,
-        flex: 1,
-        minWidth: 0,
-        flexDirection: isPrev ? "row" : "row-reverse",
-        textAlign: isPrev ? "left" : "right",
-        "&:hover .prev-next-title": { color: "primary.main" },
-      }}
+      className={cn(
+        "group flex items-center gap-4 py-5 flex-1 min-w-0 hover:[&_.prev-next-title]:text-burgundy",
+        isPrev ? "flex-row text-left" : "flex-row-reverse text-right"
+      )}
     >
       <Box
         aria-hidden="true"
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 40,
-          height: 40,
-          borderRadius: "50%",
-          border: "1px solid",
-          borderColor: "divider",
-          color: "primary.main",
-          flexShrink: 0,
-          transition: "background-color var(--duration-fast) ease, border-color var(--duration-fast) ease",
-          "a:hover &": {
-            bgcolor: "var(--color-mustard)",
-            borderColor: "var(--color-mustard)",
-            color: "#fff",
-          },
-        }}
+        className="flex items-center justify-center w-10 h-10 rounded-full border border-border text-burgundy shrink-0 transition-[background-color,border-color] duration-[var(--duration-fast)] ease-in-out group-hover:bg-mustard group-hover:border-mustard group-hover:text-white"
       >
-        <Icon sx={{ fontSize: 18 }} />
+        <Icon className="text-[18px]" />
       </Box>
-      <Stack spacing={0.5} sx={{ minWidth: 0, flex: 1 }}>
-        <KiribeTypography sx={kickerSx}>{label}</KiribeTypography>
-        <KiribeTypography className="prev-next-title" sx={titleSx}>
+      <Stack spacing={0.5} className="min-w-0 flex-1">
+        <KiribeTypography className="font-headline text-[0.6875rem] font-semibold tracking-[0.12em] uppercase text-muted-soft">
+          {label}
+        </KiribeTypography>
+        <KiribeTypography className="prev-next-title font-headline font-medium text-[0.9375rem] md:text-base leading-[1.35] text-ink transition-colors duration-[var(--duration-fast)] ease-in-out line-clamp-2">
           {article.title}
         </KiribeTypography>
       </Stack>
@@ -117,32 +70,21 @@ export function PrevNextArticleNav({ prev, next }: PrevNextArticleNavProps) {
     <Box
       component="nav"
       aria-label="Article navigation"
-      sx={{
-        borderTop: "1px solid",
-        borderBottom: "1px solid",
-        borderColor: "divider",
-        bgcolor: "background.paper",
-      }}
+      className="border-t border-b border-border bg-surface"
     >
-      <Box sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
+      <Box className="editorial-container">
         <Stack
           direction={{ xs: "column", sm: "row" }}
           divider={
-            <Box
-              sx={{
-                width: { xs: "100%", sm: "1px" },
-                height: { xs: "1px", sm: "auto" },
-                bgcolor: "divider",
-              }}
-            />
+            <Box className="w-full sm:w-px h-px sm:h-auto bg-border" />
           }
-          sx={{ alignItems: "stretch" }}
+          className="items-stretch"
         >
-          <Box sx={{ flex: 1, display: "flex", minWidth: 0 }}>
-            {prev ? <Slot article={prev} direction="prev" /> : <Box sx={{ flex: 1 }} />}
+          <Box className="flex-1 flex min-w-0">
+            {prev ? <Slot article={prev} direction="prev" /> : <Box className="flex-1" />}
           </Box>
-          <Box sx={{ flex: 1, display: "flex", minWidth: 0 }}>
-            {next ? <Slot article={next} direction="next" /> : <Box sx={{ flex: 1 }} />}
+          <Box className="flex-1 flex min-w-0">
+            {next ? <Slot article={next} direction="next" /> : <Box className="flex-1" />}
           </Box>
         </Stack>
       </Box>

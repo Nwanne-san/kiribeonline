@@ -1,13 +1,7 @@
 "use client";
 
 import CloseIcon from "@mui/icons-material/Close";
-import FacebookIcon from "@mui/icons-material/Facebook";
-import InstagramIcon from "@mui/icons-material/Instagram";
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import MenuIcon from "@mui/icons-material/Menu";
-import MusicNoteIcon from "@mui/icons-material/MusicNote";
-import TwitterIcon from "@mui/icons-material/Twitter";
-import YouTubeIcon from "@mui/icons-material/YouTube";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
@@ -18,7 +12,6 @@ import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import type { SvgIconComponent } from "@mui/icons-material";
 import NextLink from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -26,41 +19,37 @@ import { PublicRoutes } from "@/routes/public.routes";
 import type { PublicCategory } from "@/lib/content/query-categories";
 import type { SiteSettings } from "@/modules/shared/types/content";
 import { KiribeButton, publicRoute } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
 import {
   BrandMark,
   RouteProgress,
   useNavigationProgress,
 } from "@/modules/shared/components/brand";
+import {
+  resolveSocialIconLinks,
+  resolveSocialLinks,
+} from "@/modules/shared/components/social";
 import { useSubscribeModal } from "@/modules/marketing/components/SubscribeModal";
 import { HeaderSearch } from "./HeaderSearch";
 
 type NavLink = { label: string; href: string };
 
-/** Social rail — Figma V5 nav. Icons resolve to admin-configured links by platform. */
-const SOCIAL_ICONS: { key: string; label: string; Icon: SvgIconComponent }[] = [
-  { key: "facebook", label: "Facebook", Icon: FacebookIcon },
-  { key: "instagram", label: "Instagram", Icon: InstagramIcon },
-  { key: "twitter", label: "X", Icon: TwitterIcon },
-  { key: "linkedin", label: "LinkedIn", Icon: LinkedInIcon },
-  { key: "youtube", label: "YouTube", Icon: YouTubeIcon },
-  { key: "tiktok", label: "TikTok", Icon: MusicNoteIcon },
-];
+const footerLinkClass =
+  "text-[#99A1AF] text-sm transition-colors duration-[var(--duration-fast)] ease-in-out hover:text-white";
 
-function resolveSocialHref(
-  platformKey: string,
-  socialLinks: SiteSettings["socialLinks"]
-): string | undefined {
-  const match = socialLinks?.find(
-    (link) => link.platform?.toLowerCase().replace(/\s+/g, "") === platformKey
-  );
-  return match?.url;
-}
+const footerLinkSmClass = cn(footerLinkClass, "text-xs");
 
+const colHeadingClass =
+  "font-headline font-medium text-sm tracking-wide text-white uppercase mb-4";
+
+/**
+ * Social rail — Figma V5 nav. Icons resolve to admin-configured links by
+ * platform key; the key list lives in `@/constants` and the icon mapping in
+ * `components/social`, so the admin's platform picker, this rail, the footer, and
+ * the About page can't drift apart.
+ */
 function SocialRail({ socialLinks }: { socialLinks?: SiteSettings["socialLinks"] }) {
-  const items = SOCIAL_ICONS.map((social) => ({
-    ...social,
-    href: resolveSocialHref(social.key, socialLinks),
-  })).filter((social) => Boolean(social.href));
+  const items = resolveSocialIconLinks(socialLinks);
 
   if (items.length === 0) return null;
 
@@ -68,13 +57,7 @@ function SocialRail({ socialLinks }: { socialLinks?: SiteSettings["socialLinks"]
     <Stack
       direction="row"
       alignItems="center"
-      sx={{
-        display: { xs: "none", lg: "flex" },
-        pr: 1.5,
-        mr: 0.5,
-        borderRight: "1px solid",
-        borderColor: "divider",
-      }}
+      className="hidden lg:flex pr-3 mr-1 border-r border-border"
     >
       {items.map(({ key, label, Icon, href }) => (
         <IconButton
@@ -85,9 +68,9 @@ function SocialRail({ socialLinks }: { socialLinks?: SiteSettings["socialLinks"]
           rel="noopener noreferrer"
           aria-label={label}
           size="small"
-          sx={{ p: 0.75, color: "#6A7282", "&:hover": { color: "primary.main" } }}
+          className="p-1.5 text-muted hover:text-burgundy"
         >
-          <Icon sx={{ fontSize: 15 }} />
+          <Icon className="text-[15px]" />
         </IconButton>
       ))}
     </Stack>
@@ -104,15 +87,46 @@ const PRIMARY_NAV: { label: string; slug: string }[] = [
   { label: "Spotlight", slug: "spotlight" },
 ];
 
+/**
+ * Videos and Spotlight own hand-built archives at `/categories/<slug>` — Videos
+ * renders the reels collection, Spotlight renders creator profiles. Neither
+ * needs a matching CMS category record, so they must never fall back to the
+ * categories index the way an unconfigured section does.
+ */
+const STANDALONE_ARCHIVES: Record<string, string> = {
+  videos: PublicRoutes.categoryVideos,
+  spotlight: publicRoute(PublicRoutes.categoryDetail, { slug: "spotlight" }),
+};
+
 function buildPrimaryNav(navCategories: PublicCategory[]): NavLink[] {
   const knownSlugs = new Set(navCategories.map((c) => c.slug));
   return PRIMARY_NAV.map(({ label, slug }) => ({
     label,
-    href: knownSlugs.has(slug)
-      ? publicRoute(PublicRoutes.categoryDetail, { slug })
-      : PublicRoutes.categories,
+    href:
+      STANDALONE_ARCHIVES[slug] ??
+      (knownSlugs.has(slug)
+        ? publicRoute(PublicRoutes.categoryDetail, { slug })
+        : PublicRoutes.categories),
   }));
 }
+
+const navLinkClass = (active: boolean) =>
+  cn(
+    "font-headline text-sm font-medium tracking-wide uppercase transition-colors duration-[var(--duration-fast)] ease-in-out hover:text-burgundy",
+    active ? "text-burgundy" : "text-ink-secondary"
+  );
+
+const drawerNavLinkClass = (active: boolean) =>
+  cn(
+    "relative pl-5 pr-5 py-3 font-headline text-sm font-medium tracking-[0.04em] uppercase border-l-[3px] transition-colors hover:bg-black/5 hover:text-burgundy",
+    active ? "text-burgundy border-l-burgundy" : "text-ink border-l-transparent"
+  );
+
+const drawerMoreLinkClass = (active: boolean) =>
+  cn(
+    "relative pl-5 pr-5 py-3 text-sm font-semibold border-l-[3px] transition-colors hover:bg-black/5",
+    active ? "text-burgundy border-l-burgundy" : "text-ink border-l-transparent"
+  );
 
 export function SiteHeader({
   siteSettings,
@@ -136,30 +150,17 @@ export function SiteHeader({
       <AppBar
         position="sticky"
         elevation={0}
-        sx={{
-          bgcolor: "background.paper",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-        }}
+        className="bg-surface border-b border-border"
       >
-        <Container maxWidth={false} sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 } }}>
+        <Container maxWidth={false} className="editorial-container">
           <Toolbar
             disableGutters
-            sx={{
-              minHeight: 64,
-              height: 64,
-              gap: { xs: 1, md: 2 },
-              alignItems: "center",
-            }}
+            className="min-h-16 h-16 gap-2 md:gap-4 items-center"
           >
             <IconButton
               aria-label="Open menu"
               onClick={() => setDrawerOpen(true)}
-              sx={{
-                display: { xs: "inline-flex", lg: "none" },
-                color: "text.primary",
-                p: 0.5,
-              }}
+              className="inline-flex lg:hidden text-ink p-1"
               size="small"
             >
               <MenuIcon />
@@ -176,11 +177,7 @@ export function SiteHeader({
             <Stack
               direction="row"
               spacing={3}
-              sx={{
-                flex: 1,
-                justifyContent: "center",
-                display: { xs: "none", lg: "flex" },
-              }}
+              className="flex-1 justify-center hidden lg:flex"
             >
               {nav.map(({ label, href }) => {
                 const active = pathname === href;
@@ -191,16 +188,7 @@ export function SiteHeader({
                     href={href}
                     underline="none"
                     aria-current={active ? "page" : undefined}
-                    sx={{
-                      fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                      letterSpacing: "0.025em",
-                      textTransform: "uppercase",
-                      color: active ? "primary.main" : "#364153",
-                      transition: "color var(--duration-fast) ease",
-                      "&:hover": { color: "primary.main" },
-                    }}
+                    className={navLinkClass(active)}
                   >
                     {label}
                   </Link>
@@ -208,28 +196,15 @@ export function SiteHeader({
               })}
             </Stack>
 
-            <Box sx={{ flex: { xs: 1, lg: 0 } }} />
+            <Box className="flex-1 lg:flex-none" />
 
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+            <Stack direction="row" spacing={1} alignItems="center" className="shrink-0">
               <SocialRail socialLinks={siteSettings?.socialLinks} />
               <HeaderSearch categories={navCategories} />
               <KiribeButton
                 onClick={openSubscribe}
                 size="small"
-                sx={{
-                  display: { xs: "none", sm: "inline-flex" },
-                  px: 2.5,
-                  py: 1,
-                  borderRadius: 0,
-                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  letterSpacing: "0.025em",
-                  textTransform: "uppercase",
-                  color: "common.white",
-                  boxShadow: "none",
-                  "&:hover": { boxShadow: "none" },
-                }}
+                className="hidden sm:inline-flex px-5 py-2 rounded-none font-headline text-sm font-medium tracking-wide uppercase text-white shadow-none hover:shadow-none"
               >
                 Subscribe
               </KiribeButton>
@@ -244,14 +219,14 @@ export function SiteHeader({
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         ModalProps={{ keepMounted: true }}
-        slotProps={{ paper: { sx: { width: { xs: "85vw", sm: 320 } } } }}
+        slotProps={{ paper: { className: "w-[85vw] sm:w-80" } }}
       >
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <Box className="flex flex-col h-full">
           <Stack
             direction="row"
             alignItems="center"
             justifyContent="space-between"
-            sx={{ px: 2.5, py: 2, borderBottom: "1px solid", borderColor: "divider" }}
+            className="px-5 py-4 border-b border-border"
           >
             <NextLink
               href={PublicRoutes.home}
@@ -270,7 +245,7 @@ export function SiteHeader({
             </IconButton>
           </Stack>
 
-          <Stack spacing={0} sx={{ py: 1, flex: 1, overflowY: "auto" }}>
+          <Stack spacing={0} className="py-2 flex-1 overflow-y-auto">
             {nav.map(({ label, href }) => {
               const active = pathname === href;
               return (
@@ -281,42 +256,14 @@ export function SiteHeader({
                   underline="none"
                   onClick={() => setDrawerOpen(false)}
                   aria-current={active ? "page" : undefined}
-                  sx={{
-                    position: "relative",
-                    pl: 2.5,
-                    pr: 2.5,
-                    py: 1.5,
-                    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    color: active ? "primary.main" : "text.primary",
-                    /* 3px burgundy rail on the active row — same signal as the
-                       admin sidebar so the two chromes stay coherent. */
-                    borderLeft: "3px solid",
-                    borderLeftColor: active ? "primary.main" : "transparent",
-                    "&:hover": { bgcolor: "action.hover", color: "primary.main" },
-                  }}
+                  className={drawerNavLinkClass(active)}
                 >
                   {label}
                 </Link>
               );
             })}
 
-            <Box
-              sx={{
-                px: 2.5,
-                pt: 2,
-                pb: 0.5,
-                fontFamily: "var(--font-body), 'Open Sans', sans-serif",
-                fontSize: "0.6875rem",
-                fontWeight: 600,
-                letterSpacing: "0.15em",
-                textTransform: "uppercase",
-                color: "text.secondary",
-              }}
-            >
+            <Box className="px-5 pt-4 pb-1 font-body text-[0.6875rem] font-semibold tracking-[0.15em] uppercase text-ink-secondary">
               More
             </Box>
 
@@ -334,18 +281,7 @@ export function SiteHeader({
                   underline="none"
                   onClick={() => setDrawerOpen(false)}
                   aria-current={active ? "page" : undefined}
-                  sx={{
-                    position: "relative",
-                    pl: 2.5,
-                    pr: 2.5,
-                    py: 1.5,
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    color: active ? "primary.main" : "text.primary",
-                    borderLeft: "3px solid",
-                    borderLeftColor: active ? "primary.main" : "transparent",
-                    "&:hover": { bgcolor: "action.hover" },
-                  }}
+                  className={drawerMoreLinkClass(active)}
                 >
                   {label}
                 </Link>
@@ -353,22 +289,14 @@ export function SiteHeader({
             })}
           </Stack>
 
-          <Box sx={{ p: 2.5, borderTop: "1px solid", borderColor: "divider" }}>
+          <Box className="p-5 border-t border-border">
             <KiribeButton
               fullWidth
               onClick={() => {
                 setDrawerOpen(false);
                 openSubscribe();
               }}
-              sx={{
-                py: 1.25,
-                borderRadius: 0,
-                fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                fontSize: "0.875rem",
-                letterSpacing: "0.025em",
-                textTransform: "uppercase",
-                color: "common.white",
-              }}
+              className="py-2.5 rounded-none font-headline text-sm tracking-wide uppercase text-white"
             >
               Subscribe
             </KiribeButton>
@@ -403,44 +331,27 @@ export function SiteFooter({
   const tagline =
     siteSettings?.seoDefaults?.description ??
     "Your source for thoughtful entertainment journalism.";
-  const socialLinks = siteSettings?.socialLinks ?? [];
+  const socialLinks = resolveSocialLinks(siteSettings?.socialLinks);
   const sections = FOOTER_SECTIONS;
 
-  const footerLinkSx = {
-    color: "#99A1AF",
-    fontSize: "0.875rem",
-    transition: "color var(--duration-fast) ease",
-    "&:hover": { color: "common.white" },
-  } as const;
-
-  const colHeadingSx = {
-    fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-    fontWeight: 500,
-    fontSize: "0.875rem",
-    letterSpacing: "0.025em",
-    color: "common.white",
-    textTransform: "uppercase",
-    mb: 2,
-  } as const;
-
   return (
-    <Box component="footer" sx={{ bgcolor: "#101828", color: "common.white" }}>
-      <Container maxWidth={false} sx={{ maxWidth: "var(--container-editorial)", mx: "auto", px: { xs: 2, md: 4 }, py: { xs: 6, md: 8 } }}>
+    <Box component="footer" className="bg-footer text-white">
+      <Container maxWidth={false} className="editorial-container py-12 md:py-16">
         <Grid container spacing={{ xs: 4, md: 4 }}>
           <Grid size={{ xs: 12, base: 3 }}>
-            <Box sx={{ mb: 2 }}>
+            <Box className="mb-4">
               <BrandMark height={48} tone="light" />
             </Box>
             <Typography
               variant="body2"
-              sx={{ color: "#99A1AF", maxWidth: 260, fontSize: "0.875rem", lineHeight: 1.6 }}
+              className="text-[#99A1AF] max-w-[260px] text-sm leading-[1.6]"
             >
               {tagline}
             </Typography>
           </Grid>
 
           <Grid size={{ xs: 6, md: 4, base: 3 }}>
-            <Typography sx={colHeadingSx}>Sections</Typography>
+            <Typography className={colHeadingClass}>Sections</Typography>
             <Stack spacing={1.25}>
               {sections.map((item) => (
                 <Link
@@ -448,7 +359,7 @@ export function SiteFooter({
                   component={NextLink}
                   href={publicRoute(PublicRoutes.categoryDetail, { slug: item.slug })}
                   underline="hover"
-                  sx={footerLinkSx}
+                  className={footerLinkClass}
                 >
                   {item.name}
                 </Link>
@@ -457,15 +368,15 @@ export function SiteFooter({
           </Grid>
 
           <Grid size={{ xs: 6, md: 4, base: 3 }}>
-            <Typography sx={colHeadingSx}>About</Typography>
+            <Typography className={colHeadingClass}>About</Typography>
             <Stack spacing={1.25}>
-              <Link component={NextLink} href={PublicRoutes.about} underline="hover" sx={footerLinkSx}>
+              <Link component={NextLink} href={PublicRoutes.about} underline="hover" className={footerLinkClass}>
                 About Us
               </Link>
-              <Link component={NextLink} href={PublicRoutes.about} underline="hover" sx={footerLinkSx}>
+              <Link component={NextLink} href={PublicRoutes.about} underline="hover" className={footerLinkClass}>
                 Editorial Team
               </Link>
-              <Link component={NextLink} href={PublicRoutes.contact} underline="hover" sx={footerLinkSx}>
+              <Link component={NextLink} href={PublicRoutes.contact} underline="hover" className={footerLinkClass}>
                 Contact
               </Link>
               {/*
@@ -476,7 +387,7 @@ export function SiteFooter({
               <Link
                 href="/feed.xml"
                 underline="hover"
-                sx={footerLinkSx}
+                className={footerLinkClass}
                 aria-label="Subscribe to the Kiribé Online RSS feed"
               >
                 RSS Feed
@@ -484,62 +395,44 @@ export function SiteFooter({
             </Stack>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 4, base: 3 }}>
-            <Typography sx={colHeadingSx}>Follow</Typography>
-            <Stack spacing={1.25}>
-              {(socialLinks.length > 0
-                ? socialLinks.map((link) => ({ label: link.platform, href: link.url }))
-                : [
-                    { label: "Instagram", href: "#" },
-                    { label: "Twitter", href: "#" },
-                    { label: "YouTube", href: "#" },
-                  ]
-              ).map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  target={link.href.startsWith("http") ? "_blank" : undefined}
-                  rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  underline="hover"
-                  sx={footerLinkSx}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </Stack>
-          </Grid>
+          {/* Only rendered once an admin has saved social links — a Follow column
+              of dead `#` links is worse than no column. */}
+          {socialLinks.length > 0 && (
+            <Grid size={{ xs: 12, md: 4, base: 3 }}>
+              <Typography className={colHeadingClass}>Follow</Typography>
+              <Stack spacing={1.25}>
+                {socialLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="hover"
+                    className={footerLinkClass}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </Stack>
+            </Grid>
+          )}
         </Grid>
 
-        <Box
-          sx={{
-            mt: { xs: 4, md: 5 },
-            pt: 4,
-            borderTop: "1px solid",
-            borderColor: "#1E2939",
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "flex-start", sm: "center" },
-            justifyContent: "space-between",
-            gap: 2,
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{ color: "#99A1AF", fontSize: "0.875rem" }}
-          >
+        <Box className="mt-8 md:mt-10 pt-8 border-t border-[#1E2939] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <Typography variant="caption" className="text-[#99A1AF] text-sm">
             © {new Date().getFullYear()} {brandName}. All rights reserved.
           </Typography>
           <Stack
             direction="row"
             alignItems="center"
             spacing={{ xs: 2, sm: 3 }}
-            sx={{ flexWrap: "wrap", rowGap: 1 }}
+            className="flex-wrap gap-y-2"
           >
             <Link
               component={NextLink}
               href={PublicRoutes.privacy}
               underline="hover"
-              sx={{ ...footerLinkSx, fontSize: "0.75rem" }}
+              className={footerLinkSmClass}
             >
               Privacy Policy
             </Link>
@@ -547,7 +440,7 @@ export function SiteFooter({
               component={NextLink}
               href={PublicRoutes.terms}
               underline="hover"
-              sx={{ ...footerLinkSx, fontSize: "0.75rem" }}
+              className={footerLinkSmClass}
             >
               Terms of Use
             </Link>
@@ -555,12 +448,7 @@ export function SiteFooter({
               component={NextLink}
               href="/admin"
               underline="hover"
-              sx={{
-                color: "#4A5565",
-                fontSize: "0.75rem",
-                transition: "color var(--duration-fast) ease",
-                "&:hover": { color: "common.white" },
-              }}
+              className="text-[#4A5565] text-xs transition-colors duration-[var(--duration-fast)] ease-in-out hover:text-white"
             >
               Admin ↗
             </Link>

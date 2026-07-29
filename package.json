@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "check:sx": "node scripts/check-no-sx.mjs",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "generate:types": "npm run payload generate:types",
     "generate:importmap": "npm run payload generate:importmap",

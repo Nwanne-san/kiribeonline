@@ -12,9 +12,10 @@ import {
   KiribeTypography,
   publicRoute,
 } from "@/modules/shared/components/ui";
+import { cn } from "@/modules/shared/components/tw";
+import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import { SectionHeader } from "@/modules/shared/components/SectionHeader";
 import { PublicRoutes } from "@/routes/public.routes";
-import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 
 type CategoryModuleSectionProps = {
   module: HomepageCategoryModule;
@@ -34,26 +35,14 @@ export function CategoryModuleSection({ module, alt = false }: CategoryModuleSec
 
   return (
     <EditorialSection
-      sx={{
-        py: { xs: 5, md: 8 },
-        bgcolor: alt ? "#F9FAFB" : "background.paper",
-      }}
+      className={cn("py-10 md:py-16", alt ? "bg-surface-alt" : "bg-surface")}
     >
       <EditorialContainer>
         <SectionHeader title={module.sectionTitle} viewAllHref={viewAllHref} />
 
         {!hasArticles && (
-          <Box
-            sx={{
-              py: { xs: 4, md: 6 },
-              border: "1px dashed",
-              borderColor: "divider",
-              borderRadius: 1,
-              textAlign: "center",
-              color: "text.secondary",
-            }}
-          >
-            <KiribeTypography variant="body2" sx={{ color: "inherit" }}>
+          <Box className="py-8 md:py-12 border border-dashed border-border rounded text-center text-ink-secondary">
+            <KiribeTypography variant="body2" className="text-inherit">
               New stories in this section are on the way. Browse the full archive →
             </KiribeTypography>
           </Box>
@@ -118,7 +107,7 @@ function HeroPlusLead({ article }: { article: HomepageCategoryModule["articles"]
         />
       </KiribeLink>
       <KiribeLink href={href} underline="hover" color="inherit">
-        <KiribeTypography variant="h4" sx={{ mt: 2 }}>
+        <KiribeTypography variant="h4" className="mt-4">
           {article.title}
         </KiribeTypography>
       </KiribeLink>

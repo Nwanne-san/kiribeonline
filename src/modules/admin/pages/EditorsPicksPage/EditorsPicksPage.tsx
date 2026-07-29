@@ -117,7 +117,7 @@ export function EditorsPicksPage() {
                   size="sm"
                   onClick={() => removePick(index)}
                   aria-label={`Remove pick ${index + 1}`}
-                  leftIcon={<DeleteOutlineRounded sx={{ fontSize: 16 }} />}
+                  leftIcon={<DeleteOutlineRounded className="text-[16px]" />}
                 >
                   Remove
                 </AdminButton>
@@ -132,14 +132,14 @@ export function EditorsPicksPage() {
           variant="secondary"
           onClick={addPick}
           disabled={!canAdd}
-          leftIcon={<AddRounded sx={{ fontSize: 16 }} />}
+          leftIcon={<AddRounded className="text-[16px]" />}
         >
           Add pick
         </AdminButton>
         <AdminButton
           onClick={() => mutate({ editorsPicks: picks })}
           disabled={isPending}
-          leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
+          leftIcon={<SaveRounded className="text-[16px]" />}
         >
           {isPending ? "Saving…" : "Save picks"}
         </AdminButton>
