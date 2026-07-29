@@ -49,7 +49,7 @@ const STATUS_STYLES = {
   draft: { bg: "#F9FAFB", fg: "#6B7280", border: "#D1D5DB", label: "Draft" },
   // Editorial "submitted for review" — burgundy-on-cream matches the Pill
   // `brand` tone used elsewhere so the workflow reads consistently.
-  in_review: { bg: "#FDF3EF", fg: "#7F0400", border: "#F3D7CB", label: "In review" },
+  in_review: { bg: "#FDF3EF", fg: "#6b1d2a", border: "#F3D7CB", label: "In review" },
   scheduled: { bg: "#EFF6FF", fg: "#2563EB", border: "#BFDBFE", label: "Scheduled" },
   published: { bg: "#F0FDF4", fg: "#15803D", border: "#BBF7D0", label: "Published" },
   archived: { bg: "#F9FAFB", fg: "#9CA3AF", border: "#E5E7EB", label: "Archived" },

@@ -18,7 +18,7 @@ export default function AdminError({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-cream px-4">
-      <div className="w-full max-w-md rounded-card-lg border border-border bg-surface px-6 py-8 shadow-card">
+      <div className="w-full max-w-md rounded-none border border-border bg-surface px-6 py-8 shadow-card">
         <EmptyState
           size="compact"
           illustration={<BrokenProjectorIllustration />}

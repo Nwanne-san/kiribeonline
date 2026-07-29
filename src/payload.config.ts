@@ -15,6 +15,7 @@ import {
   ContactMessages,
   Creators,
   Media,
+  Pages,
   Reels,
   Subscribers,
   Tags,
@@ -70,7 +71,7 @@ export default buildConfig({
       titleSuffix: "— Kiribe Admin",
     },
   },
-  collections: [Users, Articles, Categories, Tags, Media, Creators, Reels, AuditLogs, Subscribers, ContactMessages],
+  collections: [Users, Articles, Categories, Tags, Media, Pages, Creators, Reels, AuditLogs, Subscribers, ContactMessages],
   globals: [SiteSettings, Homepage],
   // Bound the Payload REST/local upload surface too, so the size cap holds even
   // for callers that bypass the custom admin route.

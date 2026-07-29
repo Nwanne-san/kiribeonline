@@ -140,13 +140,42 @@ export const muiTheme = createTheme({
     borderRadius: 4,
   },
   components: {
+    /**
+     * Every button in the app matches the header Subscribe CTA (Figma 2001:2):
+     * sharp corners, Outfit, uppercase, 0.025em tracking, no shadow. Defining
+     * it here rather than at each call site is what keeps them identical — a
+     * `sx` override at one call site is how they drifted apart before.
+     */
     MuiButton: {
       defaultProps: {
         disableElevation: true,
+        disableRipple: false,
       },
       styleOverrides: {
         root: {
-          borderRadius: 4,
+          borderRadius: 0,
+          fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+          fontWeight: 500,
+          letterSpacing: "0.025em",
+          textTransform: "uppercase",
+          boxShadow: "none",
+          "&:hover": { boxShadow: "none" },
+        },
+        // Padding/type scale per size — mirrors the header CTA at `small`.
+        sizeSmall: {
+          padding: "8px 20px",
+          fontSize: "0.875rem",
+          lineHeight: 1.25,
+        },
+        sizeMedium: {
+          padding: "10px 24px",
+          fontSize: "0.875rem",
+          lineHeight: 1.25,
+        },
+        sizeLarge: {
+          padding: "14px 32px",
+          fontSize: "1rem",
+          lineHeight: 1.25,
         },
         containedPrimary: {
           "&:hover": {
@@ -164,7 +193,142 @@ export const muiTheme = createTheme({
     MuiIconButton: {
       styleOverrides: {
         root: {
-          borderRadius: 4,
+          borderRadius: 0,
+        },
+      },
+    },
+    /* ── Dropdowns ────────────────────────────────────────────────────
+       MUI's default select is a rounded box with a floating white paper and
+       blue-grey highlight — visibly "Material", not Kiribé. These give it the
+       editorial treatment: square edges, a burgundy focus ring, a hard-edged
+       menu with a gold rail on the selected row. */
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+          backgroundColor: "#FFFFFF",
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#E5E7EB",
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: burgundy.main,
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: burgundy.main,
+            borderWidth: 1,
+          },
+          "&.Mui-focused": {
+            boxShadow: `0 0 0 3px ${burgundy.main}1F`,
+          },
+        },
+      },
+    },
+    MuiSelect: {
+      defaultProps: {
+        // The default popover animates from the selected item over the input;
+        // anchoring below it reads as a dropdown rather than a floating sheet.
+        MenuProps: {
+          anchorOrigin: { vertical: "bottom", horizontal: "left" },
+          transformOrigin: { vertical: "top", horizontal: "left" },
+        },
+      },
+      styleOverrides: {
+        select: {
+          fontFamily: "var(--font-body), 'Open Sans', sans-serif",
+          fontSize: "0.875rem",
+        },
+        icon: {
+          color: "#6B7280",
+          transition: "transform 150ms ease",
+        },
+        iconOpen: {
+          transform: "rotate(180deg)",
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 0,
+          border: "1px solid #E5E7EB",
+          boxShadow: "0 12px 32px rgba(16, 24, 40, 0.12)",
+          marginTop: 4,
+        },
+        list: {
+          paddingTop: 0,
+          paddingBottom: 0,
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          fontFamily: "var(--font-body), 'Open Sans', sans-serif",
+          fontSize: "0.875rem",
+          paddingTop: 10,
+          paddingBottom: 10,
+          borderLeft: "3px solid transparent",
+          "&:hover": {
+            backgroundColor: "#FAF8F5",
+            borderLeftColor: "#E5E7EB",
+          },
+          "&.Mui-selected": {
+            backgroundColor: "#FAF8F5",
+            borderLeftColor: mustard.main,
+            fontWeight: 600,
+            "&:hover": { backgroundColor: "#F5F1EA" },
+          },
+        },
+      },
+    },
+    /* ── Dialogs ──────────────────────────────────────────────────────
+       Square corners, a burgundy kicker title with the gold rule the rest of
+       the site uses for section headings, and a dimmer scrim than MUI's
+       default so the page behind recedes properly. */
+    MuiBackdrop: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "rgba(12, 10, 9, 0.62)",
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          position: "relative",
+          fontFamily: "var(--font-headline), 'Outfit', sans-serif",
+          fontSize: "0.8125rem",
+          fontWeight: 700,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: burgundy.main,
+          padding: "20px 24px 14px",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            left: 24,
+            bottom: 6,
+            width: 32,
+            height: 2,
+            backgroundColor: mustard.main,
+          },
+        },
+      },
+    },
+    MuiDialogContent: {
+      styleOverrides: {
+        root: {
+          padding: "20px 24px",
+          borderTop: "1px solid #E5E7EB",
+        },
+      },
+    },
+    MuiDialogActions: {
+      styleOverrides: {
+        root: {
+          padding: "16px 24px",
+          borderTop: "1px solid #E5E7EB",
+          gap: 8,
         },
       },
     },
@@ -205,6 +369,14 @@ export const muiTheme = createTheme({
     },
     MuiDialog: {
       styleOverrides: {
+        /* Square corners + a defined edge and a deeper shadow, so a dialog
+           reads as a deliberate surface rather than MUI's default floating
+           rounded card. Dark media lightboxes opt out with `border: none`. */
+        paper: {
+          borderRadius: 0,
+          border: "1px solid #E5E7EB",
+          boxShadow: "0 24px 64px rgba(16, 24, 40, 0.24)",
+        },
         /* Dialog widths are derived from breakpoint values too, so the remap
            would shrink every modal (sm 600→480, md 900→768). styleOverrides are
            applied after the component's own variants, so these win. */

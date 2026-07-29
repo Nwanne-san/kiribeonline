@@ -31,8 +31,8 @@ function categoryColor(cat: Pick<AdminCategory, "slug" | "brandColor">): string 
 
 /** Badge-color palette for the create-category form (2×4 swatch grid). */
 const COLOR_SWATCHES = [
-  "#7f0400",
-  "#e6a313",
+  "#6b1d2a",
+  "#c9a227",
   "#64748b",
   "#4f6ef7",
   "#9333ea",
@@ -42,7 +42,7 @@ const COLOR_SWATCHES = [
 ] as const;
 
 const INPUT_CLASS =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted-soft transition-colors focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20";
+  "w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted-soft transition-colors focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20";
 
 const LABEL_CLASS =
   "mb-1.5 block text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted";
@@ -227,7 +227,7 @@ export function CategoriesTagsPage() {
                         ? `Show ${cat.name} in navigation`
                         : `Hide ${cat.name} from navigation`
                     }
-                    className="shrink-0 rounded p-1 text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
+                    className="shrink-0 rounded-none p-1 text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
                   >
                     {cat.showInNav === false ? (
                       <VisibilityOffOutlined sx={{ fontSize: 16 }} />
@@ -299,7 +299,7 @@ function TagChipsSkeleton() {
   return (
     <div className="flex flex-wrap gap-2">
       {Array.from({ length: 8 }).map((_, i) => (
-        <Skeleton key={i} className="h-7 w-24 rounded-md" />
+        <Skeleton key={i} className="h-7 w-24 rounded-none" />
       ))}
     </div>
   );
@@ -357,7 +357,7 @@ function CreateCategoryPanel({
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="grid h-8 w-8 place-items-center rounded-lg text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
+          className="grid h-8 w-8 place-items-center rounded-none text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
         >
           <CloseRounded sx={{ fontSize: 18 }} />
         </button>
@@ -429,7 +429,7 @@ function CreateCategoryPanel({
                 onClick={() => setBrandColor(color)}
                 aria-label={`Badge color ${color}`}
                 aria-pressed={brandColor === color}
-                className={`grid h-11 w-full place-items-center rounded-md transition-transform hover:scale-105 ${
+                className={`grid h-11 w-full place-items-center rounded-none transition-transform hover:scale-105 ${
                   brandColor === color
                     ? "ring-2 ring-ink/30 ring-offset-2 ring-offset-surface"
                     : ""
@@ -455,7 +455,7 @@ function CreateCategoryPanel({
               aria-label="Show in navigation"
               onClick={() => setShowInNav((v) => !v)}
               className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-burgundy/30 ${
-                showInNav ? "bg-[#7f0400]" : "bg-border"
+                showInNav ? "bg-[#6b1d2a]" : "bg-border"
               }`}
             >
               <span
@@ -577,7 +577,7 @@ function TagList({
       {filtered.map((tag) => (
         <span
           key={tag.id}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 text-[0.8125rem] transition-colors hover:border-border-soft"
+          className="inline-flex items-center gap-1.5 rounded-none border border-border bg-surface px-2.5 py-1 text-[0.8125rem] transition-colors hover:border-border-soft"
         >
           <span className="font-medium text-ink">{tag.name}</span>
           <span className="text-muted-soft">({tag.articleCount})</span>

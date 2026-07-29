@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeSocialPlatform } from "@/constants";
 
 const idSchema = z.union([z.string(), z.number()]).transform((v) => String(v));
 
@@ -33,7 +34,19 @@ export type SettingsFormOutput = z.output<typeof settingsSchema>;
 export const settingsPatchSchema = z.object({
   siteName: z.string().min(1).optional(),
   logoId: z.union([z.string(), z.number()]).nullable().optional(),
-  socialLinks: z.array(z.object({ platform: z.string(), url: z.string().url() })).optional(),
+  socialLinks: z
+    .array(
+      z.object({
+        // Normalized at the boundary so the public header's platform-key lookup
+        // always matches, whatever casing/spacing a client sends.
+        platform: z
+          .string()
+          .min(1)
+          .transform((value) => normalizeSocialPlatform(value)),
+        url: z.string().url(),
+      })
+    )
+    .optional(),
   seoDefaults: z
     .object({
       title: z.string().optional(),

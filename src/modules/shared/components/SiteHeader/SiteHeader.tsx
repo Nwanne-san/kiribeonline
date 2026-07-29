@@ -22,6 +22,7 @@ import type { SvgIconComponent } from "@mui/icons-material";
 import NextLink from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { NAV_MAX_HEADER_LINKS } from "@/constants";
 import { PublicRoutes } from "@/routes/public.routes";
 import type { PublicCategory } from "@/lib/content/query-categories";
 import type { SiteSettings } from "@/modules/shared/types/content";
@@ -104,9 +105,28 @@ const PRIMARY_NAV: { label: string; slug: string }[] = [
   { label: "Spotlight", slug: "spotlight" },
 ];
 
-function buildPrimaryNav(navCategories: PublicCategory[]): NavLink[] {
+/**
+ * Resolves the header row, in priority order:
+ *
+ *  1. Nav saved under Settings → Navigation & Footer, if an admin configured one
+ *  2. the Figma default set, resolved against the categories that exist
+ *
+ * Either way the result is capped at `NAV_MAX_HEADER_LINKS`. The Figma nav is a
+ * single centred row, and past six labels it wraps into the search + Subscribe
+ * cluster on laptop widths. Overflow categories stay reachable from
+ * `/categories` and the mobile drawer.
+ */
+function buildPrimaryNav(
+  navCategories: PublicCategory[],
+  savedNav?: SiteSettings["navigation"]
+): NavLink[] {
+  const saved = savedNav?.headerLinks ?? [];
+  if (saved.length > 0) {
+    return saved.slice(0, NAV_MAX_HEADER_LINKS);
+  }
+
   const knownSlugs = new Set(navCategories.map((c) => c.slug));
-  return PRIMARY_NAV.map(({ label, slug }) => ({
+  return PRIMARY_NAV.slice(0, NAV_MAX_HEADER_LINKS).map(({ label, slug }) => ({
     label,
     href: knownSlugs.has(slug)
       ? publicRoute(PublicRoutes.categoryDetail, { slug })
@@ -121,7 +141,7 @@ export function SiteHeader({
   siteSettings?: SiteSettings;
   navCategories?: PublicCategory[];
 }) {
-  const nav = buildPrimaryNav(navCategories);
+  const nav = buildPrimaryNav(navCategories, siteSettings?.navigation);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
   const { pending } = useNavigationProgress();
@@ -213,22 +233,17 @@ export function SiteHeader({
             <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
               <SocialRail socialLinks={siteSettings?.socialLinks} />
               <HeaderSearch categories={navCategories} />
+              {/*
+                Sharp corners, Outfit, uppercase, tracking and padding now come
+                from the MuiButton theme — this is the CTA every other button
+                is matched to, so it must not re-declare them locally.
+              */}
               <KiribeButton
                 onClick={openSubscribe}
                 size="small"
                 sx={{
                   display: { xs: "none", sm: "inline-flex" },
-                  px: 2.5,
-                  py: 1,
-                  borderRadius: 0,
-                  fontFamily: "var(--font-headline), 'Outfit', sans-serif",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  letterSpacing: "0.025em",
-                  textTransform: "uppercase",
                   color: "common.white",
-                  boxShadow: "none",
-                  "&:hover": { boxShadow: "none" },
                 }}
               >
                 Subscribe
@@ -380,9 +395,9 @@ export function SiteHeader({
 }
 
 /**
- * Footer "Sections" column is fixed to the Figma editorial set
- * (Film / Television / Videos / News, node 2001:450). It does NOT auto-expand
- * when admins add new categories.
+ * Footer "Sections" column falls back to the Figma editorial set
+ * (Film / Television / Videos / News, node 2001:450) when no admin-saved footer
+ * exists. It does NOT auto-expand when admins add new categories.
  */
 const FOOTER_SECTIONS: { name: string; slug: string }[] = [
   { name: "Film", slug: "film" },
@@ -392,6 +407,20 @@ const FOOTER_SECTIONS: { name: string; slug: string }[] = [
   { name: "Opinion", slug: "opinion" },
   { name: "Spotlight", slug: "spotlight" },
 ];
+
+/**
+ * Route a footer link through NextLink only when it's an in-app path. Feed and
+ * file URLs (`/feed.xml`) need a real document navigation so the browser hands
+ * them to the OS or a feed reader instead of rendering them in-app; external
+ * URLs open in a new tab.
+ */
+function footerLinkProps(href: string) {
+  if (/^https?:\/\//i.test(href)) {
+    return { href, target: "_blank", rel: "noopener noreferrer" as const };
+  }
+  const isFile = /\.[a-z0-9]+$/i.test(href);
+  return isFile ? { href } : { component: NextLink, href };
+}
 
 export function SiteFooter({
   siteSettings,
@@ -405,6 +434,12 @@ export function SiteFooter({
     "Your source for thoughtful entertainment journalism.";
   const socialLinks = siteSettings?.socialLinks ?? [];
   const sections = FOOTER_SECTIONS;
+  // Two editable columns sit between the brand block and Follow — keep the
+  // Figma four-column grid intact even if an admin saved more.
+  const savedFooterColumns = (siteSettings?.navigation?.footerColumns ?? []).slice(
+    0,
+    2
+  );
 
   const footerLinkSx = {
     color: "#99A1AF",
@@ -439,50 +474,72 @@ export function SiteFooter({
             </Typography>
           </Grid>
 
-          <Grid size={{ xs: 6, md: 4, base: 3 }}>
-            <Typography sx={colHeadingSx}>Sections</Typography>
-            <Stack spacing={1.25}>
-              {sections.map((item) => (
-                <Link
-                  key={item.slug}
-                  component={NextLink}
-                  href={publicRoute(PublicRoutes.categoryDetail, { slug: item.slug })}
-                  underline="hover"
-                  sx={footerLinkSx}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </Stack>
-          </Grid>
+          {savedFooterColumns.length > 0 ? (
+            savedFooterColumns.map((col) => (
+              <Grid key={col.title} size={{ xs: 6, md: 4, base: 3 }}>
+                <Typography sx={colHeadingSx}>{col.title}</Typography>
+                <Stack spacing={1.25}>
+                  {col.links.map((link) => (
+                    <Link
+                      key={`${col.title}-${link.href}`}
+                      {...footerLinkProps(link.href)}
+                      underline="hover"
+                      sx={footerLinkSx}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </Stack>
+              </Grid>
+            ))
+          ) : (
+            <>
+              <Grid size={{ xs: 6, md: 4, base: 3 }}>
+                <Typography sx={colHeadingSx}>Sections</Typography>
+                <Stack spacing={1.25}>
+                  {sections.map((item) => (
+                    <Link
+                      key={item.slug}
+                      component={NextLink}
+                      href={publicRoute(PublicRoutes.categoryDetail, { slug: item.slug })}
+                      underline="hover"
+                      sx={footerLinkSx}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </Stack>
+              </Grid>
 
-          <Grid size={{ xs: 6, md: 4, base: 3 }}>
-            <Typography sx={colHeadingSx}>About</Typography>
-            <Stack spacing={1.25}>
-              <Link component={NextLink} href={PublicRoutes.about} underline="hover" sx={footerLinkSx}>
-                About Us
-              </Link>
-              <Link component={NextLink} href={PublicRoutes.about} underline="hover" sx={footerLinkSx}>
-                Editorial Team
-              </Link>
-              <Link component={NextLink} href={PublicRoutes.contact} underline="hover" sx={footerLinkSx}>
-                Contact
-              </Link>
-              {/*
-                RSS feed link — a plain anchor (not NextLink) so the browser
-                treats `/feed.xml` as a document navigation and hands it off
-                to the OS or feed reader instead of trying to render it in-app.
-              */}
-              <Link
-                href="/feed.xml"
-                underline="hover"
-                sx={footerLinkSx}
-                aria-label="Subscribe to the Kiribé Online RSS feed"
-              >
-                RSS Feed
-              </Link>
-            </Stack>
-          </Grid>
+              <Grid size={{ xs: 6, md: 4, base: 3 }}>
+                <Typography sx={colHeadingSx}>About</Typography>
+                <Stack spacing={1.25}>
+                  <Link component={NextLink} href={PublicRoutes.about} underline="hover" sx={footerLinkSx}>
+                    About Us
+                  </Link>
+                  <Link component={NextLink} href={PublicRoutes.about} underline="hover" sx={footerLinkSx}>
+                    Editorial Team
+                  </Link>
+                  <Link component={NextLink} href={PublicRoutes.contact} underline="hover" sx={footerLinkSx}>
+                    Contact
+                  </Link>
+                  {/*
+                    RSS feed link — a plain anchor (not NextLink) so the browser
+                    treats `/feed.xml` as a document navigation and hands it off
+                    to the OS or feed reader instead of trying to render it in-app.
+                  */}
+                  <Link
+                    href="/feed.xml"
+                    underline="hover"
+                    sx={footerLinkSx}
+                    aria-label="Subscribe to the Kiribé Online RSS feed"
+                  >
+                    RSS Feed
+                  </Link>
+                </Stack>
+              </Grid>
+            </>
+          )}
 
           <Grid size={{ xs: 12, md: 4, base: 3 }}>
             <Typography sx={colHeadingSx}>Follow</Typography>

@@ -19,6 +19,34 @@ updates:
           - "@emotion/*"
       dev-deps:
         dependency-type: development
+    # Majors on the framework/toolchain packages are deliberate, hand-driven
+    # upgrades on their own branch — never a weekly automated bump. Dependabot
+    # kept reopening these as permanently-red PRs (see #7, #9, #55).
+    ignore:
+      # MUI 7 → 9 while we're mid MUI → Tailwind v4 migration (CLAUDE.md § Styling).
+      - dependency-name: "@mui/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@emotion/*"
+        update-types: ["version-update:semver-major"]
+      # Payload core majors move the DB schema — they need `migrate:create`.
+      - dependency-name: "payload"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@payloadcms/*"
+        update-types: ["version-update:semver-major"]
+      # Toolchain majors (TS 7, ESLint 10, eslint-config-next 16 → Next 16).
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # GraphQL is disabled in payload.config.ts — it's a transitive Payload
+      # peer only, so it should track Payload rather than be bumped directly.
+      - dependency-name: "graphql"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:

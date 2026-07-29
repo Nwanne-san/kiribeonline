@@ -20,6 +20,8 @@ export { toArticleCardDoc } from "./map-article";
 export { getHomepageForPublic } from "./query-homepage";
 export { getPublishedReels } from "./query-reels";
 export { getSiteSettingsForPublic } from "./query-site-settings";
+export { getPublishedPageBySlug, getPublishedPageSlugs } from "./query-pages";
+export type { PublicPage } from "./query-pages";
 export { mapPayloadArticle } from "./map-article";
 export type {
   ArticleCardDoc,

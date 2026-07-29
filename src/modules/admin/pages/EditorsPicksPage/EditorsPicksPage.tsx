@@ -86,7 +86,7 @@ export function EditorsPicksPage() {
       <AdminPanel title="Selected picks">
         <div className="space-y-3 p-5">
           {picks.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-surface-alt px-4 py-10 text-center text-sm text-muted-soft">
+            <div className="rounded-none border border-dashed border-border bg-surface-alt px-4 py-10 text-center text-sm text-muted-soft">
               No picks yet. Add up to {MAX_PICKS} to feature them in the homepage sidebar.
             </div>
           ) : (
