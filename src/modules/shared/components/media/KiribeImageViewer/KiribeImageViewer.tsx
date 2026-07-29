@@ -73,6 +73,9 @@ export function KiribeImageViewer({
             sx: {
               bgcolor: "rgba(0,0,0,0.92)",
               boxShadow: "none",
+              // Opt out of the themed light dialog border — this is a dark
+              // media lightbox, not a content dialog.
+              border: "none",
             },
           },
         }}

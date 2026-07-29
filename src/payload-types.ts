@@ -72,6 +72,7 @@ export interface Config {
     categories: Category;
     tags: Tag;
     media: Media;
+    pages: Page;
     creators: Creator;
     reels: Reel;
     'audit-logs': AuditLog;
@@ -88,6 +89,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
     creators: CreatorsSelect<false> | CreatorsSelect<true>;
     reels: ReelsSelect<false> | ReelsSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
@@ -315,6 +317,47 @@ export interface Tag {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * Short summary used for the page meta description.
+   */
+  excerpt?: string | null;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  status?: ('draft' | 'published') | null;
+  publishedAt?: string | null;
+  /**
+   * Offer this page in the Navigation & Footer link picker.
+   */
+  showInFooter?: boolean | null;
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    ogImage?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "creators".
  */
 export interface Creator {
@@ -449,6 +492,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: number | Page;
       } | null)
     | ({
         relationTo: 'creators';
@@ -666,6 +713,28 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  excerpt?: T;
+  body?: T;
+  status?: T;
+  publishedAt?: T;
+  showInFooter?: T;
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        ogImage?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "creators_select".
  */
 export interface CreatorsSelect<T extends boolean = true> {
@@ -808,6 +877,33 @@ export interface SiteSetting {
     description?: string | null;
     ogImage?: (number | null) | Media;
   };
+  /**
+   * Public header and footer chrome. Leave empty to fall back to the category-derived defaults.
+   */
+  navigation?: {
+    headerLinks?:
+      | {
+          label: string;
+          href: string;
+          visible?: boolean | null;
+          id?: string | null;
+        }[]
+      | null;
+    footerColumns?:
+      | {
+          title: string;
+          links?:
+            | {
+                label: string;
+                href: string;
+                visible?: boolean | null;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -891,6 +987,32 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         ogImage?: T;
+      };
+  navigation?:
+    | T
+    | {
+        headerLinks?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              visible?: T;
+              id?: T;
+            };
+        footerColumns?:
+          | T
+          | {
+              title?: T;
+              links?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                    visible?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;

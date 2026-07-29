@@ -48,10 +48,10 @@ export type NavGroup = {
 };
 
 /**
- * Admin navigation. The primary group mirrors the Figma sidebar; screens that
- * aren't built yet are flagged `soon` so the chrome matches the design without
- * dead links. The "Content tools" group preserves existing working features
- * that aren't in the Figma redesign yet — final IA is still open.
+ * Admin navigation. The primary group mirrors the Figma sidebar; every item now
+ * resolves to a real screen (`soon` stays on the type for future additions). The
+ * "Content tools" group preserves existing working features that aren't in the
+ * Figma redesign yet — final IA is still open.
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -70,8 +70,18 @@ export const NAV_GROUPS: NavGroup[] = [
         matchPrefix: "/admin/tags",
       },
       { label: "Media Library", icon: PermMediaOutlined, route: AdminRoutes.media },
-      { label: "Pages", icon: LayersOutlined, soon: true },
-      { label: "Navigation & Footer", icon: NearMeOutlined, soon: true },
+      {
+        label: "Pages",
+        icon: LayersOutlined,
+        route: AdminRoutes.pages,
+        capability: "settings:manage",
+      },
+      {
+        label: "Navigation & Footer",
+        icon: NearMeOutlined,
+        route: AdminRoutes.navigation,
+        capability: "settings:manage",
+      },
       {
         label: "Users & Roles",
         icon: GroupOutlined,
@@ -90,8 +100,17 @@ export const NAV_GROUPS: NavGroup[] = [
         route: AdminRouteAlias.auditLog,
         capability: "audit:view",
       },
-      { label: "Editorial Calendar", icon: CalendarTodayOutlined, soon: true },
-      { label: "SEO", icon: QueryStatsOutlined, soon: true },
+      {
+        label: "Editorial Calendar",
+        icon: CalendarTodayOutlined,
+        route: AdminRoutes.calendar,
+      },
+      {
+        label: "SEO",
+        icon: QueryStatsOutlined,
+        route: AdminRoutes.seo,
+        capability: "settings:manage",
+      },
       {
         label: "Settings",
         icon: SettingsOutlined,

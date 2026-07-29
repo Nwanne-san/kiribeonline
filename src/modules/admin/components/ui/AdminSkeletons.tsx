@@ -11,7 +11,7 @@ export function Skeleton({ className = "" }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={`block rounded bg-surface-muted skeleton-shimmer ${className}`}
+      className={`block rounded-none bg-surface-muted skeleton-shimmer ${className}`}
     />
   );
 }
@@ -21,8 +21,8 @@ export function StatTilesSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4 2xl:grid-cols-8">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="relative overflow-hidden rounded-xl border border-border bg-surface p-4 shadow-card">
-          <Skeleton className="mb-3 h-9 w-9 rounded-lg" />
+        <div key={i} className="relative overflow-hidden rounded-none border border-border bg-surface p-4 shadow-card">
+          <Skeleton className="mb-3 h-9 w-9 rounded-none" />
           <Skeleton className="h-7 w-16" />
           <Skeleton className="mt-2 h-3 w-20" />
         </div>
@@ -71,7 +71,7 @@ export function MediaGridSkeleton({ count = 16 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
       {Array.from({ length: count }).map((_, i) => (
-        <Skeleton key={i} className="aspect-square w-full rounded-lg" />
+        <Skeleton key={i} className="aspect-square w-full rounded-none" />
       ))}
     </div>
   );

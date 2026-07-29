@@ -4,6 +4,7 @@ export { Categories } from "./Categories";
 export { ContactMessages } from "./ContactMessages";
 export { Creators } from "./Creators";
 export { Media } from "./Media";
+export { Pages } from "./Pages";
 export { Reels } from "./Reels";
 export { Subscribers } from "./Subscribers";
 export { Tags } from "./Tags";

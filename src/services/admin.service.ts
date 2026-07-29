@@ -72,6 +72,19 @@ export const adminSettingsService = {
   update: { path: `${ADMIN_API}/settings`, method: ApiMethods.PATCH },
 };
 
+export const adminPagesService = {
+  list: { path: `${ADMIN_API}/pages`, method: ApiMethods.GET },
+  create: { path: `${ADMIN_API}/pages`, method: ApiMethods.POST },
+  detail: (id: string) => ({ path: `${ADMIN_API}/pages/${id}`, method: ApiMethods.GET }),
+  update: (id: string) => ({ path: `${ADMIN_API}/pages/${id}`, method: ApiMethods.PATCH }),
+  remove: (id: string) => ({ path: `${ADMIN_API}/pages/${id}`, method: ApiMethods.DELETE }),
+};
+
+export const adminNavigationService = {
+  get: { path: `${ADMIN_API}/navigation`, method: ApiMethods.GET },
+  update: { path: `${ADMIN_API}/navigation`, method: ApiMethods.PATCH },
+};
+
 /** Stable React Query key namespaces for admin lists/details. */
 export const adminQueryKeys = {
   me: "admin-me",
@@ -86,4 +99,7 @@ export const adminQueryKeys = {
   settings: "admin-settings",
   users: "admin-users",
   user: "admin-user",
+  pages: "admin-pages",
+  page: "admin-page",
+  navigation: "admin-navigation",
 } as const;

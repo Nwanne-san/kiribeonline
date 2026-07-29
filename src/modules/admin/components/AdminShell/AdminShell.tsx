@@ -24,8 +24,8 @@ import { NAV_GROUPS, isNavActive, type NavGroup, type NavItem } from "./nav";
 
 const COLLAPSE_KEY = "kiribe.admin.sidebarCollapsed";
 
-const ACTIVE_ITEM = "bg-[#7f0400] text-white";
-const IDLE_ITEM = "text-gray-400 hover:bg-white/[0.06] hover:text-white";
+const ACTIVE_ITEM = "bg-[#6b1d2a] text-white";
+const IDLE_ITEM = "text-[#99a1af] hover:bg-white/[0.06] hover:text-white";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
@@ -103,10 +103,10 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
     "Dashboard";
 
   return (
-    <div className="flex min-h-screen bg-surface-alt text-ink">
+    <div className="flex min-h-screen bg-cream text-ink">
       {/* Desktop sidebar */}
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 flex-col bg-[#0c0c10] lg:flex ${
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col bg-footer lg:flex ${
           hydrated ? "transition-[width] duration-300 ease-out" : ""
         } ${collapsed ? "w-[76px]" : "w-60"}`}
       >
@@ -129,7 +129,7 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
             className="animate-fadeIn absolute inset-0 bg-black/50"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="admin-drawer-enter absolute inset-y-0 left-0 flex w-60 flex-col bg-[#0c0c10] shadow-xl">
+          <aside className="admin-drawer-enter absolute inset-y-0 left-0 flex w-60 flex-col bg-footer shadow-xl">
             <Sidebar
               groups={navGroups}
               collapsed={false}
@@ -190,7 +190,7 @@ function Sidebar({
       >
         <BrandMark height={22} tone="light" />
         {!collapsed && (
-          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-gray-500">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[#99a1af]">
             CMS
           </span>
         )}
@@ -200,7 +200,7 @@ function Sidebar({
         {groups.map((group, gi) => (
           <div key={group.heading ?? gi} className={gi > 0 ? "mt-4" : ""}>
             {group.heading && !collapsed && (
-              <div className="px-5 pb-1.5 pt-2 text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-gray-600">
+              <div className="px-5 pb-1.5 pt-2 text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-[#6a7282]">
                 {group.heading}
               </div>
             )}
@@ -253,7 +253,7 @@ function NavRow({
   onNavigate: (route: string) => void;
 }) {
   const Icon = item.icon;
-  const base = `group flex items-center rounded-lg text-[0.8125rem] font-medium transition-colors ${
+  const base = `group flex items-center rounded-none text-[0.8125rem] font-medium transition-colors ${
     collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
   }`;
 
@@ -261,14 +261,14 @@ function NavRow({
     return (
       <span
         title={collapsed ? `${item.label} — coming soon` : undefined}
-        className={`${base} cursor-not-allowed text-gray-600`}
+        className={`${base} cursor-not-allowed text-[#6a7282]`}
         aria-disabled
       >
         <Icon fontSize="small" />
         {!collapsed && (
           <>
             <span className="flex-1 truncate">{item.label}</span>
-            <span className="rounded bg-white/5 px-1.5 py-0.5 text-[0.5625rem] font-semibold uppercase tracking-wide text-gray-500">
+            <span className="rounded-none bg-white/5 px-1.5 py-0.5 text-[0.5625rem] font-semibold uppercase tracking-wide text-[#99a1af]">
               Soon
             </span>
           </>
@@ -306,7 +306,7 @@ function FooterRow({
       type="button"
       title={collapsed ? label : undefined}
       onClick={onClick}
-      className={`flex w-full items-center rounded-lg text-[0.8125rem] font-medium text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-white ${
+      className={`flex w-full items-center rounded-none text-[0.8125rem] font-medium text-[#99a1af] transition-colors hover:bg-white/[0.06] hover:text-white ${
         collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
       }`}
     >
@@ -343,7 +343,7 @@ function TopBar({
         type="button"
         onClick={onToggleSidebar}
         aria-label="Toggle sidebar"
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-secondary transition-colors hover:bg-surface-muted"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-none text-ink-secondary transition-colors hover:bg-surface-muted"
       >
         <MenuRounded fontSize="small" />
       </button>
@@ -358,7 +358,7 @@ function TopBar({
       </nav>
 
       <form
-        className="ml-auto hidden min-w-0 max-w-md flex-1 items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2 md:flex lg:ml-6 lg:mr-auto"
+        className="ml-auto hidden min-w-0 max-w-md flex-1 items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2 md:flex lg:ml-6 lg:mr-auto"
         onSubmit={(e) => {
           e.preventDefault();
           const q = inputRef.current?.value.trim();
@@ -378,7 +378,7 @@ function TopBar({
         <button
           type="button"
           onClick={onNewArticle}
-          className="hidden items-center gap-1.5 rounded-lg bg-[#7f0400] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#6b0300] sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-none bg-[#6b1d2a] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#4a1420] sm:inline-flex"
         >
           <AddRounded sx={{ fontSize: 16 }} />
           New Article
@@ -386,7 +386,7 @@ function TopBar({
         <button
           type="button"
           onClick={onUpload}
-          className="hidden items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-secondary transition-colors hover:bg-surface-muted sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-none border border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-secondary transition-colors hover:bg-surface-muted sm:inline-flex"
         >
           <FileUploadOutlined sx={{ fontSize: 16 }} />
           Upload

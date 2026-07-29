@@ -37,7 +37,7 @@ const SOFT_TONE: Record<PillTone, string> = {
   indigo: "bg-[#e0e7ff] text-[#4f46e5]",
   // Kiribé burgundy on a soft cream tint — reserved for editorial-workflow
   // states (`in_review`) so they read as brand-owned, not generic status.
-  brand: "bg-[#fdf3ef] text-[#7f0400]",
+  brand: "bg-[#fdf3ef] text-[#6b1d2a]",
   neutral: "bg-[#f3f4f6] text-[#4b5563]",
 };
 
@@ -56,7 +56,7 @@ export function Pill({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-[0.6875rem] font-semibold leading-tight ${SOFT_TONE[tone]} ${className}`}
+      className={`inline-flex items-center rounded-none px-2 py-0.5 text-[0.6875rem] font-semibold leading-tight ${SOFT_TONE[tone]} ${className}`}
     >
       {children}
     </span>
@@ -79,7 +79,7 @@ export function CategoryTag({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded px-2 py-0.5 text-[0.6875rem] font-semibold uppercase leading-tight tracking-wide text-white ${className}`}
+      className={`inline-flex items-center rounded-none px-2 py-0.5 text-[0.6875rem] font-semibold uppercase leading-tight tracking-wide text-white ${className}`}
       style={{ backgroundColor: color }}
     >
       {label}
@@ -93,16 +93,21 @@ export type AdminButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type AdminButtonSize = "sm" | "md";
 
 const BTN_VARIANT: Record<AdminButtonVariant, string> = {
-  primary: "bg-[#7f0400] text-white hover:bg-[#6b0300] border border-transparent",
+  primary: "bg-[#6b1d2a] text-white hover:bg-[#4a1420] border border-transparent",
   secondary:
     "bg-surface text-ink-secondary border border-border hover:bg-surface-muted hover:text-ink",
   ghost: "bg-transparent text-ink-secondary border border-transparent hover:bg-surface-muted",
   danger: "bg-[#b42318] text-white hover:bg-[#98211a] border border-transparent",
 };
 
+/**
+ * Padding and type scale mirror the public `MuiButton` theme exactly
+ * (8px/20px at `sm`, 10px/24px at `md`, 0.875rem Outfit) so an admin button and
+ * the site header Subscribe CTA are the same object in two places.
+ */
 const BTN_SIZE: Record<AdminButtonSize, string> = {
-  sm: "h-8 px-3 text-[0.6875rem] gap-1.5",
-  md: "h-10 px-4 text-xs gap-2",
+  sm: "py-2 px-5 text-sm gap-1.5",
+  md: "py-2.5 px-6 text-sm gap-2",
 };
 
 /**
@@ -127,7 +132,9 @@ export function AdminButton({
   return (
     <button
       type={type}
-      className={`inline-flex shrink-0 items-center justify-center rounded-lg font-semibold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${BTN_VARIANT[variant]} ${BTN_SIZE[size]} ${className}`}
+      // Sharp corners to match the public header Subscribe CTA — buttons are
+      // square-edged across the whole product, admin included.
+      className={`inline-flex shrink-0 items-center justify-center rounded-none font-semibold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${BTN_VARIANT[variant]} ${BTN_SIZE[size]} ${className}`}
       {...rest}
     >
       {leftIcon}
@@ -157,7 +164,7 @@ export function AdminPanel({
 }) {
   return (
     <section
-      className={`rounded-xl border border-border bg-surface shadow-card ${className}`}
+      className={`rounded-none border border-border bg-surface shadow-card ${className}`}
     >
       {title ? (
         <header className="flex items-center justify-between gap-3 border-b border-border-soft px-5 py-4">
@@ -185,7 +192,7 @@ const STAT_ACCENT: Record<StatAccent, { bar: string; icon: string; value: string
   teal: { bar: "bg-[#0d766e]", icon: "bg-[#ccfbf1] text-[#0d766e]", value: "text-[#0d766e]" },
   indigo: { bar: "bg-[#4f46e5]", icon: "bg-[#e0e7ff] text-[#4f46e5]", value: "text-[#4f46e5]" },
   // Kiribé burgundy — pairs with the `brand` Pill tone for editorial-workflow states.
-  brand: { bar: "bg-[#7f0400]", icon: "bg-[#fdf3ef] text-[#7f0400]", value: "text-[#7f0400]" },
+  brand: { bar: "bg-[#6b1d2a]", icon: "bg-[#fdf3ef] text-[#6b1d2a]", value: "text-[#6b1d2a]" },
   neutral: { bar: "bg-[#4b5563]", icon: "bg-[#f3f4f6] text-[#4b5563]", value: "text-[#374151]" },
 };
 
@@ -209,10 +216,10 @@ export function StatTile({
 }) {
   const a = STAT_ACCENT[accent];
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-surface p-4 shadow-card">
+    <div className="relative overflow-hidden rounded-none border border-border bg-surface p-4 shadow-card">
       <span className={`absolute inset-x-0 top-0 h-1 ${a.bar}`} aria-hidden />
       <span
-        className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg ${a.icon}`}
+        className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-none ${a.icon}`}
         aria-hidden
       >
         <Icon fontSize="small" />
@@ -329,8 +336,9 @@ export function AdminField({
   );
 }
 
+// Square edges to match the buttons and the public form controls.
 const CONTROL_BASE =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted-soft focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20 disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted-soft focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20 disabled:cursor-not-allowed disabled:opacity-60";
 const CONTROL_ERROR = "border-[#b42318] focus:border-[#b42318] focus:ring-[#b42318]/20";
 
 /** Standard admin text input. Add `invalid` to switch to the error border. */
@@ -367,18 +375,40 @@ export function AdminTextarea({
   );
 }
 
+/**
+ * A native `<select>` renders the OS chevron and, on macOS, a rounded-none bezel
+ * that ignores our border styling — which is exactly what made these look like
+ * unstyled browser defaults. `appearance-none` strips that, and the chevron is
+ * redrawn as an inline SVG background so it matches the mustard accent and
+ * sits on our own spacing.
+ */
+const SELECT_CHEVRON =
+  "data:image/svg+xml;charset=utf-8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5 6 6.5l5-5" stroke="#6B7280" stroke-width="1.5" stroke-linecap="square"/></svg>`
+  );
+
 /** Standard admin select. Wrap `<option>` children as usual. */
 export function AdminSelect({
   invalid = false,
   className = "",
   children,
+  style,
   ...rest
 }: {
   invalid?: boolean;
 } & SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={`${CONTROL_BASE} pr-8 ${invalid ? CONTROL_ERROR : ""} ${className}`}
+      className={`${CONTROL_BASE} appearance-none bg-no-repeat pr-9 ${invalid ? CONTROL_ERROR : ""} ${className}`}
+      // Merged rather than overwritten so a caller passing `style` doesn't
+      // silently drop the chevron.
+      style={{
+        backgroundImage: `url("${SELECT_CHEVRON}")`,
+        backgroundPosition: "right 12px center",
+        backgroundSize: "12px 8px",
+        ...style,
+      }}
       {...rest}
     >
       {children}
@@ -399,10 +429,10 @@ export function AdminCheckboxRow({
   hint?: ReactNode;
 } & InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border bg-surface px-3 py-2.5 hover:bg-surface-muted">
+    <label className="flex cursor-pointer items-start gap-2.5 rounded-none border border-border bg-surface px-3 py-2.5 hover:bg-surface-muted">
       <input
         type="checkbox"
-        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-burgundy focus:ring-2 focus:ring-burgundy/20"
+        className="mt-0.5 h-4 w-4 shrink-0 rounded-none border-border text-burgundy focus:ring-2 focus:ring-burgundy/20"
         {...rest}
       />
       <span className="min-w-0 flex-1">

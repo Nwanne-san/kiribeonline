@@ -249,15 +249,15 @@ export function HomepageBuilderPage() {
       />
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-1.5 rounded-xl border border-border bg-surface p-2 shadow-card">
+      <div className="flex flex-wrap gap-1.5 rounded-none border border-border bg-surface p-2 shadow-card">
         {TABS.map((t, i) => (
           <button
             key={t.label}
             type="button"
             onClick={() => setTab(i)}
-            className={`rounded-md px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
+            className={`rounded-none px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
               tab === i
-                ? "bg-[#7f0400] text-white"
+                ? "bg-[#6b1d2a] text-white"
                 : "border border-border text-ink-secondary hover:bg-surface-muted"
             }`}
           >
@@ -312,14 +312,14 @@ export function HomepageBuilderPage() {
                     Sidebar list under the hero. Use the arrows to reorder.
                   </p>
                   {picks.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-border bg-surface-alt px-4 py-8 text-center text-sm text-muted-soft">
+                    <div className="rounded-none border border-dashed border-border bg-surface-alt px-4 py-8 text-center text-sm text-muted-soft">
                       No picks yet.
                     </div>
                   ) : (
                     picks.map((pick, index) => (
                       <div
                         key={index}
-                        className="flex items-end gap-2 rounded-lg border border-border bg-surface-alt p-3"
+                        className="flex items-end gap-2 rounded-none border border-border bg-surface-alt p-3"
                       >
                         <MoveButtons
                           onUp={() => setPicks((p) => moveItem(p, index, -1))}
@@ -378,14 +378,14 @@ export function HomepageBuilderPage() {
                   Creators grid. Reorder with the arrows.
                 </p>
                 {modules.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-border bg-surface-alt px-4 py-8 text-center text-sm text-muted-soft">
+                  <div className="rounded-none border border-dashed border-border bg-surface-alt px-4 py-8 text-center text-sm text-muted-soft">
                     No modules yet.
                   </div>
                 ) : (
                   modules.map((mod, index) => (
                     <div
                       key={index}
-                      className="space-y-3 rounded-lg border border-border bg-surface-alt p-3"
+                      className="space-y-3 rounded-none border border-border bg-surface-alt p-3"
                     >
                       <div className="flex items-center gap-2">
                         <MoveButtons
@@ -408,7 +408,7 @@ export function HomepageBuilderPage() {
                               next[index] = { ...mod, enabled: e.target.checked };
                               setModules(next);
                             }}
-                            className="h-4 w-4 rounded border-border text-burgundy focus:ring-2 focus:ring-burgundy/20"
+                            className="h-4 w-4 rounded-none border-border text-burgundy focus:ring-2 focus:ring-burgundy/20"
                           />
                           Enabled
                         </label>
@@ -519,7 +519,7 @@ export function HomepageBuilderPage() {
                         return (
                           <div
                             key={id}
-                            className="flex items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2"
+                            className="flex items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2"
                           >
                             <MoveButtons
                               onUp={() => moveFeaturedCreator(index, -1)}
@@ -581,7 +581,7 @@ export function HomepageBuilderPage() {
                         return (
                           <div
                             key={id}
-                            className="flex items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2"
+                            className="flex items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2"
                           >
                             <MoveButtons
                               onUp={() => moveReel(index, -1)}
@@ -635,7 +635,7 @@ function IconRoundBtn({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-none border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
     >
       {children}
     </button>

@@ -663,7 +663,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
       />
 
       {isEdit && status === "in_review" ? (
-        <div className="flex items-start gap-3 rounded-lg border border-[#F3D7CB] bg-[#FDF3EF] px-4 py-3 text-sm text-burgundy">
+        <div className="flex items-start gap-3 rounded-none border border-[#F3D7CB] bg-[#FDF3EF] px-4 py-3 text-sm text-burgundy">
           <RateReviewOutlined sx={{ fontSize: 20 }} className="mt-0.5 shrink-0" />
           <p className="min-w-0">
             {canPublish
