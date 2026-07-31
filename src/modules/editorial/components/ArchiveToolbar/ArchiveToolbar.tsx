@@ -1,6 +1,5 @@
 "use client";
 
-import DynamicFeedIcon from "@mui/icons-material/DynamicFeed";
 import GridViewIcon from "@mui/icons-material/GridView";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import Box from "@mui/material/Box";
@@ -60,9 +59,6 @@ export function ArchiveToolbar({
           </ToggleButton>
           <ToggleButton value="list" aria-label="List view">
             <ViewListIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="feed" aria-label="Feed view">
-            <DynamicFeedIcon fontSize="small" />
           </ToggleButton>
         </ToggleButtonGroup>
       </Stack>

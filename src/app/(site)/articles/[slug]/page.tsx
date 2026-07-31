@@ -4,6 +4,7 @@ import {
   getAdjacentArticles,
   getMostReadArticles,
   getRelatedArticles,
+  hasNamedAuthor,
   mapPayloadArticle,
   queryArticleBySlug,
   queryArticles,
@@ -48,7 +49,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url: canonical,
       publishedTime: article.publishedAt,
       modifiedTime: (article as { updatedAt?: string }).updatedAt,
-      authors: article.author?.name ? [article.author.name] : undefined,
+      // Respects the byline opt-out — see `resolvePublicByline`.
+      authors: hasNamedAuthor(article) ? [article.author!.name!] : undefined,
       section: primaryCategory?.name,
       tags,
     },
@@ -133,7 +135,10 @@ export default async function Page({ params }: PageProps) {
     imageUrl: heroImageUrl,
     datePublished: article.publishedAt ?? new Date().toISOString(),
     dateModified: (article as { updatedAt?: string }).updatedAt,
-    authorName: article.author?.name ?? undefined,
+    // Structured data must respect the byline opt-out too — a hidden name must
+    // not leak through schema.org. `undefined` lets the schema fall back to the
+    // publisher as author.
+    authorName: hasNamedAuthor(article) ? article.author?.name : undefined,
     section: primaryCategory?.name,
     keywords: tagNames,
     wordCount,

@@ -1,4 +1,4 @@
-import { APP_URL, getResendClient, RESEND_FROM_EMAIL } from "@/lib/email/resend";
+import { APP_URL, getResendClient, sendTransactionalEmail } from "@/lib/email/resend";
 import { renderAdminPasswordResetEmail } from "@/lib/email/templates/admin-password-reset";
 import { AdminRoutes } from "@/routes/admin.routes";
 import { RESET_TOKEN_TTL_MS } from "./reset-token";
@@ -36,17 +36,11 @@ export async function sendAdminPasswordResetEmail({
     ttlMinutes: Math.round(RESET_TOKEN_TTL_MS / 60_000),
   });
 
-  try {
-    await resend.emails.send({
-      from: RESEND_FROM_EMAIL,
-      to: email,
-      subject,
-      html,
-      text,
-    });
-    return true;
-  } catch (err) {
-    console.error("[users] password reset email failed", err);
-    return false;
-  }
+  return sendTransactionalEmail({
+    to: email,
+    subject,
+    html,
+    text,
+    context: "[users] password reset",
+  });
 }

@@ -40,6 +40,7 @@ export default async function OpengraphImage({ params }: PageParams) {
       title: `#${name}`,
       accentColor: accent,
       subtitle: "Every article tagged with this topic",
+      showMark: true,
     }),
     size
   );

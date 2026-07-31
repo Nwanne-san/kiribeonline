@@ -85,6 +85,19 @@ export const Articles: CollectionConfig = {
       },
     },
     {
+      // Opt-out only affects the PUBLIC byline. `author` stays populated so the
+      // admin module, author stats, and the audit trail always know who wrote
+      // the piece — this flag never anonymises the record itself.
+      name: "hideByline",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        position: "sidebar",
+        description:
+          "Publish without the writer's name. The public byline reads “Kiribé Editor”; the author is still recorded in the admin.",
+      },
+    },
+    {
       name: "status",
       type: "select",
       defaultValue: "draft",

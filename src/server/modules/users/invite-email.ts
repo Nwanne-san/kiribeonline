@@ -1,4 +1,4 @@
-import { APP_URL, getResendClient, RESEND_FROM_EMAIL } from "@/lib/email/resend";
+import { APP_URL, getResendClient, sendTransactionalEmail } from "@/lib/email/resend";
 import { renderAdminInviteEmail } from "@/lib/email/templates/admin-invite";
 import { AdminRoutes } from "@/routes/admin.routes";
 
@@ -36,17 +36,11 @@ export async function sendAdminInviteEmail({
     role,
   });
 
-  try {
-    await resend.emails.send({
-      from: RESEND_FROM_EMAIL,
-      to: email,
-      subject,
-      html,
-      text,
-    });
-    return true;
-  } catch (err) {
-    console.error("[users] invite email failed", err);
-    return false;
-  }
+  return sendTransactionalEmail({
+    to: email,
+    subject,
+    html,
+    text,
+    context: "[users] invite",
+  });
 }

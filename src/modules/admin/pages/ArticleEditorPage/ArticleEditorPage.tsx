@@ -70,6 +70,7 @@ type ArticleDoc = {
   tags?: Tag[];
   heroImage?: MediaRef | string;
   author?: { id: string | number; name?: string | null } | string | null;
+  hideByline?: boolean;
   seo?: {
     title?: string;
     description?: string;
@@ -119,6 +120,7 @@ type SavePayload = {
   tagIds: string[];
   heroImageId: string | null;
   authorId?: string | null;
+  hideByline: boolean;
   seo: {
     title?: string;
     description?: string;
@@ -167,6 +169,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [heroImage, setHeroImage] = useState<AdminMediaRef | null>(null);
   const [authorId, setAuthorId] = useState<string>("");
+  const [hideByline, setHideByline] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
@@ -255,6 +258,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         } else if (typeof author === "string") {
           setAuthorId(author);
         }
+        setHideByline(Boolean(doc.hideByline));
         setSeoTitle(doc.seo?.title ?? "");
         setSeoDescription(doc.seo?.description ?? "");
         const og = doc.seo?.ogImage;
@@ -343,6 +347,8 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     // never sends the field, so their save can't overwrite an editor-assigned
     // byline. New articles fall through to the server default (the actor).
     authorId: canPickAuthor && authorId ? authorId : undefined,
+    // Always sent: unlike `authorId`, a writer may opt their own byline out.
+    hideByline,
     seo: {
       title: seoTitle || undefined,
       description: seoDescription || undefined,
@@ -362,6 +368,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     heroImage?.id,
     authorId,
     canPickAuthor,
+    hideByline,
     seoTitle,
     seoDescription,
     seoOgImage?.id,
@@ -461,6 +468,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         tagIds,
         heroId: heroImage?.id ?? null,
         authorId,
+        hideByline,
         seoTitle,
         seoDescription,
         ogId: seoOgImage?.id ?? null,
@@ -484,6 +492,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
       tagIds,
       heroImage?.id,
       authorId,
+      hideByline,
       seoTitle,
       seoDescription,
       seoOgImage?.id,
@@ -889,6 +898,20 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                   </AdminSelect>
                 </AdminField>
               ) : null}
+
+              {/* Deliberately outside the `canPickAuthor` guard: a writer who
+                  cannot reassign the byline may still withhold their own name.
+                  The author relationship is saved either way, so the admin
+                  keeps full attribution. */}
+              <AdminCheckboxRow
+                label="Hide byline on the public site"
+                hint="Publishes as “Kiribé Editor”. The author above is still recorded in the admin and counts toward author stats."
+                checked={hideByline}
+                onChange={(e) => {
+                  setHideByline(e.target.checked);
+                  bumpDirty();
+                }}
+              />
             </div>
           </AdminPanel>
 

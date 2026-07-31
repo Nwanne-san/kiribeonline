@@ -25,8 +25,22 @@ const CATEGORY_SUBJECT: Record<Category, string> = {
   other: "General enquiry",
 };
 
-/** Contact form for the About page — matches Figma "Send us a message". */
-export function AboutContactForm() {
+type ContactFormProps = {
+  /**
+   * Prefix for the generated input ids. Both the About page and the Contact
+   * page render this form, so the ids must be unique per instance for the
+   * `<label for>` associations to stay correct.
+   */
+  idPrefix?: string;
+  /** Heading above the fields. */
+  title?: string;
+};
+
+/** Shared "Send us a message" form — Figma parity across About and Contact. */
+export function ContactForm({
+  idPrefix = "contact",
+  title = "Send us a message",
+}: ContactFormProps = {}) {
   const [category, setCategory] = useState<Category>("editorial");
 
   const { control, handleSubmit, reset } = useFormValidator<ContactFormInput>({
@@ -59,9 +73,9 @@ export function AboutContactForm() {
     "mb-2 block font-headline text-xs uppercase tracking-[0.1em] text-muted";
 
   return (
-    <form onSubmit={onSubmit} noValidate className="bg-white p-10">
+    <form onSubmit={onSubmit} noValidate className="bg-white p-6 sm:p-10">
       <h3 className="font-headline text-lg font-normal text-[#1e2939]">
-        Send us a message
+        {title}
       </h3>
 
       {/* Category toggle */}
@@ -94,12 +108,12 @@ export function AboutContactForm() {
           name="name"
           render={({ field, fieldState }) => (
             <div>
-              <label htmlFor="about-name" className={labelClass}>
+              <label htmlFor={`${idPrefix}-name`} className={labelClass}>
                 Full Name
               </label>
               <input
                 {...field}
-                id="about-name"
+                id={`${idPrefix}-name`}
                 type="text"
                 placeholder="Your name"
                 className={inputClass}
@@ -117,12 +131,12 @@ export function AboutContactForm() {
           name="email"
           render={({ field, fieldState }) => (
             <div>
-              <label htmlFor="about-email" className={labelClass}>
+              <label htmlFor={`${idPrefix}-email`} className={labelClass}>
                 Email Address
               </label>
               <input
                 {...field}
-                id="about-email"
+                id={`${idPrefix}-email`}
                 type="email"
                 placeholder="you@example.com"
                 className={inputClass}
@@ -144,12 +158,12 @@ export function AboutContactForm() {
           name="message"
           render={({ field, fieldState }) => (
             <div>
-              <label htmlFor="about-message" className={labelClass}>
+              <label htmlFor={`${idPrefix}-message`} className={labelClass}>
                 Message
               </label>
               <textarea
                 {...field}
-                id="about-message"
+                id={`${idPrefix}-message`}
                 rows={6}
                 placeholder="Tell us what's on your mind…"
                 className={inputClass + " resize-y"}

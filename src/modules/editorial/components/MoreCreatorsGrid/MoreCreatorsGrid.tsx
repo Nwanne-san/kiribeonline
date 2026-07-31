@@ -1,7 +1,6 @@
 "use client";
 
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
 import type { PublicCreator } from "@/lib/content/query-homepage";
 import { CreatorCard } from "@/modules/editorial/components/CreatorCard";
 import {
@@ -9,6 +8,7 @@ import {
   EditorialSection,
   KiribeTypography,
 } from "@/modules/shared/components/ui";
+import { MobileCarousel } from "@/modules/shared/components/MobileCarousel";
 import { SectionHeader } from "@/modules/shared/components/SectionHeader";
 import { PublicRoutes } from "@/routes/public.routes";
 
@@ -25,13 +25,20 @@ export function MoreCreatorsGrid({ creators }: MoreCreatorsGridProps) {
         <SectionHeader title="More Creators" viewAllHref={PublicRoutes.about} />
 
         {hasCreators ? (
-          <Grid container spacing={{ xs: 2, md: 3 }}>
+          // Eight portraits stack into a very long column on a phone — swipe
+          // instead. From `sm` up this is the original 2/3/4-up grid.
+          <MobileCarousel
+            breakpoint="sm"
+            columns={{ sm: 2, md: 3, base: 4 }}
+            gap={2}
+            itemWidth="52vw"
+          >
             {creators.slice(0, 8).map((creator) => (
-              <Grid key={creator.id} size={{ xs: 6, md: 4, base: 3 }}>
+              <Box key={creator.id}>
                 <CreatorCard creator={creator} />
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </MobileCarousel>
         ) : (
           <Box
             sx={{

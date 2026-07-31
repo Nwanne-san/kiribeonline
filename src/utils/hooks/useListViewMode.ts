@@ -35,5 +35,5 @@ export function useListViewMode() {
     [pathname, router, searchParams]
   );
 
-  return { view, setView, isFeed: view === "feed" };
+  return { view, setView };
 }

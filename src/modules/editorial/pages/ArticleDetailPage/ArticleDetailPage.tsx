@@ -28,7 +28,8 @@ import {
   publicRoute,
 } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
-import { estimateReadingTime, formatDate, resolveAuthorName } from "@/utils/helper";
+import { hasNamedAuthor, resolvePublicByline } from "@/lib/content/byline";
+import { estimateReadingTime, formatDate } from "@/utils/helper";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
 
 type ArticleDetailPageProps = {
@@ -50,8 +51,6 @@ type ArticleDetailPageProps = {
 };
 
 const BODY_WIDTH = 832;
-
-const AUTHOR_FALLBACK = "Kiribé Editorial";
 
 function categoryColor(slug?: string) {
   if (!slug) return "#7F0400";
@@ -161,7 +160,10 @@ function ArticleDetailContent({
   const otherCategories = article.categories?.slice(1) ?? [];
   const accent = categoryColor(primaryCategory?.slug);
   const readingTime = estimateReadingTime(article.body);
-  const authorName = resolveAuthorName(article.author) ?? AUTHOR_FALLBACK;
+  // Anonymised and unattributed pieces both read "Kiribé Editor"; only a real
+  // named writer gets the contributor bio card below.
+  const authorName = resolvePublicByline(article);
+  const isNamedAuthor = hasNamedAuthor(article);
 
   return (
     <Box component="article">
@@ -440,12 +442,12 @@ function ArticleDetailContent({
                 {authorName}
               </KiribeTypography>
               <KiribeTypography sx={{ mt: 0.25, fontSize: "0.875rem", color: "var(--color-mustard)" }}>
-                Contributor
+                {isNamedAuthor ? "Contributor" : "Editorial Desk"}
               </KiribeTypography>
               <KiribeTypography sx={{ mt: 1.5, fontSize: "0.875rem", lineHeight: 1.625, color: "#4A5565" }}>
-                {authorName} is a contributor to Kiribé, covering culture, cinema,
-                and the intersection of art and society across the African
-                continent and beyond.
+                {isNamedAuthor
+                  ? `${authorName} is a contributor to Kiribé, covering culture, cinema, and the intersection of art and society across the African continent and beyond.`
+                  : "Published by the Kiribé editorial desk, covering culture, cinema, and the intersection of art and society across the African continent and beyond."}
               </KiribeTypography>
             </Box>
           </Stack>
