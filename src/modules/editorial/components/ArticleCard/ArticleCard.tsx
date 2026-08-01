@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -8,7 +9,8 @@ import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import { KiribeLink, KiribeTypography, publicRoute } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
-import { estimateReadingTime, formatDate, resolveAuthorName } from "@/utils/helper";
+import { resolvePublicByline } from "@/lib/content/byline";
+import { estimateReadingTime, formatBylineDate } from "@/utils/helper";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
 
 export type ArticleCardProps = {
@@ -61,16 +63,16 @@ function CardMetaRow({
   gap = 1.5,
   sx,
 }: {
-  items: Array<string | undefined>;
+  items: Array<ReactNode>;
   gap?: number;
   sx?: object;
 }) {
-  const visible = items.filter((item): item is string => Boolean(item));
+  const visible = items.filter(Boolean);
   if (visible.length === 0) return null;
   return (
     <Stack direction="row" alignItems="center" spacing={gap} sx={sx}>
       {visible.map((item, i) => (
-        <Stack key={`${item}-${i}`} direction="row" alignItems="center" spacing={gap}>
+        <Stack key={i} direction="row" alignItems="center" spacing={gap}>
           {i > 0 && <Box component="span" sx={metaTextSx}>·</Box>}
           <Box component="span" sx={metaTextSx}>{item}</Box>
         </Stack>
@@ -79,12 +81,27 @@ function CardMetaRow({
   );
 }
 
+/**
+ * Byline date. The visible text is relative for recent stories, so it can
+ * differ between the server render and hydration if a boundary ticks over in
+ * between — `suppressHydrationWarning` keeps that harmless while `dateTime`
+ * carries the exact, machine-readable timestamp for crawlers.
+ */
+function CardDate({ publishedAt }: { publishedAt?: string | null }) {
+  if (!publishedAt) return null;
+  return (
+    <Box component="time" dateTime={publishedAt} suppressHydrationWarning>
+      {formatBylineDate(publishedAt)}
+    </Box>
+  );
+}
+
 export function ArticleCard({ article, variant = "grid", surface = "plain" }: ArticleCardProps) {
   const href = publicRoute(PublicRoutes.articleDetail, { slug: article.slug });
-  const dateLabel = article.publishedAt ? formatDate(article.publishedAt) : undefined;
+  const dateLabel = <CardDate publishedAt={article.publishedAt} />;
   const primaryCategory = article.categories?.[0];
   const accent = getCategoryColor(primaryCategory?.slug);
-  const authorName = resolveAuthorName(article.author);
+  const authorName = resolvePublicByline(article);
   const readLabel = article.body
     ? `${estimateReadingTime(article.body)} min read`
     : undefined;
@@ -195,7 +212,7 @@ export function ArticleCard({ article, variant = "grid", surface = "plain" }: Ar
           >
             {article.title}
           </KiribeTypography>
-          <CardMetaRow items={[authorName, readLabel ?? dateLabel]} sx={{ mt: 1 }} />
+          <CardMetaRow items={[authorName, dateLabel, readLabel]} sx={{ mt: 1 }} />
         </Box>
       </KiribeLink>
     );
@@ -246,7 +263,7 @@ export function ArticleCard({ article, variant = "grid", surface = "plain" }: Ar
         </KiribeTypography>
       )}
       <CardMetaRow
-        items={[authorName, readLabel ?? dateLabel]}
+        items={[authorName, dateLabel, readLabel]}
         gap={2}
         sx={{ mt: 1.5 }}
       />

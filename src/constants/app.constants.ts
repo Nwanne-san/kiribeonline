@@ -38,7 +38,18 @@ export const URL_PARAMS = {
  */
 export const NAV_MAX_HEADER_LINKS = 6;
 
-export const LIST_VIEW_MODES = ["grid", "list", "feed"] as const;
+/**
+ * Category chips offered in the header search panel's "Browse by category"
+ * shortcut. Capped so the panel stays one or two tidy rows on mobile instead of
+ * pushing the results list below the fold.
+ */
+export const SEARCH_CATEGORY_SUGGESTION_LIMIT = 6;
+
+/**
+ * Public article view modes. `feed` (infinite scroll) was retired — any stale
+ * `?view=feed` link falls back to `DEFAULT_LIST_VIEW` via `useListViewMode`.
+ */
+export const LIST_VIEW_MODES = ["grid", "list"] as const;
 export type ListViewMode = (typeof LIST_VIEW_MODES)[number];
 export const DEFAULT_LIST_VIEW: ListViewMode = "grid";
 

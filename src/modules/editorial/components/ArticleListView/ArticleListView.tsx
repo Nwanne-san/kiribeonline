@@ -7,7 +7,6 @@ import {
   ArticleCard,
   CategoryHero,
   FeaturedArticleCard,
-  InfiniteArticleList,
 } from "@/modules/editorial/components";
 import { useArticlesList } from "@/modules/editorial/hooks/useArticlesList";
 import {
@@ -60,11 +59,7 @@ export type ArticleListViewProps = {
   activeFilter?: { label: string; clearHref: string };
 };
 
-/**
- * GRID / LIST / FEED toggle — sharp-edged, burgundy active state (Figma V5).
- * Feed mode drops pagination in favour of infinite scroll, useful for casual
- * browsing sessions.
- */
+/** GRID / LIST toggle — sharp-edged, burgundy active state (Figma V5). */
 function ViewToggle({
   view,
   onChange,
@@ -75,7 +70,6 @@ function ViewToggle({
   const options: { value: ListViewMode; label: string; ariaLabel: string }[] = [
     { value: "grid", label: "Grid", ariaLabel: "Grid view" },
     { value: "list", label: "List", ariaLabel: "List view" },
-    { value: "feed", label: "Feed", ariaLabel: "Feed view (infinite scroll)" },
   ];
   return (
     <Box
@@ -147,9 +141,6 @@ export function ArticleListView({
     isLoading,
     isError,
     refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     searchEnabled,
     isSearchMode,
   } = useArticlesList({ mode, defaultCategorySlug, defaultTagSlug });
@@ -277,11 +268,7 @@ export function ArticleListView({
           >
             {() => {
               const showFeatured =
-                featured &&
-                !isSearchMode &&
-                page === 1 &&
-                view !== "feed" &&
-                articles.length > 0;
+                featured && !isSearchMode && page === 1 && articles.length > 0;
               // The featured card is a highlight, not a replacement — the
               // "All … Articles" grid/list below still shows every article
               // (otherwise a one-article category renders an empty list).
@@ -334,15 +321,7 @@ export function ArticleListView({
                     <ViewToggle view={view} onChange={setView} />
                   </Stack>
 
-                  {view === "feed" ? (
-                    <InfiniteArticleList
-                      articles={articles}
-                      view={view}
-                      hasNextPage={hasNextPage}
-                      isFetchingNextPage={isFetchingNextPage}
-                      fetchNextPage={fetchNextPage}
-                    />
-                  ) : view === "list" ? (
+                  {view === "list" ? (
                     <Stack spacing={1}>
                       {listArticles.map((article) => (
                         <ArticleCard key={article.id} article={article} variant="list" />
@@ -358,27 +337,26 @@ export function ArticleListView({
                     </Grid>
                   )}
 
-                  {view !== "feed" && (
-                    <KiribePaginationControls
-                      currentPage={page}
-                      rowsPerPage={limit}
-                      totalItems={pagination.totalDocs}
-                      onPageChange={({ page: nextPage, rowsPerPage }) => {
-                        // KiribePaginationControls fires this callback for both
-                        // page-changes and page-size changes with the same
-                        // shape. `setLimit` resets the page to 1 by design, so
-                        // calling both unconditionally clobbers the setPage URL
-                        // write on the Next/Prev clicks — split the branches.
-                        if (rowsPerPage !== limit) {
-                          setLimit(rowsPerPage);
-                        } else {
-                          setPage(nextPage);
-                        }
-                      }}
-                      isCondense
-                      itemLabel="Stories per page"
-                    />
-                  )}
+                  <KiribePaginationControls
+                    currentPage={page}
+                    rowsPerPage={limit}
+                    totalItems={pagination.totalDocs}
+                    onPageChange={({ page: nextPage, rowsPerPage }) => {
+                      // KiribePaginationControls fires this callback for both
+                      // page-changes and page-size changes with the same
+                      // shape. `setLimit` resets the page to 1 by design, so
+                      // calling both unconditionally clobbers the setPage URL
+                      // write on the Next/Prev clicks — split the branches.
+                      if (rowsPerPage !== limit) {
+                        setLimit(rowsPerPage);
+                      } else {
+                        setPage(nextPage);
+                      }
+                    }}
+                    isCondense
+                    itemLabel="Stories per page"
+                  />
+
                 </>
               );
             }}

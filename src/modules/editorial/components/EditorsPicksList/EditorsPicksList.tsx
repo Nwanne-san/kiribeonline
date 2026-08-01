@@ -8,6 +8,7 @@ import type { ArticleCardDoc } from "@/lib/content/types";
 import { KiribeLink, KiribeTypography, publicRoute } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
+import { ArticleByline } from "../ArticleByline";
 
 type EditorsPicksListProps = {
   picks: ArticleCardDoc[];
@@ -87,6 +88,7 @@ export function EditorsPicksList({ picks }: EditorsPicksListProps) {
                   {article.title}
                 </KiribeTypography>
               </KiribeLink>
+              <ArticleByline article={article} sx={{ pt: 0.25 }} />
             </Stack>
           );
         })}

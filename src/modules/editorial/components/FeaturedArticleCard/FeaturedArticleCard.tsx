@@ -8,7 +8,8 @@ import type { ArticleCardDoc } from "@/lib/content/types";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import { KiribeLink, KiribeTypography, publicRoute } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
-import { estimateReadingTime, resolveAuthorName } from "@/utils/helper";
+import { resolvePublicByline } from "@/lib/content/byline";
+import { estimateReadingTime } from "@/utils/helper";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
 
 /** Split featured card — Figma V5 category archive: image left, #030712 panel right. */
@@ -19,7 +20,7 @@ export function FeaturedArticleCard({ article }: { article: ArticleCardDoc }) {
     (primaryCategory?.slug &&
       CATEGORY_COLORS[primaryCategory.slug as keyof typeof CATEGORY_COLORS]?.bg) ||
     "#7F0400";
-  const authorName = resolveAuthorName(article.author);
+  const authorName = resolvePublicByline(article);
   const readLabel = article.body
     ? `${estimateReadingTime(article.body)} min read`
     : undefined;

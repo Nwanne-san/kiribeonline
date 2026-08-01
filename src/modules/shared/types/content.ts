@@ -21,6 +21,11 @@ export interface Article {
   updatedAt: string;
   /** Byline resolved from the related user (depth ≥ 1). */
   author?: ArticleAuthor;
+  /**
+   * Writer opted out of a public byline. `author` is still recorded for the
+   * admin module — resolve display names via `resolvePublicByline`.
+   */
+  hideByline?: boolean;
 }
 
 export interface ArticleAuthor {

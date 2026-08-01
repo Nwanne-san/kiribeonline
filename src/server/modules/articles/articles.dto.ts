@@ -102,6 +102,8 @@ export const articleInputSchema = z
     publishedAt: z.string().nullable().optional(),
     featured: z.boolean().optional(),
     featuredPriority: z.number().optional(),
+    // Public byline opt-out. Display-only — `authorId` is still persisted.
+    hideByline: z.boolean().optional(),
     seo: z
       .object({
         title: z.string().optional(),
@@ -129,6 +131,7 @@ const articleBaseSchema = z.object({
   publishedAt: z.string().nullable().optional(),
   featured: z.boolean().optional(),
   featuredPriority: z.number().optional(),
+  hideByline: z.boolean().optional(),
   seo: z
     .object({
       title: z.string().optional(),

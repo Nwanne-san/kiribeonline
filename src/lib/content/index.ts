@@ -17,6 +17,7 @@ export {
 export type { PublicCategory, PublicCategorySummary } from "./query-categories";
 export { getTagBySlug } from "./query-tags";
 export { toArticleCardDoc } from "./map-article";
+export { hasNamedAuthor, KIRIBE_EDITOR_BYLINE, resolvePublicByline } from "./byline";
 export { getHomepageForPublic } from "./query-homepage";
 export { getPublishedReels } from "./query-reels";
 export { getSiteSettingsForPublic } from "./query-site-settings";

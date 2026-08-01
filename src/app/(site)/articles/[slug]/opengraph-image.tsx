@@ -8,6 +8,7 @@ import {
   OG_SIZE,
 } from "@/lib/seo/branded-og-card";
 import { toAbsoluteUrl } from "@/lib/seo/site-url";
+import { streamMedia } from "@/lib/seo/stream-og-media";
 
 /**
  * Dynamic Open Graph image for article shares.
@@ -16,12 +17,15 @@ import { toAbsoluteUrl } from "@/lib/seo/site-url";
  * `og:image` (file-based metadata overrides `generateMetadata` in Next.js), so
  * it implements the full fallback chain:
  *
- *   1. `seo.ogImage` (og size variant, 1200×630) → 307 redirect to the media URL
- *   2. `heroImage`   (og size variant, 1200×630) → 307 redirect to the media URL
+ *   1. `seo.ogImage` (og size variant, 1200×630) → media bytes, streamed
+ *   2. `heroImage`   (og size variant, 1200×630) → media bytes, streamed
  *   3. branded card  → rendered with the shared `brandedOgCard` (category accent)
  *
- * No external requests are made (no remote fonts/assets); tiers 1–2 redirect to
- * the already-hosted media and tier 3 renders from inline styles only.
+ * Tiers 1–2 proxy the bytes rather than 307-ing to R2. The redirect is correct
+ * HTTP, but several major scrapers (X, LinkedIn, WhatsApp, Slack) don't follow
+ * redirects on `og:image` and drop the preview entirely — which is why articles
+ * with perfectly good artwork showed no social image. Serving from this origin
+ * works everywhere, and the response is immutable so the CDN absorbs the hop.
  */
 
 export const alt = "Kiribé Online — article social card";
@@ -60,13 +64,15 @@ export default async function OpengraphImage({ params }: PageParams) {
     console.error("[opengraph-image] failed to load article, using branded fallback", err);
   }
 
-  // Tiers 1 & 2 — real artwork wins. Redirect to the hosted og-size media so the
-  // social card uses the actual image without proxying bytes through this route.
+  // Tiers 1 & 2 — real artwork wins.
   const mediaUrl =
     resolveOgImageUrl(asMedia(doc?.seo?.ogImage)) ?? resolveOgImageUrl(asMedia(doc?.heroImage));
 
   if (mediaUrl) {
-    return Response.redirect(toAbsoluteUrl(mediaUrl), 307);
+    const proxied = await streamMedia(toAbsoluteUrl(mediaUrl));
+    if (proxied) return proxied;
+    // Unreachable or non-image upstream — fall through to the branded card so
+    // the share still gets an image rather than nothing.
   }
 
   // Tier 3 — branded fallback card with the primary category's accent color.
@@ -79,7 +85,7 @@ export default async function OpengraphImage({ params }: PageParams) {
   const kicker = primaryCategory?.name?.toUpperCase() ?? "KIRIBÉ EDITORIAL";
 
   return new ImageResponse(
-    brandedOgCard({ kicker, title, accentColor: accent }),
+    brandedOgCard({ kicker, title, accentColor: accent, showMark: true }),
     size
   );
 }

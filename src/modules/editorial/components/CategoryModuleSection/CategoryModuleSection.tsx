@@ -12,6 +12,7 @@ import {
   KiribeTypography,
   publicRoute,
 } from "@/modules/shared/components/ui";
+import { MobileCarousel } from "@/modules/shared/components/MobileCarousel";
 import { SectionHeader } from "@/modules/shared/components/SectionHeader";
 import { PublicRoutes } from "@/routes/public.routes";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
@@ -68,23 +69,25 @@ export function CategoryModuleSection({ module, alt = false }: CategoryModuleSec
         )}
 
         {hasArticles && module.layout === "grid-2" && (
-          <Grid container spacing={3}>
+          <MobileCarousel gap={3} columns={{ md: 2 }}>
             {module.articles.map((article) => (
-              <Grid key={article.id} size={{ xs: 12, md: 6 }}>
+              <Box key={article.id}>
                 <ArticleCard article={article} />
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </MobileCarousel>
         )}
 
         {hasArticles && (module.layout === "grid-3" || !module.layout) && (
-          <Grid container spacing={{ xs: 3, md: 2 }}>
+          // Mobile swipes through the module; md is 2-up and base+ the
+          // original 3-up grid.
+          <MobileCarousel columns={{ md: 2, base: 3 }}>
             {module.articles.map((article) => (
-              <Grid key={article.id} size={{ xs: 12, md: 6, base: 4 }}>
+              <Box key={article.id}>
                 <ArticleCard article={article} />
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </MobileCarousel>
         )}
 
         {hasArticles && module.layout === "hero-plus-grid" && (
