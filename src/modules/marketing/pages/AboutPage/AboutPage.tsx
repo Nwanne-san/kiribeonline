@@ -23,9 +23,6 @@ import {
 
 /* ── Data ────────────────────────────────────────────────────── */
 
-/** Height of the sticky site header — sticky cards must clear it. */
-const STICKY_HEADER_OFFSET = 64;
-
 const STATS = [
   { value: "1M+", label: "Monthly Readers" },
   { value: "40+", label: "Countries Reached" },
@@ -240,10 +237,14 @@ export function AboutPage() {
       <section className="bg-white py-20 md:py-24">
         <div className="editorial-container">
           <SectionHeader kicker="The Journey" title="Key Milestones" />
-          <div className="relative mt-16">
-            {/* connecting line (desktop) */}
-            <span className="absolute left-0 right-0 top-6 hidden h-px bg-border lg:block" />
-            <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-6 lg:gap-6">
+
+          {/*
+            Desktop (≥ lg): the original horizontal timeline with a straight
+            hairline behind six evenly-spaced dots.
+          */}
+          <div className="relative mt-16 hidden lg:block">
+            <span className="absolute left-0 right-0 top-6 h-px bg-border" />
+            <div className="grid grid-cols-6 gap-6">
               {MILESTONES.map((m) => (
                 <div key={m.year} className="relative">
                   <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-mustard bg-white">
@@ -262,6 +263,63 @@ export function AboutPage() {
               ))}
             </div>
           </div>
+
+          {/*
+            Mobile / tablet (< lg): a vertical timeline where each dot lives in
+            a 56px rail and the gaps between dots are filled by a hand-drawn
+            SVG "road" that alternates the direction of its bend row-to-row.
+            `preserveAspectRatio="none"` lets a single 100-unit path scale to
+            whatever height the content forces on the rail, so the connector
+            always meets the next dot regardless of body length.
+          */}
+          <ol className="mt-12 lg:hidden">
+            {MILESTONES.map((m, idx) => {
+              const isLast = idx === MILESTONES.length - 1;
+              return (
+                <li
+                  key={m.year}
+                  className="grid grid-cols-[56px_1fr] gap-4 pb-8 last:pb-0"
+                >
+                  <div className="relative flex flex-col items-center">
+                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 border-mustard bg-white shadow-[0_2px_6px_rgba(107,29,42,0.12)]">
+                      <span className="font-headline text-xs font-bold text-burgundy">
+                        {m.node}
+                      </span>
+                    </span>
+                    {!isLast ? (
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 56 100"
+                        preserveAspectRatio="none"
+                        fill="none"
+                        className="mt-1 h-full w-14 flex-1"
+                      >
+                        <path
+                          d={
+                            idx % 2 === 0
+                              ? "M28 0 C 6 26, 50 52, 28 74 C 14 88, 34 96, 28 100"
+                              : "M28 0 C 50 26, 6 52, 28 74 C 42 88, 22 96, 28 100"
+                          }
+                          stroke="var(--color-mustard)"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    ) : null}
+                  </div>
+                  <div className="pt-1">
+                    <Kicker>{m.year}</Kicker>
+                    <h3 className="mt-2 font-headline text-base font-normal text-black">
+                      {m.title}
+                    </h3>
+                    <p className="mt-2 font-body text-sm leading-relaxed text-muted">
+                      {m.body}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </section>
 
@@ -307,29 +365,31 @@ export function AboutPage() {
         <div className="editorial-container">
           <SectionHeader kicker="The People" title="Editorial Team" />
           {/*
-            Mobile: a sticky card stack. The container is a flex column so every
-            card shares one containing block and can pin while the next scrolls
-            up over it — inside a grid, each card would only stick within its own
-            row and nothing would stack. From `sm` up it reverts to the plain
-            grid, where `static` cancels the pinning.
+            Mobile: a horizontal snap carousel — one card at a time, with a
+            short peek of the next card so it's obvious you can scroll. From
+            `sm` up we switch to `display: grid`, which overrides the flex +
+            overflow-x from mobile and turns the same DOM into a static grid.
+            No dual-render, so images and content only ship once.
           */}
-          <div className="mt-12 flex flex-col gap-6 sm:grid sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
-            {TEAM.map((member, i) => (
+          <div
+            className={[
+              "mt-12 -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4",
+              "hide-scrollbar",
+              "sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-8 sm:overflow-visible sm:px-0 sm:pb-0",
+              "lg:grid-cols-4",
+            ].join(" ")}
+          >
+            {TEAM.map((member) => (
               <div
                 key={member.name}
-                className="sticky bg-white pb-6 shadow-[0_-12px_24px_-18px_rgba(0,0,0,0.35)] sm:static sm:pb-0 sm:shadow-none"
-                style={{
-                  // Clears the 64px sticky header, then steps each card down a
-                  // little so the ones already pinned stay peeking through.
-                  top: `${STICKY_HEADER_OFFSET + i * 12}px`,
-                }}
+                className="w-[82%] shrink-0 snap-start bg-white sm:w-auto sm:shrink"
               >
-                <div className="relative aspect-[4/3] w-full bg-surface-muted sm:aspect-[3/4]">
+                <div className="relative aspect-[3/4] w-full bg-surface-muted">
                   <Image
                     src={member.img}
                     alt={member.name}
                     fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px"
+                    sizes="(max-width: 640px) 82vw, (max-width: 1024px) 50vw, 280px"
                     className="object-cover"
                   />
                   <span className="absolute bottom-0 left-0 h-1 w-full bg-mustard" />
