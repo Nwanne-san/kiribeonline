@@ -34,7 +34,7 @@ jobs:
       NEXT_PUBLIC_API_URL: http://localhost:3000
       DISABLE_PAYLOAD_STUDIO: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -77,7 +77,7 @@ jobs:
       # uploads — setting it would demand the full R2 credential set here for
       # no benefit.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -137,7 +137,7 @@ jobs:
       # `webServer` reads this to build/start once per CI run.
       CI: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
