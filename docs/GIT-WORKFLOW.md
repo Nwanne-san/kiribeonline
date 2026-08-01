@@ -49,10 +49,55 @@ feat/<slug> ──PR──▶ develop ──promotion PR──▶ staging ──
    Batch of features headed for verification. Title: `Release: <summary> → staging`.
 3. **Release PR `staging` → `main`** — merge commit. Title:
    `Production release: <summary>`. Only after staging verification passes.
+   **If the release carries a migration, see [Migrations on release](#migrations-on-release)
+   before you merge** — CI's migrate step does not touch production.
 
 CI (`.github/workflows/ci.yml`) runs migrate + typecheck + lint + build on every
-push and PR to the three long-lived branches. Vercel deploys via Git
-integration — no deploy step in Actions (real env values live in Vercel).
+push and PR to the three long-lived branches — against a throwaway service
+container, never a real database. Vercel deploys via Git integration — no deploy
+step in Actions (real env values live in Vercel).
+
+## Migrations on release
+
+**A green CI run does not mean production has been migrated.** Both CI jobs spin
+up a throwaway `postgres:16` service container and migrate *that* from scratch —
+they never touch Neon. Schema changes reach production only when someone applies
+them.
+
+This matters because the deploy and the migration are not atomic. Vercel ships
+the new code the moment the release PR merges; if the column it expects doesn't
+exist yet, every query against that table fails until the migration lands. A
+field added to a Payload collection goes into the generated Drizzle schema, so
+it appears in the column list of **every** query for that collection — not just
+the code paths that read it.
+
+Pick one of the two, per environment:
+
+**Automated (preferred).** The `migrate-production` job in `.github/workflows/ci.yml`
+runs on pushes to `main`, after `verify` passes. It is dormant until you
+configure it:
+
+| Kind | Name | Value |
+|------|------|-------|
+| Variable | `ENABLE_PROD_MIGRATE` | `true` |
+| Variable | `PRODUCTION_APP_URL` | production origin, e.g. `https://kiribeonline.com` |
+| Secret | `PRODUCTION_DATABASE_URL` | Neon **main** branch connection string |
+| Secret | `PAYLOAD_SECRET` | the production value |
+
+The job targets the `production` GitHub environment — add required reviewers to
+it in repo settings if you want an approval gate before production DDL.
+
+**Manual.** Run it against the target database *before* merging the release PR,
+so the schema is ready when the new code deploys:
+
+```bash
+DATABASE_URL='<neon main connection string>' npm run migrate
+```
+
+Either way: migrations are forward-only in practice. Test on your feature's own
+Neon branch first (see the Neon table above), and prefer additive, nullable, or
+defaulted columns so old and new code can both run against the schema during the
+deploy window.
 
 ## Commit messages
 

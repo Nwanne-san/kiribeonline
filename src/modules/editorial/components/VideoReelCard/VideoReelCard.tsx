@@ -7,7 +7,6 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import YouTubeIcon from "@mui/icons-material/YouTube";
 import Box from "@mui/material/Box";
 import type { PublicReel } from "@/lib/content/query-homepage";
-import { parseReelEmbed } from "@/lib/reels/parse-embed";
 import { KiribeImage } from "@/modules/shared/components/media/KiribeImage";
 import { KiribeLink, KiribeTypography } from "@/modules/shared/components/ui";
 
@@ -49,11 +48,13 @@ const SIZE_PRESETS = {
 } as const;
 
 export function VideoReelCard({ reel, onSelect, size = "row" }: VideoReelCardProps) {
-  const embed = parseReelEmbed(reel.externalUrl);
   const preset = SIZE_PRESETS[size];
 
-  // No modal-embeddable target — fall back to opening the source in a new tab.
-  if (!embed || !embed.embedUrl || !onSelect) {
+  // Only ever link-out if the parent hasn't wired up a modal. When `onSelect`
+  // is present we always open the modal — the modal itself gracefully falls
+  // back to a "Watch on original site" screen when a URL can't be embedded,
+  // so the reader never gets bounced out to another tab from the card.
+  if (!onSelect) {
     return (
       <KiribeLink
         href={reel.externalUrl}

@@ -45,6 +45,63 @@ jobs:
       - run: npm run lint
       - run: npm run build
 
+  migrate-production:
+    # Applies pending Payload migrations to the PRODUCTION database once a
+    # release lands on `main`.
+    #
+    # The `verify` job above migrates a throwaway service container, so a green
+    # CI run says nothing about the real database — production migrations were
+    # a manual step that was easy to forget between merging a release and the
+    # new code going live. This job closes that window.
+    #
+    # Dormant by default: it does nothing until you set the repo variable
+    # ENABLE_PROD_MIGRATE=true and the PRODUCTION_DATABASE_URL secret. See
+    # "Migrations on release" in docs/GIT-WORKFLOW.md.
+    #
+    # `environment: production` is deliberate — add required reviewers to that
+    # environment in repo settings to put a human in front of production DDL.
+    if: >-
+      github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
+      && vars.ENABLE_PROD_MIGRATE == 'true'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.PRODUCTION_APP_URL }}
+      DISABLE_PAYLOAD_STUDIO: "true"
+      # NODE_ENV is intentionally left unset. The payload.config media-storage
+      # guard only fires under NODE_ENV=production, and migrations touch no
+      # uploads — setting it would demand the full R2 credential set here for
+      # no benefit.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Fail fast if production secrets are missing
+        # Without this, an unset secret becomes an empty connection string and
+        # surfaces as an opaque driver error instead of a clear misconfiguration.
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::PRODUCTION_DATABASE_URL is not set, but ENABLE_PROD_MIGRATE=true."
+            echo "::error::Add the secret, or unset the variable to go back to manual migrations."
+            exit 1
+          fi
+          if [ -z "$PAYLOAD_SECRET" ]; then
+            echo "::error::PAYLOAD_SECRET is not set — payload cannot build its config."
+            exit 1
+          fi
+      - run: npm ci
+      - name: Show pending migrations
+        # Recorded in the log before anything is applied, so the run itself is
+        # the audit trail for what changed in production.
+        run: npm run payload migrate:status
+      - run: npm run migrate
+
   e2e:
     # Smoke suite — separate job so a flake here doesn't gate every merge.
     # `needs: verify` keeps CI cheap (skips if the base checks are already red).
