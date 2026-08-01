@@ -43,10 +43,24 @@ export function ContactForm({
 }: ContactFormProps = {}) {
   const [category, setCategory] = useState<Category>("editorial");
 
-  const { control, handleSubmit, reset } = useFormValidator<ContactFormInput>({
-    validationSchema: contactFormSchema,
-    defaultValues: contactFormDefaultValues,
-  });
+  // `subject` is required by the shared schema but never rendered as a visible
+  // field — the category chips derive it. Seed the RHF default (and keep it in
+  // sync on category change) so validation passes and the submit reaches the
+  // API. Without this, RHF blocks the submit for an empty subject before the
+  // handler ever runs, and the user sees nothing happen.
+  const { control, handleSubmit, reset, setValue } =
+    useFormValidator<ContactFormInput>({
+      validationSchema: contactFormSchema,
+      defaultValues: {
+        ...contactFormDefaultValues,
+        subject: CATEGORY_SUBJECT.editorial,
+      },
+    });
+
+  const handleCategoryChange = (cat: Category) => {
+    setCategory(cat);
+    setValue("subject", CATEGORY_SUBJECT[cat], { shouldValidate: true });
+  };
 
   const { mutate, isPending } = useMutationService<
     ContactFormInput,
@@ -56,15 +70,16 @@ export function ContactForm({
     options: {
       successTitle: "Message sent",
       onSuccess: () => {
-        reset();
+        reset({
+          ...contactFormDefaultValues,
+          subject: CATEGORY_SUBJECT.editorial,
+        });
         setCategory("editorial");
       },
     },
   });
 
-  const onSubmit = handleSubmit((data) =>
-    mutate({ ...data, subject: CATEGORY_SUBJECT[category] }),
-  );
+  const onSubmit = handleSubmit((data) => mutate(data));
 
   const inputClass =
     "w-full bg-surface-alt border border-border px-4 py-3 font-body text-sm text-ink " +
@@ -86,7 +101,7 @@ export function ContactForm({
             <button
               key={cat}
               type="button"
-              onClick={() => setCategory(cat)}
+              onClick={() => handleCategoryChange(cat)}
               aria-pressed={active}
               className={
                 "px-4 py-1.5 font-headline text-xs uppercase tracking-[0.1em] transition-colors " +

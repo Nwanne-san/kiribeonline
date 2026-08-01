@@ -8,7 +8,10 @@ import type { ArticleCardDoc } from "@/lib/content/types";
 import { KiribeLink, KiribeTypography, publicRoute } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
-import { ArticleByline } from "../ArticleByline";
+// Byline (author + date) intentionally hidden in Editor's Picks per editorial
+// direction — keep the import commented so we can restore quickly if we change
+// our minds. Also see `<ArticleByline />` usage below.
+// import { ArticleByline } from "../ArticleByline";
 
 type EditorsPicksListProps = {
   picks: ArticleCardDoc[];
@@ -88,7 +91,7 @@ export function EditorsPicksList({ picks }: EditorsPicksListProps) {
                   {article.title}
                 </KiribeTypography>
               </KiribeLink>
-              <ArticleByline article={article} sx={{ pt: 0.25 }} />
+              {/* <ArticleByline article={article} sx={{ pt: 0.25 }} /> */}
             </Stack>
           );
         })}
