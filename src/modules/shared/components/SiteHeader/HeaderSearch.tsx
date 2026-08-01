@@ -13,6 +13,7 @@ import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { SEARCH_CATEGORY_SUGGESTION_LIMIT } from "@/constants";
 import type { PublicCategory } from "@/lib/content/query-categories";
 import { CategoryBadge } from "@/modules/shared/components/CategoryBadge";
 import { trackEvent } from "@/modules/shared/components/GoogleAnalytics";
@@ -45,6 +46,7 @@ function searchDestination(query: string) {
 
 export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[] }) {
   const router = useRouter();
+  const suggestedCategories = categories.slice(0, SEARCH_CATEGORY_SUGGESTION_LIMIT);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -227,7 +229,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
                     Type a title, topic, or author to search the Kiribé archive.
                   </KiribeTypography>
 
-                  {categories.length > 0 && (
+                  {suggestedCategories.length > 0 && (
                     <Box sx={{ mt: 3 }}>
                       <KiribeTypography
                         component="p"
@@ -243,7 +245,7 @@ export function HeaderSearch({ categories = [] }: { categories?: PublicCategory[
                         Browse by category
                       </KiribeTypography>
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                        {categories.map((category) => (
+                        {suggestedCategories.map((category) => (
                           <Box
                             key={category.id}
                             component={NextLink}

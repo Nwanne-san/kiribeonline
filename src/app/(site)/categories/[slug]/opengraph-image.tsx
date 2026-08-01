@@ -49,6 +49,7 @@ export default async function OpengraphImage({ params }: PageParams) {
         kicker: special.kicker,
         title: special.title,
         accentColor: special.accent,
+        showMark: true,
       }),
       size
     );
@@ -72,6 +73,7 @@ export default async function OpengraphImage({ params }: PageParams) {
       kicker: `${name} Category`.toUpperCase(),
       title: `Browse ${name} on Kiribé Online.`,
       accentColor: accent,
+      showMark: true,
     }),
     size
   );

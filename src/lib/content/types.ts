@@ -30,6 +30,12 @@ export type ArticleCardDoc = Pick<
   /** Populated byline (depth ≥ 1). May arrive as a bare id string at depth 0. */
   author?: { id?: string | number; name?: string | null } | string | null;
   /**
+   * Writer opted out of a public byline. `author` stays populated for the admin
+   * module; public surfaces render `KIRIBE_EDITOR_BYLINE` instead. Always read
+   * this through `resolvePublicByline` rather than branching on it inline.
+   */
+  hideByline?: boolean | null;
+  /**
    * Pre-computed reading time (minutes). Card queries derive this server-side
    * and omit the heavy Lexical `body` so list payloads stay lean.
    */

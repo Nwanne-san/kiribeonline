@@ -12,6 +12,7 @@ import {
 } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
+import { ArticleByline } from "../ArticleByline";
 
 type MostReadVariant = "homepage" | "sidebar";
 
@@ -114,6 +115,7 @@ function MostReadRow({
         >
           {article.title}
         </KiribeTypography>
+        <ArticleByline article={article} sx={{ pt: 0.25 }} />
       </Stack>
     </KiribeLink>
   );

@@ -19,6 +19,7 @@ export default function OpengraphImage() {
       title: "Premium entertainment journalism for audiences who take culture seriously.",
       accentColor: MUSTARD,
       subtitle: "Twelve years of film, television, and cultural criticism",
+      showMark: true,
     }),
     size
   );

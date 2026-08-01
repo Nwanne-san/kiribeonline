@@ -24,6 +24,53 @@ export function formatDate(date: string | Date, locale = "en-US") {
   }).format(new Date(date));
 }
 
+/** `29-10-2026` — the numeric form used once a story is no longer "recent". */
+export function formatShortDate(date: string | Date): string {
+  const d = new Date(date);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+}
+
+/** Cutoff past which a byline shows the calendar date instead of "N days ago". */
+const RELATIVE_DATE_WINDOW_DAYS = 7;
+
+/**
+ * Byline date, phrased the way a reader scans it: "16 hours ago" / "yesterday" /
+ * "2 days ago" for fresh stories, and the plain `DD-MM-YYYY` date once the piece
+ * is older than a week.
+ *
+ * `now` is injectable so callers (and tests) can pin the reference point.
+ *
+ * Because this is time-relative, server and client can render different strings
+ * across a boundary tick. Callers render it inside an element marked
+ * `suppressHydrationWarning` — the value self-corrects on the next render and
+ * the machine-readable timestamp lives in the `<time dateTime>` attribute.
+ */
+export function formatBylineDate(
+  date: string | Date,
+  now: Date = new Date()
+): string {
+  const then = new Date(date);
+  const diffMs = now.getTime() - then.getTime();
+
+  // Future or clock-skewed dates fall back to the calendar date rather than
+  // rendering a nonsensical "-3 hours ago".
+  if (diffMs < 0) return formatShortDate(then);
+
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "yesterday";
+  if (days < RELATIVE_DATE_WINDOW_DAYS) return `${days} days ago`;
+
+  return formatShortDate(then);
+}
+
 export function getRelativeTime(dateString: string | Date) {
   const date = new Date(dateString);
   const now = new Date();

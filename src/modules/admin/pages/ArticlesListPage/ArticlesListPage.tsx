@@ -57,6 +57,7 @@ type ArticleDoc = {
   viewCount?: number;
   heroImage?: MediaRef | string | null;
   author?: AuthorRef | string | null;
+  hideByline?: boolean | null;
   categories?: Array<TermRef | string> | null;
 };
 
@@ -566,7 +567,19 @@ export function ArticlesListPage() {
                         <span className="text-muted-soft">—</span>
                       )}
                     </td>
-                    <td className="px-2 py-3 text-ink-secondary">{authorName(article)}</td>
+                    <td className="px-2 py-3 text-ink-secondary">
+                      {/* The real author is always shown here — `hideByline`
+                          only suppresses the name on the public site. */}
+                      {authorName(article)}
+                      {article.hideByline ? (
+                        <span
+                          className="ml-2 whitespace-nowrap rounded-sm border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-soft"
+                          title="Byline hidden — publishes as Kiribé Editor"
+                        >
+                          Byline hidden
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="px-2 py-3 whitespace-nowrap text-ink-secondary">
                       {displayDate(article)}
                     </td>
