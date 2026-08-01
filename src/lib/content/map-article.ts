@@ -79,6 +79,7 @@ type PayloadArticleDoc = {
   categories?: (PayloadCategory | string)[] | null;
   tags?: (PayloadTag | string)[] | null;
   author?: { id: string | number; name?: string | null } | string | null;
+  hideByline?: boolean | null;
   status: Article["status"];
   publishedAt?: string | null;
   createdAt: string;
@@ -140,6 +141,11 @@ export function toArticleCardDoc(
   const { body, readingTime, ...rest } = doc;
   return {
     ...rest,
+    // Redaction, not just display: an opted-out name must not ship at all.
+    // These docs are serialised into `/api/articles`, `/api/search`, and the
+    // RSC payload, so leaving `author` populated would publish the exact name
+    // the writer withheld — anyone could read it out of the JSON.
+    author: rest.hideByline ? undefined : rest.author,
     readingTime: readingTime ?? estimateReadingTime(body),
   };
 }
@@ -158,10 +164,14 @@ export function mapPayloadArticle(doc: PayloadArticleDoc): Article {
       .map(mapCategory)
       .filter((item): item is Category => item !== null),
     tags: (doc.tags ?? []).map(mapTag).filter((item): item is Tag => item !== null),
+    // Dropped entirely when the byline is hidden — this object is serialised
+    // into the RSC payload, so keeping the name here would publish it in the
+    // page source. `resolvePublicByline` renders "Kiribé Editor" instead.
     author:
-      doc.author && typeof doc.author === "object"
+      !doc.hideByline && doc.author && typeof doc.author === "object"
         ? { id: String(doc.author.id), name: doc.author.name ?? undefined }
         : undefined,
+    hideByline: doc.hideByline ?? false,
     status: doc.status,
     publishedAt: doc.publishedAt ?? undefined,
     createdAt: doc.createdAt,

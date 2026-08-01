@@ -94,7 +94,7 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
         <CloseIcon sx={{ fontSize: 20 }} />
       </IconButton>
 
-      <Box sx={{ p: 5 }}>
+      <Box sx={{ p: { xs: 3, sm: 5 }, pt: { xs: 4.5, sm: 5 } }}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Box
             sx={{
@@ -159,11 +159,13 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
           </KiribeTypography>
         ) : (
           <>
+            {/* Column on mobile: side-by-side leaves the input ~130px wide, so
+                the reader can never see the whole address they typed. */}
             <Stack
               component="form"
               onSubmit={onSubmit}
               noValidate
-              direction="row"
+              direction={{ xs: "column", sm: "row" }}
               sx={{ mt: 3 }}
             >
               <Box
@@ -177,14 +179,22 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
                 sx={{
                   flex: 1,
                   minWidth: 0,
+                  width: "100%",
                   border: "1px solid",
                   borderColor: touched && !valid ? "var(--color-danger)" : "#D1D5DC",
-                  borderRight: "none",
+                  // Only collapse the shared edge when the button sits beside it.
+                  borderRight: { xs: "1px solid", sm: "none" },
+                  borderRightColor: {
+                    xs: touched && !valid ? "var(--color-danger)" : "#D1D5DC",
+                    sm: "transparent",
+                  },
                   color: "#101828",
                   px: 2,
                   py: 1.5,
                   fontFamily: "var(--font-body), 'Open Sans', sans-serif",
-                  fontSize: "0.875rem",
+                  // 16px on mobile — anything smaller makes iOS Safari zoom the
+                  // viewport on focus and the reader loses the modal.
+                  fontSize: { xs: "1rem", sm: "0.875rem" },
                   outline: "none",
                   "&::placeholder": { color: "#99A1AF" },
                   "&:focus": { borderColor: "primary.main" },
@@ -197,7 +207,11 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
                 sx={{
                   display: "inline-flex",
                   alignItems: "center",
+                  justifyContent: "center",
                   gap: 1,
+                  width: { xs: "100%", sm: "auto" },
+                  mt: { xs: 1.5, sm: 0 },
+                  flexShrink: 0,
                   bgcolor: "primary.main",
                   color: "#fff",
                   border: "none",
@@ -220,15 +234,26 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
               </Box>
             </Stack>
 
+            {/* The label wraps to 2–3 lines on mobile, so the row is top-aligned
+                and the box is nudged down to sit on the first line's optical
+                centre rather than floating above the text. */}
             <FormControlLabel
-              sx={{ mt: 2, mx: 0, alignItems: "flex-start" }}
+              sx={{
+                mt: 2,
+                mx: 0,
+                alignItems: "flex-start",
+                gap: 1,
+                "& .MuiFormControlLabel-label": { mt: "1px" },
+              }}
               control={
                 <Checkbox
                   checked={consent}
                   onChange={(e) => setConsent(e.target.checked)}
                   size="small"
                   sx={{
-                    py: 0,
+                    p: 0,
+                    mt: "1px",
+                    flexShrink: 0,
                     color: "#99A1AF",
                     "&.Mui-checked": { color: "primary.main" },
                   }}

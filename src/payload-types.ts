@@ -257,6 +257,10 @@ export interface Article {
    * Byline shown on the article and used for author stats
    */
   author?: (number | null) | User;
+  /**
+   * Publish without the writer's name. The public byline reads “Kiribé Editor”; the author is still recorded in the admin.
+   */
+  hideByline?: boolean | null;
   status?: ('draft' | 'in_review' | 'scheduled' | 'published' | 'archived') | null;
   publishedAt?: string | null;
   /**
@@ -602,6 +606,7 @@ export interface ArticlesSelect<T extends boolean = true> {
   categories?: T;
   tags?: T;
   author?: T;
+  hideByline?: T;
   status?: T;
   publishedAt?: T;
   featured?: T;

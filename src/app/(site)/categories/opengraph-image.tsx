@@ -18,6 +18,7 @@ export default function OpengraphImage() {
       kicker: "Kiribé Categories",
       title: "Browse the archive by section — Film, TV, Opinion, News, and more.",
       accentColor: MUSTARD,
+      showMark: true,
     }),
     size
   );

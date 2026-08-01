@@ -23,6 +23,7 @@ function mapArticleInput(input: ArticleInput) {
     publishedAt: input.publishedAt ?? undefined,
     featured: input.featured ?? false,
     featuredPriority: input.featuredPriority ?? 0,
+    hideByline: input.hideByline ?? false,
     seo: input.seo
       ? {
           title: input.seo.title,
@@ -209,6 +210,7 @@ export async function updateAdminArticle(id: string, input: Partial<ArticleInput
   if (input.publishedAt !== undefined) data.publishedAt = input.publishedAt;
   if (input.featured !== undefined) data.featured = input.featured;
   if (input.featuredPriority !== undefined) data.featuredPriority = input.featuredPriority;
+  if (input.hideByline !== undefined) data.hideByline = input.hideByline;
   if (input.seo) {
     data.seo = {
       title: input.seo.title,

@@ -8,62 +8,23 @@ import MovieOutlinedIcon from "@mui/icons-material/MovieOutlined";
 import TvOutlinedIcon from "@mui/icons-material/TvOutlined";
 import MicNoneOutlinedIcon from "@mui/icons-material/MicNoneOutlined";
 import CheckIcon from "@mui/icons-material/Check";
-import MailOutlineIcon from "@mui/icons-material/MailOutline";
-import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
-import HandshakeOutlinedIcon from "@mui/icons-material/HandshakeOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import TwitterIcon from "@mui/icons-material/Twitter";
-import InstagramIcon from "@mui/icons-material/Instagram";
-import YouTubeIcon from "@mui/icons-material/YouTube";
 import { PublicRoutes } from "@/routes/public.routes";
-import { AboutContactForm } from "./AboutContactForm";
-
-/* ── Small shared pieces ─────────────────────────────────────── */
-
-function Kicker({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <p
-      className={
-        "font-headline text-xs uppercase tracking-[0.1em] text-mustard " + className
-      }
-    >
-      {children}
-    </p>
-  );
-}
-
-function GoldRule({ className = "" }: { className?: string }) {
-  return <span className={"block h-0.5 w-10 bg-mustard " + className} />;
-}
-
-/** Section header: kicker + Outfit-regular title + gold rule. */
-function SectionHeader({
-  kicker,
-  title,
-  align = "left",
-}: {
-  kicker: string;
-  title: string;
-  align?: "left" | "center";
-}) {
-  return (
-    <div className={align === "center" ? "flex flex-col items-center text-center" : ""}>
-      <Kicker>{kicker}</Kicker>
-      <h2 className="mt-4 font-headline text-4xl font-normal text-burgundy">
-        {title}
-      </h2>
-      <GoldRule className="mt-3" />
-    </div>
-  );
-}
+import { ContactForm } from "@/modules/marketing/components/ContactForm";
+import {
+  GoldRule,
+  Kicker,
+  SectionHeader,
+} from "@/modules/marketing/components/EditorialHeadings";
+import {
+  CONTACT_CHANNELS,
+  SOCIAL_LINKS,
+} from "@/modules/marketing/constants/contact";
 
 /* ── Data ────────────────────────────────────────────────────── */
+
+/** Height of the sticky site header — sticky cards must clear it. */
+const STICKY_HEADER_OFFSET = 64;
 
 const STATS = [
   { value: "1M+", label: "Monthly Readers" },
@@ -123,18 +84,6 @@ const TEAM = [
   { img: "/images/about/team-kwame.png", role: "Head of Television", name: "Kwame Asante", bio: "Former TV producer turned critic. Kwame brings an insider's eye to Kiribé's coverage of series, drama, and the business of broadcasting." },
   { img: "/images/about/team-blessing.png", role: "Senior Critic & Academic Editor", name: "Dr. Blessing Nwosu", bio: "Professor of Film Studies at the University of Lagos. Blessing brings rigorous academic thinking to Kiribé's most challenging long-form pieces." },
   { img: "/images/about/team-chisom.png", role: "Film Critic & Cinematography Editor", name: "Chisom Adiele", bio: "Festival programmer and critic whose writing has appeared in Sight & Sound, Reverse Shot, and The Film Stage." },
-];
-
-const CONTACT = [
-  { Icon: MailOutlineIcon, kicker: "Editorial Enquiries", email: "editorial@kiribe.com", desc: "Story pitches, corrections, and editorial feedback." },
-  { Icon: CampaignOutlinedIcon, kicker: "Press & Media", email: "press@kiribe.com", desc: "Media accreditation, partnership requests, and interviews." },
-  { Icon: HandshakeOutlinedIcon, kicker: "Advertising", email: "partnerships@kiribe.com", desc: "Sponsorship, native content, and brand partnerships." },
-];
-
-const SOCIALS = [
-  { Icon: TwitterIcon, label: "Twitter", href: "#" },
-  { Icon: InstagramIcon, label: "Instagram", href: "#" },
-  { Icon: YouTubeIcon, label: "YouTube", href: "#" },
 ];
 
 /* ── Page ────────────────────────────────────────────────────── */
@@ -357,10 +306,25 @@ export function AboutPage() {
       <section className="bg-white py-20 md:py-24">
         <div className="editorial-container">
           <SectionHeader kicker="The People" title="Editorial Team" />
-          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {TEAM.map((member) => (
-              <div key={member.name}>
-                <div className="relative aspect-[3/4] w-full bg-surface-muted">
+          {/*
+            Mobile: a sticky card stack. The container is a flex column so every
+            card shares one containing block and can pin while the next scrolls
+            up over it — inside a grid, each card would only stick within its own
+            row and nothing would stack. From `sm` up it reverts to the plain
+            grid, where `static` cancels the pinning.
+          */}
+          <div className="mt-12 flex flex-col gap-6 sm:grid sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
+            {TEAM.map((member, i) => (
+              <div
+                key={member.name}
+                className="sticky bg-white pb-6 shadow-[0_-12px_24px_-18px_rgba(0,0,0,0.35)] sm:static sm:pb-0 sm:shadow-none"
+                style={{
+                  // Clears the 64px sticky header, then steps each card down a
+                  // little so the ones already pinned stay peeking through.
+                  top: `${STICKY_HEADER_OFFSET + i * 12}px`,
+                }}
+              >
+                <div className="relative aspect-[4/3] w-full bg-surface-muted sm:aspect-[3/4]">
                   <Image
                     src={member.img}
                     alt={member.name}
@@ -411,7 +375,7 @@ export function AboutPage() {
           <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-[440px_1fr]">
             {/* Left: contact channels */}
             <div className="space-y-6">
-              {CONTACT.map(({ Icon, kicker, email, desc }) => (
+              {CONTACT_CHANNELS.map(({ Icon, kicker, email, desc }) => (
                 <div
                   key={kicker}
                   className="flex gap-5 border-l-4 border-burgundy bg-white p-6"
@@ -437,7 +401,7 @@ export function AboutPage() {
                   Follow Us
                 </p>
                 <div className="mt-5 flex gap-3">
-                  {SOCIALS.map(({ Icon, label, href }) => (
+                  {SOCIAL_LINKS.map(({ Icon, label, href }) => (
                     <a
                       key={label}
                       href={href}
@@ -452,7 +416,7 @@ export function AboutPage() {
             </div>
 
             {/* Right: form */}
-            <AboutContactForm />
+            <ContactForm idPrefix="about" />
           </div>
         </div>
       </section>

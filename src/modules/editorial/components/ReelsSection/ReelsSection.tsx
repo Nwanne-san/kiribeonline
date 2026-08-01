@@ -50,15 +50,27 @@ export function ReelsSection({ reels }: ReelsSectionProps) {
           <Box
             sx={{
               display: "flex",
-              gap: 2,
+              gap: { xs: 2.5, md: 2 },
               overflowX: "auto",
               scrollSnapType: "x mandatory",
-              pb: 2,
+              // Snapped cards land on the container gutter rather than flush
+              // against the screen edge.
+              scrollPaddingInline: { xs: "16px", md: 0 },
+              pt: 0.5,
+              pb: { xs: 3, md: 2 },
               mx: { xs: -2, md: 0 },
               px: { xs: 2, md: 0 },
               "&::-webkit-scrollbar": { display: "none" },
               scrollbarWidth: "none",
               msOverflowStyle: "none",
+              // Trailing gutter. `padding-right` on a horizontal scroll
+              // container is honoured inconsistently across engines, so the
+              // last card would otherwise sit hard against the screen edge.
+              "&::after": {
+                content: '""',
+                flex: "0 0 auto",
+                width: { xs: "4px", md: 0 },
+              },
             }}
           >
             {reels.map((reel) => (

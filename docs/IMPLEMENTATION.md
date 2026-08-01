@@ -46,11 +46,19 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
 ### 2.1 Public pages
 - [x] Homepage — hero, Editor's Picks, category modules from CMS
 - [x] Article detail — hero, body, optional image modal (`/articles/[slug]`)
-- [x] All Articles — search, list/grid/feed toggle, pagination, URL state
+- [x] All Articles — search, grid/list toggle, pagination, URL state
+      (the infinite-scroll `feed` mode was retired; stale `?view=feed`
+      links fall back to the default grid)
 - [x] Category archive (`/categories/[slug]`)
 - [x] Tag archive (`/tags/[slug]`)
-- [x] About (+ contact section)
+- [x] About (+ contact section) — mobile team cards stack as you scroll
+- [x] Contact page rebuilt on the About section rhythm (shared
+      `MarketingHero`/`SectionHeader` primitives + shared `ContactForm`)
 - [x] Contact form + validation
+- [x] Homepage bylines — author + relative date (`16 hours ago` /
+      `yesterday` / `2 days ago`, then `DD-MM-YYYY`)
+- [x] Mobile carousels for homepage category modules and creator grids
+      (`MobileCarousel` — one DOM pass, grid from the breakpoint up)
 - [x] Subscribe form
 - [x] Privacy Policy, Terms of Use
 - [x] Search results page (`/search?q=`)
@@ -72,6 +80,11 @@ Derived from PRD v1.0 and TRD v2.2. Use this as the master build checklist.
       defaults until an admin saves)
 - [x] Header nav capped at 6 category links (`NAV_MAX_HEADER_LINKS`) — enforced
       in the Payload array (`maxRows`), the PATCH schema, and the header resolver
+- [x] Header search category shortcuts capped at 6
+      (`SEARCH_CATEGORY_SUGGESTION_LIMIT`)
+- [x] Public byline opt-out (`hideByline`) — publishes as “Kiribé Editor”
+      while the admin keeps the real author for attribution and stats; the
+      name is redacted from API/RSC payloads, not merely hidden in the UI
 - [x] Admin design system matches the public site — burgundy/mustard/cream (the
       Figma Make CMS red `#7F0400` + amber `#E6A313` were dropped), square edges
       everywhere, and `AdminButton` padding/type identical to the public

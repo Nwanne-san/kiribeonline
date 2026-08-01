@@ -3,7 +3,7 @@ import { getPayloadClient } from "@/lib/payload/get-payload";
 import {
   APP_URL,
   getResendClient,
-  RESEND_FROM_EMAIL,
+  sendTransactionalEmail,
 } from "@/lib/email/resend";
 import { renderSubscribeConfirmationEmail } from "@/lib/email/templates/subscribe-confirmation";
 import type { SubscribeFormOutput } from "@/lib/validation/subscribe";
@@ -27,19 +27,13 @@ async function sendConfirmationEmail(email: string, token: string): Promise<bool
   const { subject, html, text } = renderSubscribeConfirmationEmail({
     confirmUrl: buildConfirmUrl(token),
   });
-  try {
-    await resend.emails.send({
-      from: RESEND_FROM_EMAIL,
-      to: email,
-      subject,
-      html,
-      text,
-    });
-    return true;
-  } catch (err) {
-    console.error("[subscribe] confirmation email failed", err);
-    return false;
-  }
+  return sendTransactionalEmail({
+    to: email,
+    subject,
+    html,
+    text,
+    context: "[subscribe] confirmation",
+  });
 }
 
 export async function submitSubscribe(input: SubscribeFormOutput) {

@@ -13,7 +13,7 @@ import {
   publicRoute,
 } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
-import { formatDate } from "@/utils/helper";
+import { ArticleByline } from "../ArticleByline";
 import { EditorsPicksList } from "../EditorsPicksList";
 
 type HomeHeroProps = {
@@ -25,7 +25,6 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
   const heroHref = heroArticle
     ? publicRoute(PublicRoutes.articleDetail, { slug: heroArticle.slug })
     : undefined;
-  const heroDate = heroArticle?.publishedAt ? formatDate(heroArticle.publishedAt) : undefined;
   const primaryCategory = heroArticle?.categories?.[0]?.name;
 
   return (
@@ -74,11 +73,7 @@ export function HomeHero({ heroArticle, editorsPicks }: HomeHeroProps) {
                     {heroArticle.excerpt}
                   </KiribeTypography>
                 )}
-                {heroDate && (
-                  <KiribeTypography variant="caption" color="text.secondary">
-                    {heroDate}
-                  </KiribeTypography>
-                )}
+                <ArticleByline article={heroArticle} size="md" />
               </Stack>
             ) : (
               <Stack spacing={2.5}>

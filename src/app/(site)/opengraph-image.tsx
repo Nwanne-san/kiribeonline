@@ -8,6 +8,7 @@ import {
   OG_SIZE,
 } from "@/lib/seo/branded-og-card";
 import { toAbsoluteUrl } from "@/lib/seo/site-url";
+import { streamMedia } from "@/lib/seo/stream-og-media";
 
 /**
  * Homepage social card. Prefers the hero article's og-size image (so the
@@ -35,9 +36,12 @@ export default async function OpengraphImage() {
     console.error("[opengraph-image:home] hero fetch failed, using branded fallback", err);
   }
 
+  // Proxy the bytes rather than redirecting — scrapers that ignore 307s on
+  // `og:image` would otherwise render no preview at all. See `streamMedia`.
   const mediaUrl = resolveOgImageUrl(heroImage);
   if (mediaUrl) {
-    return Response.redirect(toAbsoluteUrl(mediaUrl), 307);
+    const proxied = await streamMedia(toAbsoluteUrl(mediaUrl));
+    if (proxied) return proxied;
   }
 
   return new ImageResponse(
@@ -45,6 +49,7 @@ export default async function OpengraphImage() {
       kicker: "Kiribé Online",
       title: "Premium editorial. Film, television, and the cultural conversations that matter.",
       accentColor: MUSTARD,
+      showMark: true,
     }),
     size
   );
