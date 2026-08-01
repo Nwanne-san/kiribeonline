@@ -11,6 +11,7 @@ import {
 } from "@/modules/admin/components/AdminAuthShell";
 import { AdminButton } from "@/modules/admin/components/ui/AdminPrimitives";
 import { unwrapApiData } from "@/lib/api/unwrap";
+import { useKiribeToast } from "@/modules/shared/components/feedback/KiribeSnackbar";
 
 /**
  * `?next=` is a raw string from the URL. String-prefix checks (`startsWith`)
@@ -47,6 +48,7 @@ function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const nextTarget = sanitizeNextParam(params.get("next"));
+  const { showToast } = useKiribeToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,16 +67,33 @@ function LoginForm() {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.message ?? "Invalid email or password.");
+        const message = json.message ?? "Invalid email or password.";
+        setError(message);
+        showToast({
+          message: "Sign-in failed",
+          description: message,
+          severity: "error",
+        });
         return;
       }
       unwrapApiData(json);
+      showToast({
+        message: "Signed in",
+        description: "Welcome back to the Kiribé admin.",
+        severity: "success",
+      });
       // When `next` came from the shell's session-expiry redirect this lands the
       // reader back where they were; otherwise the admin index picks a landing
       // page appropriate to the user's capabilities.
       router.replace(nextTarget);
     } catch {
-      setError("Login failed.");
+      const message = "Login failed. Please check your connection and try again.";
+      setError(message);
+      showToast({
+        message: "Sign-in failed",
+        description: message,
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
