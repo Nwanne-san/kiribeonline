@@ -6,6 +6,7 @@ import {
   revalidateHomepageAfterChange,
   revalidateHomepageAfterDelete,
 } from "../hooks/revalidate-homepage";
+import { resolveReelExternalUrl } from "../hooks/resolve-reel-url";
 
 export const Reels: CollectionConfig = {
   slug: "reels",
@@ -44,7 +45,7 @@ export const Reels: CollectionConfig = {
       required: true,
       admin: {
         description:
-          "Paste the original post URL (Instagram /reel/, TikTok /video/, YouTube /shorts/ or /watch). The card auto-embeds when recognised.",
+          "Paste the original post URL. Instagram /reel/, TikTok /video/, and YouTube /shorts/ or /watch all auto-embed. TikTok mobile short links (vm.tiktok.com/…) and web share links (tiktok.com/t/…) are resolved to their canonical URL on save so they embed too.",
       },
     },
     {
@@ -61,6 +62,7 @@ export const Reels: CollectionConfig = {
     },
   ],
   hooks: {
+    beforeChange: [resolveReelExternalUrl],
     afterChange: [auditAfterChange("reels"), revalidateHomepageAfterChange],
     afterDelete: [auditAfterDelete("reels"), revalidateHomepageAfterDelete],
   },
