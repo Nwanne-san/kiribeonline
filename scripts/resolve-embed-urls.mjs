@@ -52,11 +52,13 @@ if (!process.env.DATABASE_URL || !process.env.PAYLOAD_SECRET) {
 const { values } = parseArgs({
   options: {
     "dry-run": { type: "boolean", default: false },
+    audit: { type: "boolean", default: false },
     limit: { type: "string", default: "1000" },
   },
 });
 
 const dryRun = values["dry-run"];
+const auditOnly = values.audit;
 const perCollectionLimit = Number.parseInt(values.limit, 10) || 1000;
 
 process.env.PAYLOAD_MIGRATING = "true";
@@ -66,8 +68,91 @@ const config = (await import("../src/payload.config.ts")).default;
 const { needsResolution, resolveShortUrl } = await import(
   "../src/lib/embeds/resolve-url.ts"
 );
+const { parseEmbed } = await import("../src/lib/embeds/parse-embed.ts");
 
 const payload = await getPayload({ config });
+
+// ── Audit mode: no writes, no network. Just report which stored embed URLs
+// the render-time parser can't turn into an iframe, so we can extend the
+// parser (or the resolver) for the exact URL shapes in the DB.
+if (auditOnly) {
+  console.log("\n▶ resolve-embed-urls  (AUDIT — read-only inspection)\n");
+  const unembeddable = { reels: [], articles: [], pages: [] };
+
+  const reels = await payload.find({
+    collection: "reels",
+    limit: perCollectionLimit,
+    overrideAccess: true,
+    depth: 0,
+  });
+  for (const doc of reels.docs) {
+    const url = typeof doc.externalUrl === "string" ? doc.externalUrl.trim() : "";
+    if (!url) continue;
+    const embed = parseEmbed(url);
+    // "unembeddable" from a video perspective = degrades to a link-card OR
+    // parses to null (non-http, malformed) OR has no embedUrl.
+    if (!embed || embed.platform === "link-card" || !embed.embedUrl) {
+      unembeddable.reels.push({
+        id: doc.id,
+        title: doc.title ?? "(untitled)",
+        platform: doc.platform,
+        url,
+        would_resolve: needsResolution(url),
+      });
+    }
+  }
+
+  for (const collection of ["articles", "pages"]) {
+    const res = await payload.find({
+      collection,
+      limit: perCollectionLimit,
+      overrideAccess: true,
+      depth: 0,
+    });
+    for (const doc of res.docs) {
+      const body = doc.body;
+      if (!body || typeof body !== "object") continue;
+      const embeds = [];
+      collectEmbedNodes(body, embeds);
+      for (const [idx, node] of embeds.entries()) {
+        const url = typeof node.url === "string" ? node.url.trim() : "";
+        if (!url) continue;
+        const embed = parseEmbed(url);
+        if (!embed || embed.platform === "link-card" || !embed.embedUrl) {
+          unembeddable[collection].push({
+            id: doc.id,
+            title: doc.title ?? doc.slug ?? "(untitled)",
+            embed_index: idx,
+            url,
+            would_resolve: needsResolution(url),
+          });
+        }
+      }
+    }
+  }
+
+  for (const [name, rows] of Object.entries(unembeddable)) {
+    if (rows.length === 0) {
+      console.log(`  ${name.padEnd(9)}  ✓ all URLs embed cleanly`);
+      continue;
+    }
+    console.log(`  ${name.padEnd(9)}  ✗ ${rows.length} un-embeddable`);
+    for (const row of rows) {
+      const suffix = row.would_resolve
+        ? "  (short-link — will fix on live run)"
+        : "  (parser doesn't recognise this URL shape)";
+      const meta =
+        name === "reels"
+          ? `[${row.platform}] ${row.title}`
+          : `embed[${row.embed_index}] in "${row.title}"`;
+      console.log(`    id=${row.id}  ${meta}\n      ${row.url}${suffix}`);
+    }
+  }
+  console.log(
+    "\nRun without --audit to actually rewrite the resolvable ones. Send me the URLs marked \"parser doesn't recognise\" and I'll extend parseEmbed for them.\n"
+  );
+  process.exit(0);
+}
 
 console.log(
   `\n▶ resolve-embed-urls  (${dryRun ? "DRY RUN — no writes" : "LIVE — will update docs"})\n`
@@ -197,5 +282,20 @@ async function walkEmbedNodes(node, visit) {
   }
   if (Array.isArray(node.children)) {
     for (const child of node.children) await walkEmbedNodes(child, visit);
+  }
+}
+
+/** Sync variant of walkEmbedNodes — pushes every embed node into `out`. */
+function collectEmbedNodes(node, out) {
+  if (!node || typeof node !== "object") return;
+  if (node.type === "embed" && typeof node.url === "string") {
+    out.push(node);
+  }
+  const root = node.root;
+  if (root && Array.isArray(root.children)) {
+    for (const child of root.children) collectEmbedNodes(child, out);
+  }
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) collectEmbedNodes(child, out);
   }
 }
