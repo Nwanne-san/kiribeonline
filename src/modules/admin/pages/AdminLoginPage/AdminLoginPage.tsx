@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AdminRoutes } from "@/routes/admin.routes";
 import {
@@ -45,7 +45,6 @@ function sanitizeNextParam(next: string | null): string {
 }
 
 function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const nextTarget = sanitizeNextParam(params.get("next"));
   const { showToast } = useKiribeToast();
@@ -82,10 +81,18 @@ function LoginForm() {
         description: "Welcome back to the Kiribé admin.",
         severity: "success",
       });
-      // When `next` came from the shell's session-expiry redirect this lands the
-      // reader back where they were; otherwise the admin index picks a landing
-      // page appropriate to the user's capabilities.
-      router.replace(nextTarget);
+      // Hard navigate rather than `router.replace`: the App Router's client
+      // cache holds a pre-auth RSC render of the target route (which itself
+      // redirects to /admin/login when unauthenticated), so a client-side
+      // navigation right after login bounces the reader back here even
+      // though the cookie was set. `window.location.assign` forces a fresh
+      // request that carries the new session cookie, which the admin shell's
+      // `requireAdminUser()` then reads correctly on the first try.
+      //
+      // When `next` came from the shell's session-expiry redirect this lands
+      // the reader back where they were; otherwise the admin index picks a
+      // landing page appropriate to the user's capabilities.
+      window.location.assign(nextTarget);
     } catch {
       const message = "Login failed. Please check your connection and try again.";
       setError(message);
