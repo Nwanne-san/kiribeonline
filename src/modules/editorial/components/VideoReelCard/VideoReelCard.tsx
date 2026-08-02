@@ -124,6 +124,17 @@ function ReelPoster({
         borderRadius: 2,
         overflow: "hidden",
         bgcolor: "#0A0A0A",
+        // Hover on the poster (or its clickable parent) lifts the play button
+        // from subtle white to brand mustard for a stronger affordance.
+        "&:hover .reel-play-btn, .MuiButtonBase-root:hover & .reel-play-btn, button:hover & .reel-play-btn, a:hover & .reel-play-btn":
+          {
+            bgcolor: "var(--color-mustard)",
+            transform: "scale(1.08)",
+          },
+        "& .reel-play-btn": {
+          transition:
+            "background-color var(--duration-base) ease, transform var(--duration-base) ease",
+        },
       }}
     >
       <KiribeImage
@@ -152,6 +163,7 @@ function ReelPoster({
         }}
       >
         <Box
+          className="reel-play-btn"
           sx={{
             width: 48,
             height: 48,
