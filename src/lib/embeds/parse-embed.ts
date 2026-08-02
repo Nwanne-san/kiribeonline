@@ -71,7 +71,18 @@ const YOUTUBE_HOSTS = new Set([
 ]);
 const VIMEO_HOSTS = new Set(["vimeo.com", "www.vimeo.com", "player.vimeo.com"]);
 const INSTAGRAM_HOSTS = new Set(["instagram.com", "www.instagram.com"]);
-const TIKTOK_HOSTS = new Set(["tiktok.com", "www.tiktok.com", "vm.tiktok.com"]);
+const TIKTOK_HOSTS = new Set([
+  "tiktok.com",
+  "www.tiktok.com",
+  "m.tiktok.com",
+  // `vm.tiktok.com` (mobile "Copy link") and `www.tiktok.com/t/…` (web share)
+  // are short redirects. They only produce an embeddable id after the reels
+  // beforeChange hook (`resolve-reel-url.ts`) follows the redirect and stores
+  // the canonical `/@user/video/{id}` URL. Kept on the allow-list so an
+  // unresolved paste still degrades to a safe `link-card` rather than being
+  // treated as an unknown host.
+  "vm.tiktok.com",
+]);
 const SPOTIFY_HOSTS = new Set(["open.spotify.com"]);
 
 /** Spotify content types we support and the compact iframe height for each. */

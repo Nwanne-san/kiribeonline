@@ -122,15 +122,21 @@ export function ArticleCard({ article, variant = "grid", surface = "plain" }: Ar
           "&:hover": { bgcolor: "var(--color-surface-alt)" },
           "&:hover .card-title": { color: accent },
           "&:hover .card-chevron": { color: accent, transform: "translateX(2px)" },
+          "&:hover .card-thumb img": { transform: "scale(1.06)" },
         }}
       >
         <Box
+          className="card-thumb"
           sx={{
             position: "relative",
             width: { xs: 112, sm: 160 },
             height: { xs: 78, sm: 112 },
             flexShrink: 0,
             bgcolor: "#F3F4F6",
+            overflow: "hidden",
+            "& img": {
+              transition: "transform var(--duration-slow) var(--ease-out-soft)",
+            },
           }}
         >
           <KiribeImage
@@ -193,9 +199,21 @@ export function ArticleCard({ article, variant = "grid", surface = "plain" }: Ar
           display: "block",
           bgcolor: "#fff",
           "&:hover .card-title": { color: accent },
+          "&:hover .card-thumb img": { transform: "scale(1.06)" },
         }}
       >
-        <Box sx={{ position: "relative", aspectRatio: "4 / 3", bgcolor: "#F3F4F6" }}>
+        <Box
+          className="card-thumb"
+          sx={{
+            position: "relative",
+            aspectRatio: "4 / 3",
+            bgcolor: "#F3F4F6",
+            overflow: "hidden",
+            "& img": {
+              transition: "transform var(--duration-slow) var(--ease-out-soft)",
+            },
+          }}
+        >
           <KiribeImage
             src={article.heroImage}
             alt={article.heroImage?.alt ?? article.title}
@@ -219,14 +237,32 @@ export function ArticleCard({ article, variant = "grid", surface = "plain" }: Ar
   }
 
   // Figma V5 GridCard — 4:3 image with overlaid badge, two-line excerpt, byline meta.
+  //
+  // Image and title share one <KiribeLink> so hovering either surface triggers
+  // the same group hover (image scales, title colour lifts). Splitting them
+  // into two links made the image inert on hover, which lost the affordance
+  // and forced two focus stops on keyboard traversal for the same target.
   return (
     <Box>
-      <KiribeLink href={href} underline="none">
+      <KiribeLink
+        href={href}
+        underline="none"
+        sx={{
+          display: "block",
+          "&:hover .card-title": { color: accent },
+          "&:hover .card-thumb img": { transform: "scale(1.06)" },
+        }}
+      >
         <Box
+          className="card-thumb"
           sx={{
             position: "relative",
             aspectRatio: "4 / 3",
             bgcolor: "#F3F4F6",
+            overflow: "hidden",
+            "& img": {
+              transition: "transform var(--duration-slow) var(--ease-out-soft)",
+            },
           }}
         >
           <KiribeImage
@@ -240,8 +276,6 @@ export function ArticleCard({ article, variant = "grid", surface = "plain" }: Ar
             </Box>
           )}
         </Box>
-      </KiribeLink>
-      <KiribeLink href={href} underline="none" sx={{ "&:hover .card-title": { color: accent } }}>
         <KiribeTypography
           className="card-title"
           sx={{ ...cardTitleSx, mt: 2, ...TWO_LINE_CLAMP }}
