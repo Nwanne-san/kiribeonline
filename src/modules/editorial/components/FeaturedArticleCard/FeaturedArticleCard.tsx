@@ -39,13 +39,19 @@ export function FeaturedArticleCard({ article }: { article: ArticleCardDoc }) {
         display: "grid",
         gridTemplateColumns: { xs: "1fr", base: "1fr 1fr" },
         "&:hover .featured-title": { color: "var(--color-mustard)" },
+        "&:hover .featured-thumb img": { transform: "scale(1.05)" },
       }}
     >
       <Box
+        className="featured-thumb"
         sx={{
           position: "relative",
           minHeight: { xs: 260, sm: 360, base: "auto" },
           bgcolor: "#F3F4F6",
+          overflow: "hidden",
+          "& img": {
+            transition: "transform var(--duration-slow) var(--ease-out-soft)",
+          },
         }}
       >
         <KiribeImage
