@@ -519,7 +519,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
 
   /* ── Unsaved changes guard (beforeunload + in-app nav) ── */
 
-  const { navigateSafely } = useUnsavedChangesGuard(dirty && !saving);
+  const { navigateSafely, dialog: unsavedDialog } = useUnsavedChangesGuard(dirty && !saving);
 
   /* ── Status picker ── */
 
@@ -1018,6 +1018,8 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         onConfirm={() => void handleConfirmPublish()}
         isPending={saving}
       />
+
+      {unsavedDialog}
     </form>
   );
 }
