@@ -41,6 +41,10 @@ export type ListAdminArticlesParams = {
   categoryId?: string;
   /** Filter by author (user) relationship id. */
   authorId?: string;
+  /** Inclusive lower bound on `publishedAt` (ISO 8601). */
+  publishedFrom?: string;
+  /** Inclusive upper bound on `publishedAt` (ISO 8601). */
+  publishedTo?: string;
   /** Publish-date ordering. Defaults to newest first. */
   sort?: "newest" | "oldest";
   page?: number;
@@ -54,6 +58,10 @@ export async function listAdminArticles(params?: ListAdminArticlesParams) {
   if (params?.status) conditions.push({ status: { equals: params.status } });
   if (params?.categoryId) conditions.push({ categories: { equals: params.categoryId } });
   if (params?.authorId) conditions.push({ author: { equals: params.authorId } });
+  if (params?.publishedFrom)
+    conditions.push({ publishedAt: { greater_than_equal: params.publishedFrom } });
+  if (params?.publishedTo)
+    conditions.push({ publishedAt: { less_than_equal: params.publishedTo } });
   if (params?.q) {
     const q = params.q.trim();
     conditions.push({ or: [{ title: { like: q } }, { slug: { like: q } }] });

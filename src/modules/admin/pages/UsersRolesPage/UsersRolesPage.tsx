@@ -6,8 +6,11 @@ import CloseRounded from "@mui/icons-material/CloseRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import PersonAddAlt1Rounded from "@mui/icons-material/PersonAddAlt1Rounded";
+import SearchRounded from "@mui/icons-material/SearchRounded";
 import WarningAmberRounded from "@mui/icons-material/WarningAmberRounded";
-import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDebouncedUrlParam } from "@/utils/hooks/useDebouncedUrlParam";
 import { ApiMethods } from "../../../../../types/service";
 import { AdminRoutes } from "@/routes/admin.routes";
 import {
@@ -112,21 +115,44 @@ export function UsersRolesPage() {
   const { can } = usePermissions();
   const canManage = can(MANAGE_CAPABILITY);
 
-  // Client-side tab + filter state. URL-syncing (page/filter) is a planned
-  // follow-up across the rebuilt admin lists (see RecentActivityPage).
-  const [tab, setTab] = useState<MainTab>("members");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [role, setRole] = useState<RoleFilter>("all");
+  // Filter state is URL-synced so bookmarking a filtered view (or landing on
+  // it from an audit-log link) preserves the operator's context. Search runs
+  // through the standard debounced-URL hook to match the rest of the admin.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab: MainTab = (searchParams.get("tab") as MainTab | null) === "roles" ? "roles" : "members";
+  const status = (searchParams.get("status") as StatusFilter | null) ?? "all";
+  const role = (searchParams.get("role") as RoleFilter | null) ?? "all";
+  const { value: search, setValue: setSearch, debouncedValue } = useDebouncedUrlParam();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editUser, setEditUser] = useState<AdminUserListItem | null>(null);
+
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null || value === "" || value === "all") params.delete(key);
+        else params.set(key, value);
+      }
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  const setTab = (next: MainTab) => updateParams({ tab: next === "members" ? null : next });
+  const setStatus = (next: StatusFilter) => updateParams({ status: next });
+  const setRole = (next: RoleFilter) => updateParams({ role: next });
 
   const listPath = useMemo(() => {
     const params = new URLSearchParams();
     if (status !== "all") params.set("status", status);
     if (role !== "all") params.set("role", role);
+    if (debouncedValue) params.set("q", debouncedValue);
     const qs = params.toString();
     return qs ? `${adminUsersService.list.path}?${qs}` : adminUsersService.list.path;
-  }, [status, role]);
+  }, [status, role, debouncedValue]);
 
   const { data, isLoading } = useQueryService<Record<string, never>, UsersListResponse>({
     service: { path: listPath, method: ApiMethods.GET },
@@ -134,6 +160,7 @@ export function UsersRolesPage() {
       keys: [adminQueryKeys.users, status, role],
       keepPreviousData: true,
       filterFingerprint: `${status}:${role}`,
+      searchQuery: debouncedValue,
     },
   });
 
@@ -199,6 +226,16 @@ export function UsersRolesPage() {
                   onClick={() => setRole(value)}
                 />
               ))}
+            </div>
+            <div className="flex min-w-0 items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2 lg:ml-auto lg:w-64">
+              <SearchRounded sx={{ fontSize: 18 }} className="shrink-0 text-muted-soft" />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name or email…"
+                className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted-soft"
+              />
             </div>
           </div>
 
@@ -454,11 +491,13 @@ function InviteUserModal({ onClose }: { onClose: () => void }) {
     service: adminUsersService.invite,
     options: {
       invalidateKeys: [adminQueryKeys.users],
-      successTitle: "Invite sent",
+      // Split the title on outcome — a silent "Invite sent" toast on delivery
+      // failure was hiding a real Resend problem on production.
+      successTitle: (r) => (r.emailSent ? "Invite sent" : "Invite created — email did not go out"),
       successMessage: (r) =>
         r.emailSent
           ? "An invitation email is on its way."
-          : "Invite created — share the invite link with the new member.",
+          : "Resend did not accept the email (check the domain is verified and the recipient isn't in your sandbox allowlist). Share the invite link below.",
       errorTitle: "Could not send invite",
       onSuccess: (r) => {
         // If the email went out there's nothing to hand off — close. Otherwise
