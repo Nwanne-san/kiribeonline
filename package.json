@@ -21,6 +21,7 @@
     "seed": "npm run seed:taxonomy && npm run seed:demo",
     "seo:audit": "node scripts/seo-audit.mjs",
     "resolve:embeds": "tsx scripts/resolve-embed-urls.mjs",
+    "assign:authors": "tsx scripts/assign-article-authors.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
