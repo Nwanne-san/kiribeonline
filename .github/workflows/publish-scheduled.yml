@@ -1,0 +1,65 @@
+# External cron for the scheduled-article publisher.
+#
+# Vercel Hobby caps cron cadence at once per day, which is far too slow for
+# "publish at the exact scheduled time" behaviour — editors setting a 2pm
+# slot would otherwise wait until the next daily tick. GitHub Actions offers
+# a 5-minute scheduled cadence on all plans, so it drives the endpoint while
+# we're on Hobby. When the project moves to Vercel Pro, replace this workflow
+# with a native minute-level entry in vercel.json and remove this file.
+#
+# Setup:
+#   - Repo secret PUBLISH_CRON_URL   → https://kiribeonline.com/api/cron/publish-scheduled
+#     (or the production origin; use the same URL Vercel would call)
+#   - Repo secret PUBLISH_CRON_TOKEN → the value of the CRON_SECRET env var
+#     on Vercel Production. `requireCronSecret` compares them.
+#
+# The action is idempotent (server-side lookup by publishedAt <= now), so a
+# rare double invocation from GitHub retry is harmless.
+
+name: publish-scheduled-articles
+
+on:
+  schedule:
+    # Every 5 minutes. GitHub's minimum granularity + it aligns with common
+    # scheduling UIs (editors pick :00 / :05 / :10 etc).
+    - cron: "*/5 * * * *"
+  # Manual trigger for debugging or one-off flushes.
+  workflow_dispatch: {}
+
+# One run at a time — if a run overlaps the next tick (rare, endpoint is fast)
+# we skip rather than pile on.
+concurrency:
+  group: publish-scheduled-articles
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Hit the publisher endpoint
+        env:
+          URL: ${{ secrets.PUBLISH_CRON_URL }}
+          TOKEN: ${{ secrets.PUBLISH_CRON_TOKEN }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$TOKEN" ]; then
+            echo "::error::PUBLISH_CRON_URL or PUBLISH_CRON_TOKEN not set"
+            exit 1
+          fi
+          # -sS prints errors even in silent mode; -f fails on 4xx/5xx.
+          # `--retry` handles a transient cold-start blip on Vercel.
+          # We deliberately do NOT print the token or response body.
+          curl -sSf \
+            --retry 3 --retry-delay 4 --retry-connrefused \
+            --max-time 60 \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/json" \
+            "$URL" \
+            > /tmp/publish-response.json
+          # Log just the numbers — the endpoint returns `{ published: N }`.
+          if command -v jq >/dev/null 2>&1; then
+            jq -r '"published=" + (.data.published // .published | tostring)' \
+              /tmp/publish-response.json || cat /tmp/publish-response.json
+          else
+            cat /tmp/publish-response.json
+          fi
