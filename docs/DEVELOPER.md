@@ -68,7 +68,7 @@ See `.env.example`. Never commit `.env.local`.
 | `R2_PUBLIC_URL` | Public base URL for R2 media (full origin, no trailing slash) |
 | `CONTACT_TO_EMAIL` | Optional notification email for contact form |
 | `RESEND_API_KEY` | Resend key for transactional email (subscribe + admin invites). Unset → emails skipped, invite token returned to the admin |
-| `RESEND_FROM_EMAIL` | Verified sender, e.g. `Kiribé <hello@kiribeonline.com>` |
+| `RESEND_FROM_EMAIL` | Verified sender, e.g. `Kiribé <noreply@send.kiribeonline.com>` |
 | `ADMIN_TOKEN_TTL_SECONDS` | Admin session lifetime (default 7200 = 2h). Fail-closed: bad value → default |
 | `ADMIN_MAX_LOGIN_ATTEMPTS` | Account lockout threshold (default 5) |
 | `ADMIN_LOCK_TIME_SECONDS` | Lockout duration after threshold (default 900 = 15m) |

@@ -53,8 +53,16 @@ export async function getAdminUserFromRequest(
   request: Request
 ): Promise<AdminUser | null> {
   const payload = await getPayloadClient();
-  const { user } = await payload.auth({ headers: request.headers });
-  return toAdminUser(user);
+  let authResult = await payload.auth({ headers: request.headers });
+  if (!authResult.user) {
+    try {
+      const headerList = await headers();
+      authResult = await payload.auth({ headers: headerList });
+    } catch {
+      // In case headers() is invoked outside Next.js request context (e.g. unit test)
+    }
+  }
+  return toAdminUser(authResult.user);
 }
 
 export async function requireAdminUserFromRequest(
