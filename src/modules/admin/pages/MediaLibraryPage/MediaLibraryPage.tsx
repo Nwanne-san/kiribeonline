@@ -12,6 +12,7 @@ import BrokenImageOutlined from "@mui/icons-material/BrokenImageOutlined";
 import PermMediaOutlined from "@mui/icons-material/PermMediaOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import { AdminButton, AdminPanel, Pill, formatCompact } from "@/modules/admin/components/ui/AdminPrimitives";
+import { AdminConfirmDialog } from "@/modules/admin/components/ui/AdminDialog";
 import { MediaGridSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
 import { MediaMetadataDialog } from "@/modules/admin/components/MediaPicker";
 import { ApiMethods } from "../../../../../types/service";
@@ -206,16 +207,11 @@ export function MediaLibraryPage() {
     [showToast],
   );
 
-  const handleDelete = useCallback(
-    (item: AdminMediaItem) => {
-      const label = item.filename ?? item.alt ?? "this asset";
-      // Deletion is blocked server-side while the asset is referenced (409), so
-      // don't promise an override here — just confirm intent.
-      if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) return;
-      deleteMutation.mutate({ id: item.id });
-    },
-    [deleteMutation],
-  );
+  const [pendingDelete, setPendingDelete] = useState<AdminMediaItem | null>(null);
+
+  const handleDelete = useCallback((item: AdminMediaItem) => {
+    setPendingDelete(item);
+  }, []);
 
   const handleEdit = useCallback((item: AdminMediaItem) => {
     setEditing(item);
@@ -461,6 +457,24 @@ export function MediaLibraryPage() {
           }}
         />
       ) : null}
+
+      <AdminConfirmDialog
+        open={pendingDelete !== null}
+        tone="danger"
+        title="Delete image?"
+        description={
+          pendingDelete
+            ? `“${pendingDelete.filename ?? pendingDelete.alt ?? "this asset"}” will be removed from the library. This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (pendingDelete) deleteMutation.mutate({ id: pendingDelete.id });
+          setPendingDelete(null);
+        }}
+        isPending={deleteMutation.isPending}
+      />
     </div>
   );
 }

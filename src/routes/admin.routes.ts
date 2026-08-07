@@ -16,6 +16,8 @@ export enum AdminRoutes {
   articles = "/admin/articles",
   articleNew = "/admin/articles/new",
   articleEdit = "/admin/articles/:id/edit",
+  /** Dedicated approvals queue — lists every article awaiting review. */
+  review = "/admin/review",
   homepage = "/admin/homepage",
   editorsPicks = "/admin/homepage/editors-picks",
   media = "/admin/media",

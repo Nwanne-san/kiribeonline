@@ -18,6 +18,7 @@ import {
   BrandMark,
 } from "@/modules/shared/components/brand";
 import { InitialAvatar } from "@/modules/admin/components/ui/AdminPrimitives";
+import { AdminConfirmDialog } from "@/modules/admin/components/ui/AdminDialog";
 import { usePermissions } from "@/modules/admin/hooks/usePermissions";
 import { useBreakpointUp } from "@/utils/hooks";
 import { NAV_GROUPS, isNavActive, type NavGroup, type NavItem } from "./nav";
@@ -55,6 +56,8 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   // Matches the sidebar's `lg:flex` — above it the hamburger collapses the
   // sidebar to icons, below it the same button opens the mobile drawer.
@@ -93,10 +96,22 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
     [pathname, router]
   );
 
-  const logout = useCallback(async () => {
-    await fetch("/api/admin/auth/logout", { method: "POST" });
-    router.replace(AdminRoutes.login);
-  }, [router]);
+  const requestLogout = useCallback(() => setLogoutOpen(true), []);
+
+  const performLogout = useCallback(async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch("/api/admin/auth/logout", { method: "POST" });
+      router.replace(AdminRoutes.login);
+    } finally {
+      // A router.replace may or may not tear down this component before the
+      // finally block runs — resetting is cheap and prevents a stuck spinner
+      // in the edge case where the redirect is intercepted.
+      setLoggingOut(false);
+      setLogoutOpen(false);
+    }
+  }, [loggingOut, router]);
 
   const activeLabel =
     navGroups.flatMap((g) => g.items).find((i) => isNavActive(i, pathname))?.label ??
@@ -116,7 +131,7 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
           pathname={pathname}
           onNavigate={navigate}
           onViewSite={() => window.open(PublicRoutes.home, "_blank")}
-          onLogout={logout}
+          onLogout={requestLogout}
         />
       </aside>
 
@@ -136,7 +151,7 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
               pathname={pathname}
               onNavigate={navigate}
               onViewSite={() => window.open(PublicRoutes.home, "_blank")}
-              onLogout={logout}
+              onLogout={requestLogout}
             />
           </aside>
         </div>
@@ -160,6 +175,18 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      <AdminConfirmDialog
+        open={logoutOpen}
+        title="Log out?"
+        description="You'll be signed out of the admin. Any unsaved changes on the current page could be lost."
+        confirmLabel="Log out"
+        cancelLabel="Stay signed in"
+        tone="danger"
+        onCancel={() => setLogoutOpen(false)}
+        onConfirm={() => void performLogout()}
+        isPending={loggingOut}
+      />
     </div>
   );
 }

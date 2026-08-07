@@ -7,6 +7,7 @@ import {
   revalidateHomepageAfterDelete,
 } from "../hooks/revalidate-homepage";
 import { resolveReelExternalUrl } from "../hooks/resolve-reel-url";
+import { validateReelExternalUrl } from "../hooks/validate-reel-url";
 
 export const Reels: CollectionConfig = {
   slug: "reels",
@@ -62,6 +63,9 @@ export const Reels: CollectionConfig = {
     },
   ],
   hooks: {
+    // Validation must run before the resolver — otherwise a mismatched
+    // platform survives to the resolver and only fails at render time.
+    beforeValidate: [validateReelExternalUrl],
     beforeChange: [resolveReelExternalUrl],
     afterChange: [auditAfterChange("reels"), revalidateHomepageAfterChange],
     afterDelete: [auditAfterDelete("reels"), revalidateHomepageAfterDelete],

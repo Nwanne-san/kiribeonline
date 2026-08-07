@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactElement } from "react";
 import { useRouter } from "next/navigation";
+import { AdminConfirmDialog } from "@/modules/admin/components/ui/AdminDialog";
 
 /**
  * Block accidental data loss when a form is dirty.
@@ -13,16 +15,16 @@ import { useRouter } from "next/navigation";
  *      prompt. Wording is browser-controlled; we can only opt in.
  *   2. In-app navigation via `next/navigation` (Link, router.push, router.replace) —
  *      we monkey-patch the router's `push`/`replace` while the guard is active
- *      and pop a `confirm()` before letting the navigation proceed. On confirm
- *      we call through; on cancel we swallow the call and the URL is untouched.
+ *      and show the branded `AdminConfirmDialog` before letting the navigation
+ *      proceed. On confirm we call through; on cancel the URL is untouched.
  *
  * The in-app guard is intentionally patched at mount instead of wrapping every
  * `router.push` call site — the editor has links (breadcrumb, cancel button,
  * side nav) that don't know about editor state, and asking every one to
  * consult the dirty flag would be error-prone.
  *
- * Safe to call unconditionally; the `dirty` flag gates the behavior so the
- * effect can turn off without unmount.
+ * Consumers must render the returned `dialog` element for the confirm to
+ * show. It's a portal-less inline element so it renders wherever it's placed.
  */
 export interface UnsavedChangesGuardApi {
   /**
@@ -32,25 +34,26 @@ export interface UnsavedChangesGuardApi {
    * When the guard is inactive, this is a plain `router.push`.
    */
   navigateSafely: (href: string, mode?: "push" | "replace") => void;
+  /** Branded confirm dialog; render inside the guarded page. */
+  dialog: ReactElement;
 }
+
+type Pending = { href: string; mode: "push" | "replace"; options?: unknown };
 
 export function useUnsavedChangesGuard(
   dirty: boolean,
   message?: string
 ): UnsavedChangesGuardApi {
   const router = useRouter();
+  const [pending, setPending] = useState<Pending | null>(null);
 
   // The originals live in a ref so both the effect (for cleanup) and
   // navigateSafely (for the bypass) see the SAME underlying functions.
-  // Otherwise navigateSafely would race the effect's install/cleanup and
-  // could either double-wrap or call a stale reference.
   const originalPushRef = useRef<typeof router.push | null>(null);
   const originalReplaceRef = useRef<typeof router.replace | null>(null);
 
   const navigateSafely = useCallback(
     (href: string, mode: "push" | "replace" = "push") => {
-      // When the guard isn't currently patching, fall through to the live
-      // router — nothing to bypass.
       const push = originalPushRef.current ?? router.push.bind(router);
       const replace = originalReplaceRef.current ?? router.replace.bind(router);
       if (mode === "replace") replace(href);
@@ -67,21 +70,11 @@ export function useUnsavedChangesGuard(
     // Browser exits (close/reload/back).
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
-      // Legacy browsers require the return-value assignment; modern browsers
-      // ignore the string and show their own copy.
       event.returnValue = prompt;
       return prompt;
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // In-app navigation via next/navigation. Patch on this router instance
-    // only; restore on cleanup so we can't leak the wrapper into an unrelated
-    // screen if the guard flag toggles. In App Router the router is a
-    // singleton context value, so any component sharing the tree sees the
-    // patched fns while the guard is active — that's the intent (a stray
-    // `router.push` from a sibling should still be intercepted while the
-    // editor is dirty), but consumers with legitimate programmatic
-    // navigation (e.g. a post-save redirect) must use `navigateSafely`.
     type PushFn = typeof router.push;
     type ReplaceFn = typeof router.replace;
     const originalPush: PushFn = router.push.bind(router);
@@ -90,15 +83,11 @@ export function useUnsavedChangesGuard(
     originalReplaceRef.current = originalReplace;
 
     const guardedPush: PushFn = (href, options) => {
-      if (window.confirm(prompt)) {
-        return originalPush(href, options);
-      }
+      setPending({ href: String(href), mode: "push", options });
       return undefined;
     };
     const guardedReplace: ReplaceFn = (href, options) => {
-      if (window.confirm(prompt)) {
-        return originalReplace(href, options);
-      }
+      setPending({ href: String(href), mode: "replace", options });
       return undefined;
     };
 
@@ -111,8 +100,36 @@ export function useUnsavedChangesGuard(
       router.replace = originalReplace;
       originalPushRef.current = null;
       originalReplaceRef.current = null;
+      // Clear any pending confirm from the previous session — turning the
+      // guard off should never leave a floating modal behind.
+      setPending(null);
     };
   }, [dirty, message, router]);
 
-  return { navigateSafely };
+  const dialog = (
+    <AdminConfirmDialog
+      open={pending !== null}
+      title="Unsaved changes"
+      description={
+        message ??
+        "You have unsaved changes on this page. Leave without saving — your edits will be discarded."
+      }
+      confirmLabel="Leave without saving"
+      cancelLabel="Stay on page"
+      tone="danger"
+      onConfirm={() => {
+        const target = pending;
+        setPending(null);
+        if (!target) return;
+        // Use the stashed originals — the patched fns would just re-queue us.
+        const push = originalPushRef.current ?? router.push.bind(router);
+        const replace = originalReplaceRef.current ?? router.replace.bind(router);
+        if (target.mode === "replace") replace(target.href);
+        else push(target.href);
+      }}
+      onCancel={() => setPending(null)}
+    />
+  );
+
+  return { navigateSafely, dialog };
 }
