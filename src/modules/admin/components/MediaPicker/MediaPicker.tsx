@@ -473,6 +473,10 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
   const { showToast } = useKiribeToast();
   const [alt, setAlt] = useState("");
   const [selected, setSelected] = useState<File | null>(null);
+  // Renamed filename — a large-preview affordance so the operator can catch a
+  // wrong-file selection before it lands in R2. Defaults to the original name
+  // and is used verbatim as the upload's `filename` field.
+  const [renamedFilename, setRenamedFilename] = useState<string>("");
   const [dimensions, setDimensions] = useState<ImageDimensions | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -494,6 +498,7 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
   function resetFile() {
     setSelected(null);
     setDimensions(null);
+    setRenamedFilename("");
     setPreviewUrl((current) => {
       if (current) URL.revokeObjectURL(current);
       return null;
@@ -526,6 +531,7 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
       const dims = await readImageDimensions(file);
       setSelected(file);
       setDimensions(dims);
+      setRenamedFilename(file.name);
       setPreviewUrl((current) => {
         if (current) URL.revokeObjectURL(current);
         return URL.createObjectURL(file);
@@ -551,7 +557,12 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
       return;
     }
     const formData = new FormData();
-    formData.append("file", optimized);
+    // Preserve the user's chosen filename. Some browsers strip the File.name
+    // during the reassignment path, so pass the renamed file with a fresh
+    // File wrapper to guarantee the server sees it.
+    const finalName = (renamedFilename.trim() || selected.name).replace(/[/\\]/g, "-");
+    const renamed = new File([optimized], finalName, { type: optimized.type });
+    formData.append("file", renamed);
     formData.append("alt", alt.trim());
     mutate(formData);
   };
@@ -617,15 +628,26 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
       </Box>
 
       {selected ? (
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          alignItems="flex-start"
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            p: 2,
+            borderRadius: 1,
+            bgcolor: "background.default",
+          }}
+        >
           {previewUrl ? (
             <Box
               component="img"
               src={previewUrl}
               alt="Selected preview"
               sx={{
-                width: 72,
-                height: 72,
+                width: { xs: "100%", sm: 132 },
+                height: { xs: 180, sm: 132 },
                 objectFit: "cover",
                 borderRadius: 1,
                 border: "1px solid",
@@ -634,15 +656,31 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
               }}
             />
           ) : null}
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="body2" noWrap title={selected.name}>
-              {selected.name}
-            </Typography>
+          <Stack spacing={1.5} sx={{ flex: 1, minWidth: 0, width: "100%" }}>
+            <KiribeTextField
+              label="Filename"
+              value={renamedFilename}
+              onChange={(event) => setRenamedFilename(event.target.value)}
+              fullWidth
+              helperText="Rename before upload — this becomes the filename stored in the media library."
+            />
             <Typography variant="caption" color="text.secondary">
               {dimensions ? `${dimensions.width}×${dimensions.height}px · ` : ""}
-              {(selected.size / (1024 * 1024)).toFixed(1)}MB
+              {(selected.size / (1024 * 1024)).toFixed(1)}MB · {selected.type.replace("image/", "").toUpperCase()}
             </Typography>
-          </Box>
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => fileRef.current?.click()}
+              >
+                Choose different file
+              </Button>
+              <Button color="error" size="small" onClick={resetFile}>
+                Remove
+              </Button>
+            </Stack>
+          </Stack>
         </Stack>
       ) : null}
 

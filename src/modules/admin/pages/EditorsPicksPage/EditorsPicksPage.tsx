@@ -3,30 +3,43 @@
 import AddRounded from "@mui/icons-material/AddRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import SaveRounded from "@mui/icons-material/SaveRounded";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
 import {
   AdminButton,
   AdminField,
   AdminPageHeader,
   AdminPanel,
-  AdminSelect,
 } from "@/modules/admin/components/ui/AdminPrimitives";
+import { AdminSearchableSelect } from "@/modules/admin/components/ui/AdminSearchableSelect";
+import { AdminInfoTip } from "@/modules/admin/components/ui/AdminTooltip";
 import { useMutationService } from "@/utils/hooks/useMutationService";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import client from "@/utils/client";
 import { unwrapApiData } from "@/lib/api/unwrap";
 
-type Article = { id: string; title: string };
+type Article = { id: string; title: string; slug?: string };
 type PickRow = { articleId: string; sortOrder: number };
 
 const MAX_PICKS = 5;
 
+/**
+ * Editor's Picks — searchable, keyboard-friendly picker replacing the raw
+ * `<select>` that felt unresponsive on long article lists. The published-article
+ * feed is fetched once (200-cap) and filtered client-side so subsequent picks
+ * don't re-hit the API.
+ */
 export function EditorsPicksPage() {
   const [picks, setPicks] = useState<PickRow[]>([]);
 
-  const { data: articles } = useQueryService<Record<string, never>, { docs: Article[] }>({
-    service: { path: "/api/admin/articles?status=published", method: ApiMethods.GET },
+  const { data: articles, isLoading } = useQueryService<
+    Record<string, never>,
+    { docs: Article[] }
+  >({
+    service: {
+      path: "/api/admin/articles?status=published&limit=200&sort=newest",
+      method: ApiMethods.GET,
+    },
     options: { keys: ["admin", "articles", "published"] },
   });
 
@@ -54,15 +67,30 @@ export function EditorsPicksPage() {
       method: ApiMethods.PATCH,
       data: payload,
     }),
-    options: { keys: ["admin", "homepage", "picks"] },
+    options: {
+      keys: ["admin", "homepage", "picks"],
+      successTitle: "Editor's Picks saved",
+    },
   });
+
+  // Build the option list once — burdenless updates as picks reshape.
+  const options = useMemo(() => {
+    const chosen = new Set(picks.map((p) => p.articleId));
+    return (articles?.docs ?? []).map((a) => ({
+      value: String(a.id),
+      label: a.title,
+      hint: a.slug ? `/${a.slug}` : undefined,
+      // Grey out the ones already chosen elsewhere so the operator doesn't
+      // silently duplicate a slot.
+      disabled: chosen.has(String(a.id)),
+    }));
+  }, [articles?.docs, picks]);
 
   const addPick = () => {
     if (picks.length >= MAX_PICKS) return;
-    const first = articles?.docs?.[0];
     setPicks((prev) => [
       ...prev,
-      { articleId: first ? String(first.id) : "", sortOrder: prev.length },
+      { articleId: "", sortOrder: prev.length },
     ]);
   };
 
@@ -83,7 +111,14 @@ export function EditorsPicksPage() {
         subtitle={`Up to ${MAX_PICKS} articles surfaced on the homepage sidebar · ${picks.length}/${MAX_PICKS} selected`}
       />
 
-      <AdminPanel title="Selected picks">
+      <AdminPanel
+        title="Selected picks"
+        action={
+          <AdminInfoTip
+            content="These slots appear on the homepage in the order shown. Search the picker by title or slug — already-selected articles are greyed out so you don't duplicate a slot."
+          />
+        }
+      >
         <div className="space-y-3 p-5">
           {picks.length === 0 ? (
             <div className="rounded-none border border-dashed border-border bg-surface-alt px-4 py-10 text-center text-sm text-muted-soft">
@@ -94,22 +129,20 @@ export function EditorsPicksPage() {
               <div key={index} className="flex items-end gap-2">
                 <div className="min-w-0 flex-1">
                   <AdminField label={`Pick ${index + 1}`} htmlFor={`pick-${index}`}>
-                    <AdminSelect
+                    <AdminSearchableSelect
                       id={`pick-${index}`}
                       value={pick.articleId}
-                      onChange={(e) => {
-                        const next = [...picks];
-                        next[index] = { ...pick, articleId: e.target.value };
-                        setPicks(next);
+                      onChange={(next) => {
+                        const nextRows = [...picks];
+                        nextRows[index] = { ...pick, articleId: next };
+                        setPicks(nextRows);
                       }}
-                    >
-                      <option value="">Select an article…</option>
-                      {(articles?.docs ?? []).map((a) => (
-                        <option key={a.id} value={String(a.id)}>
-                          {a.title}
-                        </option>
-                      ))}
-                    </AdminSelect>
+                      options={options}
+                      placeholder={isLoading ? "Loading articles…" : "Search articles…"}
+                      emptyLabel={
+                        isLoading ? "Loading…" : "No published articles found"
+                      }
+                    />
                   </AdminField>
                 </div>
                 <AdminButton
@@ -137,7 +170,7 @@ export function EditorsPicksPage() {
           Add pick
         </AdminButton>
         <AdminButton
-          onClick={() => mutate({ editorsPicks: picks })}
+          onClick={() => mutate({ editorsPicks: picks.filter((p) => p.articleId) })}
           disabled={isPending}
           leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
         >

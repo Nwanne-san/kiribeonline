@@ -3,6 +3,7 @@
 import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import FileDownloadOutlined from "@mui/icons-material/FileDownloadOutlined";
 import HourglassEmptyOutlined from "@mui/icons-material/HourglassEmptyOutlined";
 import MarkEmailReadOutlined from "@mui/icons-material/MarkEmailReadOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
@@ -10,6 +11,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { ApiMethods } from "../../../../../types/service";
 import {
+  AdminButton,
   AdminPanel,
   Pill,
   StatTile,
@@ -117,6 +119,22 @@ export function SubscribersPage() {
             Newsletter list · {stats.total.toLocaleString()} total
           </p>
         </div>
+        <AdminButton
+          variant="secondary"
+          leftIcon={<FileDownloadOutlined sx={{ fontSize: 16 }} />}
+          onClick={() => {
+            // Reuse the same filter params on screen so what the operator sees
+            // matches what lands in the file.
+            const qs = new URLSearchParams();
+            if (debouncedValue) qs.set("q", debouncedValue);
+            if (status) qs.set("status", status);
+            const url = `/api/admin/subscribers/export.csv${qs.toString() ? `?${qs.toString()}` : ""}`;
+            window.location.href = url;
+          }}
+          disabled={stats.total === 0}
+        >
+          Export CSV
+        </AdminButton>
       </div>
 
       {/* Stat tiles */}

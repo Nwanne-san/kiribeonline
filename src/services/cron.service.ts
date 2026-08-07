@@ -122,21 +122,39 @@ export async function publishScheduledArticles(): Promise<number> {
     overrideAccess: true,
   });
 
+  let promoted = 0;
   for (const article of docs) {
-    await payload.update({
-      collection: "articles",
-      id: article.id,
-      data: {
-        status: "published",
-      },
-      overrideAccess: true,
-    });
+    try {
+      // Pass the existing scheduled `publishedAt` back explicitly so the
+      // `articleBeforeChange` hook can't reset it to now() in the unlikely
+      // case Payload's merged-data behavior shifts under us. The scheduled
+      // timestamp is the intended publication moment and must survive
+      // promotion untouched.
+      await payload.update({
+        collection: "articles",
+        id: article.id,
+        data: {
+          status: "published",
+          publishedAt: article.publishedAt ?? now,
+        },
+        overrideAccess: true,
+      });
+      promoted += 1;
+    } catch (err) {
+      // A single bad article shouldn't abort the batch — log and move on so
+      // the rest still ship, and the next cron tick retries.
+      console.error(
+        `[cron] failed to publish scheduled article ${article.id}`,
+        err
+      );
+    }
   }
 
-  if (docs.length) {
+  if (promoted) {
     revalidateTag("articles");
     revalidateTag("homepage");
+    console.info(`[cron] promoted ${promoted}/${docs.length} scheduled articles`);
   }
 
-  return docs.length;
+  return promoted;
 }

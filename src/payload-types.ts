@@ -404,7 +404,7 @@ export interface Reel {
   platform: 'instagram' | 'tiktok' | 'youtube';
   thumbnail: number | Media;
   /**
-   * Paste the original post URL (Instagram /reel/, TikTok /video/, YouTube /shorts/ or /watch). The card auto-embeds when recognised.
+   * Paste the original post URL. Instagram /reel/, TikTok /video/, and YouTube /shorts/ or /watch all auto-embed. TikTok mobile short links (vm.tiktok.com/…) and web share links (tiktok.com/t/…) are resolved to their canonical URL on save so they embed too.
    */
   externalUrl: string;
   published?: boolean | null;

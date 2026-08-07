@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
       q: params.get("q") ?? undefined,
       categoryId: params.get("categoryId") ?? undefined,
       authorId: params.get("authorId") ?? undefined,
+      publishedFrom: params.get("publishedFrom") ?? undefined,
+      publishedTo: params.get("publishedTo") ?? undefined,
       sort: sortParam === "newest" || sortParam === "oldest" ? sortParam : undefined,
       page: params.get("page") ? Number(params.get("page")) : undefined,
       limit: params.get("limit") ? Number(params.get("limit")) : undefined,

@@ -90,3 +90,39 @@ export async function listSubscribers(
     },
   };
 }
+
+/** Cap on how many subscribers a single CSV export may return. Above this we
+ *  refuse the request so an accidental full-list export can't blow up memory. */
+const EXPORT_ROW_CAP = 25_000;
+
+/**
+ * Stream every subscriber matching the given filter into a plain array, ready
+ * for CSV encoding. Ignores pagination on purpose — the admin export button is
+ * meant to hand a marketing lead the whole confirmed list. Bounded at
+ * `EXPORT_ROW_CAP` to keep the export path predictable.
+ */
+export async function listSubscribersForExport(
+  params: Pick<ListSubscribersParams, "q" | "status"> = {}
+): Promise<SubscriberEntry[]> {
+  const payload = await getPayloadClient();
+
+  const conditions: Where[] = [];
+  if (params.q) conditions.push({ email: { like: params.q } });
+  if (params.status === "confirmed") conditions.push({ confirmed: { equals: true } });
+  else if (params.status === "pending") conditions.push({ confirmed: { equals: false } });
+  const where: Where | undefined = conditions.length
+    ? conditions.length === 1 ? conditions[0] : { and: conditions }
+    : undefined;
+
+  const result = await payload.find({
+    collection: "subscribers",
+    where,
+    sort: "-createdAt",
+    limit: EXPORT_ROW_CAP,
+    pagination: false,
+    depth: 0,
+    overrideAccess: true,
+  });
+
+  return (result.docs as unknown as Array<Record<string, unknown>>).map(mapSubscriber);
+}

@@ -405,7 +405,10 @@ export function AboutPage() {
             ))}
           </div>
 
-          {/* Write for Kiribé CTA */}
+          {/* Write for Kiribé CTA — paired with an "All Articles" link so
+              About is never a dead end: readers who land here can click straight
+              through to the archive. The "All Articles" CTA is intentionally
+              hard-coded (not CMS-managed) so it can't be removed accidentally. */}
           <div className="mt-16 flex flex-col items-start justify-between gap-6 bg-surface-alt p-10 md:flex-row md:items-center">
             <div className="max-w-xl">
               <h3 className="font-headline text-xl font-normal text-burgundy">
@@ -417,13 +420,22 @@ export function AboutPage() {
                 cultural journalism.
               </p>
             </div>
-            <NextLink
-              href={PublicRoutes.contact}
-              className="inline-flex shrink-0 items-center gap-2 bg-burgundy px-8 py-3 font-headline text-sm uppercase tracking-[0.1em] text-white transition-colors hover:bg-burgundy-dark"
-            >
-              Pitch an Article
-              <ArrowForwardIcon sx={{ fontSize: 16 }} />
-            </NextLink>
+            <div className="flex flex-wrap gap-3">
+              <NextLink
+                href={PublicRoutes.articles}
+                className="inline-flex shrink-0 items-center gap-2 border border-burgundy bg-white px-8 py-3 font-headline text-sm uppercase tracking-[0.1em] text-burgundy transition-colors hover:bg-burgundy hover:text-white"
+              >
+                All Articles
+                <ArrowForwardIcon sx={{ fontSize: 16 }} />
+              </NextLink>
+              <NextLink
+                href={PublicRoutes.contact}
+                className="inline-flex shrink-0 items-center gap-2 bg-burgundy px-8 py-3 font-headline text-sm uppercase tracking-[0.1em] text-white transition-colors hover:bg-burgundy-dark"
+              >
+                Pitch an Article
+                <ArrowForwardIcon sx={{ fontSize: 16 }} />
+              </NextLink>
+            </div>
           </div>
         </div>
       </section>
