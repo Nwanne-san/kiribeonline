@@ -52,7 +52,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.80.0",
-    "resend": "^6.16.0",
+    "resend": "^6.18.1",
     "sharp": "^0.34.1",
     "tailwind-merge": "^3.4.0",
     "zod": "^3.23.8"
