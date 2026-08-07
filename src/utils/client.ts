@@ -6,7 +6,23 @@ import { ApiMethods } from "../../types/service";
 /** Site origin only — service paths already include `/api/...`. */
 function normalizeApiBaseUrl(url?: string): string | undefined {
   if (!url) return undefined;
-  return url.replace(/\/api\/?$/, "") || url;
+  const normalized = url.replace(/\/api\/?$/, "") || url;
+
+  // The public site and admin are served from different hosts. API paths are
+  // same-origin by design so Payload's session cookie and CSRF Origin checks
+  // work without CORS. A production NEXT_PUBLIC_API_URL pointing at the public
+  // apex must therefore not make admin.kiribeonline.com call across origins.
+  if (typeof window !== "undefined") {
+    try {
+      if (new URL(normalized, window.location.origin).origin !== window.location.origin) {
+        return undefined;
+      }
+    } catch {
+      return undefined;
+    }
+  }
+
+  return normalized;
 }
 
 const apiUrl = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);

@@ -129,7 +129,7 @@ Managed exclusively via **Vercel → Project → Settings → Environment Variab
 | Variable | Env | Notes |
 |---|---|---|
 | `NEXT_PUBLIC_APP_URL` | all | `https://kiribeonline.com` in prod. Full origin. |
-| `NEXT_PUBLIC_API_URL` | all | Usually same as APP_URL. |
+| `NEXT_PUBLIC_API_URL` | all | Leave empty for this multi-host deployment. Browser API requests then stay on the current origin (`admin.` stays on `admin.`), preserving the session cookie and avoiding CORS. |
 | `APP_URL` | all | Server-side canonical origin (invite links, redirects). |
 | `ENVIRONMENT` | all | `development` / `preview` / `staging` / `production`. |
 | `PRIMARY_HOST` | prod | `kiribeonline.com` (no `www.`). Middleware. |
