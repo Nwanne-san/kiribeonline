@@ -6,7 +6,23 @@ import {
   sendTransactionalEmail,
 } from "@/lib/email/resend";
 import { renderSubscribeConfirmationEmail } from "@/lib/email/templates/subscribe-confirmation";
+import { subscribeToNewsletter } from "@/server/newsletter";
 import type { SubscribeFormOutput } from "@/lib/validation/subscribe";
+
+/**
+ * Fire-and-forget push to Mailchimp. Runs on the same edge as the caller so
+ * we don't block the confirmation redirect on Mailchimp's response time, and
+ * a Mailchimp outage never regresses our own double-opt-in flow.
+ */
+function pushToMailchimp(email: string, source = "website"): void {
+  void subscribeToNewsletter({ email, source, alreadyConfirmed: true }).then(
+    (result) => {
+      if (!result.ok && result.reason !== "not-configured") {
+        console.warn(`[subscribe] Mailchimp sync failed: ${result.reason}`);
+      }
+    }
+  );
+}
 
 function newToken() {
   return randomBytes(24).toString("hex");
@@ -79,6 +95,7 @@ export async function submitSubscribe(input: SubscribeFormOutput) {
         data: { confirmed: true, confirmedAt: new Date().toISOString() } as never,
         overrideAccess: true,
       });
+      pushToMailchimp(input.email, "subscribe-auto-confirm");
       return {
         message: "You are subscribed. Watch your inbox for updates.",
         status: "confirmed" as const,
@@ -120,6 +137,7 @@ export async function submitSubscribe(input: SubscribeFormOutput) {
         overrideAccess: true,
       });
     }
+    pushToMailchimp(input.email, "subscribe-auto-confirm");
     return {
       message: "You are subscribed. Watch your inbox for updates.",
       status: "confirmed" as const,
@@ -159,5 +177,9 @@ export async function confirmSubscriber(token: string): Promise<{
     } as never,
     overrideAccess: true,
   });
+  // Read the confirmed email back off the row — we intentionally don't accept
+  // it as a route arg to avoid a token-mismatch attack.
+  const email = String((sub as { email?: unknown }).email ?? "");
+  if (email) pushToMailchimp(email, "double-opt-in");
   return { ok: true, status: "confirmed" };
 }

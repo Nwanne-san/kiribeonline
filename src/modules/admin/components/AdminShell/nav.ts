@@ -6,6 +6,7 @@ import PermMediaOutlined from "@mui/icons-material/PermMediaOutlined";
 import LayersOutlined from "@mui/icons-material/LayersOutlined";
 import NearMeOutlined from "@mui/icons-material/NearMeOutlined";
 import GroupOutlined from "@mui/icons-material/GroupOutlined";
+import RateReviewOutlined from "@mui/icons-material/RateReviewOutlined";
 import CalendarTodayOutlined from "@mui/icons-material/CalendarTodayOutlined";
 import QueryStatsOutlined from "@mui/icons-material/QueryStatsOutlined";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
@@ -63,6 +64,14 @@ export const NAV_GROUPS: NavGroup[] = [
         capability: "analytics:read",
       },
       { label: "Articles", icon: ArticleOutlined, route: AdminRoutes.articles },
+      {
+        // The approvals queue is available to everyone with articles:edit —
+        // writers see their own pieces waiting; editors see the full backlog.
+        label: "In Review",
+        icon: RateReviewOutlined,
+        route: AdminRoutes.review,
+        capability: "articles:edit",
+      },
       {
         label: "Categories & Tags",
         icon: SellOutlined,

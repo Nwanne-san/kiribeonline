@@ -21,6 +21,7 @@ import {
   formatCompact,
   type PillTone,
 } from "@/modules/admin/components/ui/AdminPrimitives";
+import { AdminConfirmDialog } from "@/modules/admin/components/ui/AdminDialog";
 import { TableSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
 import { usePermissions } from "@/modules/admin/hooks/usePermissions";
 import { AdminRoutes, adminRoute } from "@/routes/admin.routes";
@@ -268,14 +269,14 @@ export function ArticlesListPage() {
     },
   });
 
+  const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
+
   const runBulk = (action: "publish" | "unpublish" | "archive" | "delete") => {
     const ids = Array.from(selected);
     if (!ids.length) return;
     if (action === "delete") {
-      const ok = window.confirm(
-        `Delete ${ids.length} article${ids.length === 1 ? "" : "s"}? This cannot be undone.`
-      );
-      if (!ok) return;
+      setPendingDelete(ids);
+      return;
     }
     bulk.mutate({ ids, action });
   };
@@ -654,6 +655,24 @@ export function ArticlesListPage() {
           </div>
         </div>
       </div>
+
+      <AdminConfirmDialog
+        open={pendingDelete !== null}
+        tone="danger"
+        title="Delete articles?"
+        description={
+          pendingDelete
+            ? `${pendingDelete.length} article${pendingDelete.length === 1 ? "" : "s"} will be permanently removed. This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (pendingDelete) bulk.mutate({ ids: pendingDelete, action: "delete" });
+          setPendingDelete(null);
+        }}
+        isPending={bulk.isPending}
+      />
     </div>
   );
 }

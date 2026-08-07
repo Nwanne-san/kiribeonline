@@ -25,6 +25,7 @@ import { AdminRoutes } from "@/routes/admin.routes";
 import {
   actionBadge,
   actorName,
+  humanSummary,
   relativeTime,
   type ActivityItem,
 } from "@/modules/admin/lib/activity";
@@ -206,32 +207,41 @@ export function RecentActivityPage() {
           events.map((e) => {
             const badge = actionBadge(e.action);
             const isExpanded = expandedId === e.id;
-            const hasMeta = e.metadata && Object.keys(e.metadata).length > 0;
+            const summary = humanSummary(e);
+            const meta = (e.metadata ?? {}) as Record<string, unknown>;
+            const displayName = actorName(e.actorEmail);
+            const detailFields: Array<[string, string]> = [];
+            const prevStatus = typeof meta.previousStatus === "string" ? meta.previousStatus : undefined;
+            const nextStatus = typeof meta.nextStatus === "string" ? meta.nextStatus : undefined;
+            if (prevStatus && nextStatus && prevStatus !== nextStatus) {
+              detailFields.push(["Status", `${prevStatus} → ${nextStatus}`]);
+            } else if (nextStatus) {
+              detailFields.push(["Status", nextStatus]);
+            }
+            if (typeof meta.role === "string") detailFields.push(["Role", meta.role]);
+            if (typeof meta.emailSent === "boolean")
+              detailFields.push(["Email delivered", meta.emailSent ? "yes" : "no"]);
+            if (typeof meta.title === "string") detailFields.push(["Title", meta.title]);
+            if (e.targetType) detailFields.push(["Entity", e.targetType]);
+            if (e.targetId) detailFields.push(["ID", `#${e.targetId}`]);
+            if (e.actorEmail) detailFields.push(["Actor email", e.actorEmail]);
+            const hasDetail = detailFields.length > 0;
             return (
               <div key={e.id} className="px-5 py-4">
                 <div className="flex items-start gap-3">
-                  <InitialAvatar name={actorName(e.actorEmail)} className="mt-0.5 h-9 w-9" />
+                  <InitialAvatar name={displayName} className="mt-0.5 h-9 w-9" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-ink">
-                        {actorName(e.actorEmail)}
-                      </span>
+                      <span className="text-sm font-semibold text-ink">{displayName}</span>
                       <Pill tone={badge.tone}>{badge.label}</Pill>
-                      <code className="rounded-none bg-surface-muted px-1.5 py-0.5 font-mono text-[0.6875rem] text-ink-secondary">
-                        {e.action}
-                      </code>
                     </div>
-                    <div className="mt-0.5 text-xs capitalize text-muted">
-                      {e.targetType ? `${e.targetType}` : "—"}
-                      {e.targetId ? ` · #${e.targetId}` : ""}
-                      {e.actorEmail ? ` · ${e.actorEmail}` : ""}
-                    </div>
+                    <p className="mt-1 text-sm text-ink-secondary">{summary}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="whitespace-nowrap text-xs text-muted-soft">
                       {relativeTime(e.createdAt)}
                     </span>
-                    {hasMeta && (
+                    {hasDetail && (
                       <button
                         type="button"
                         onClick={() => setExpandedId(isExpanded ? null : e.id)}
@@ -247,10 +257,21 @@ export function RecentActivityPage() {
                     )}
                   </div>
                 </div>
-                {isExpanded && hasMeta && (
-                  <pre className="mt-3 overflow-x-auto rounded-none border border-border-soft bg-surface-muted p-3 text-[0.6875rem] leading-relaxed text-ink-secondary">
-                    {JSON.stringify(e.metadata, null, 2)}
-                  </pre>
+                {isExpanded && hasDetail && (
+                  <dl className="mt-3 grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1.5 border-l-2 border-mustard bg-surface-muted px-4 py-3 text-xs">
+                    {detailFields.map(([label, value]) => (
+                      <div key={label} className="contents">
+                        <dt className="font-semibold uppercase tracking-wide text-muted">
+                          {label}
+                        </dt>
+                        <dd className="break-words text-ink-secondary">{value}</dd>
+                      </div>
+                    ))}
+                    <div className="contents">
+                      <dt className="font-semibold uppercase tracking-wide text-muted">Event</dt>
+                      <dd className="font-mono text-[0.6875rem] text-muted">{e.action}</dd>
+                    </div>
+                  </dl>
                 )}
               </div>
             );

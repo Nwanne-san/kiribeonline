@@ -24,6 +24,32 @@ type ReelEditorPageProps = {
   reelId?: string;
 };
 
+const PLATFORM_HOST_PATTERN: Record<string, RegExp> = {
+  instagram: /(^|\.)instagram\.com$/i,
+  tiktok: /(^|\.)tiktok\.com$/i,
+  youtube: /(^|\.)(youtube\.com|youtu\.be)$/i,
+};
+
+/** Mirror of the server-side guard so we can flash the same error inline
+ *  before the user submits. */
+function validateReelUrl(url: string, platform: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return "That doesn’t look like a valid link. Paste the full URL, including https://.";
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return "Reel links must start with http:// or https://.";
+  }
+  const expected = PLATFORM_HOST_PATTERN[platform];
+  if (!expected || expected.test(parsed.hostname)) return null;
+  const label = platform === "instagram" ? "Instagram" : platform === "tiktok" ? "TikTok" : "YouTube";
+  return `The link doesn't match the selected platform (${label}). Paste an ${label} URL or change the platform.`;
+}
+
 export function ReelEditorPage({ reelId }: ReelEditorPageProps) {
   const router = useRouter();
   const isEdit = Boolean(reelId);
@@ -32,6 +58,7 @@ export function ReelEditorPage({ reelId }: ReelEditorPageProps) {
   const [platform, setPlatform] = useState("youtube");
   const [externalUrl, setExternalUrl] = useState("");
   const [thumbnail, setThumbnail] = useState<AdminMediaRef | null>(null);
+  const urlError = validateReelUrl(externalUrl, platform);
 
   useEffect(() => {
     if (!reelId) return;
@@ -65,7 +92,12 @@ export function ReelEditorPage({ reelId }: ReelEditorPageProps) {
   });
 
   const canSave =
-    title.trim() && label.trim() && externalUrl.trim() && thumbnail?.id && !isPending;
+    title.trim() &&
+    label.trim() &&
+    externalUrl.trim() &&
+    thumbnail?.id &&
+    !urlError &&
+    !isPending;
 
   const save = () => {
     if (!canSave) return;
@@ -132,6 +164,7 @@ export function ReelEditorPage({ reelId }: ReelEditorPageProps) {
               label="External URL"
               htmlFor="reel-url"
               required
+              error={urlError ?? undefined}
               hint="Instagram /reel/, TikTok /video/, YouTube /shorts/ or /watch."
             >
               <AdminInput
@@ -140,6 +173,7 @@ export function ReelEditorPage({ reelId }: ReelEditorPageProps) {
                 value={externalUrl}
                 onChange={(e) => setExternalUrl(e.target.value)}
                 placeholder="https://"
+                invalid={Boolean(urlError)}
               />
             </AdminField>
           </div>
