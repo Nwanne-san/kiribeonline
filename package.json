@@ -42,7 +42,7 @@
     "@vercel/analytics": "^2.0.1",
     "axios": "^1.12.2",
     "clsx": "^2.1.1",
-    "cross-env": "^7.0.3",
+    "cross-env": "^10.1.0",
     "eventemitter3": "^5.0.4",
     "graphql": "^16.10.0",
     "ioredis": "^5.11.1",
