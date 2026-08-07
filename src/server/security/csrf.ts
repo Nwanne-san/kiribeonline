@@ -48,10 +48,27 @@ function buildAllowlist(): Set<string> {
     process.env.NEXT_PUBLIC_API_URL,
   ].filter((value): value is string => Boolean(value));
   const raw = [...explicit, ...fallback];
-  const normalized = raw
-    .map(normalizeOrigin)
-    .filter((origin): origin is string => Boolean(origin));
-  return new Set(normalized);
+  const set = new Set<string>();
+
+  for (const item of raw) {
+    const norm = normalizeOrigin(item);
+    if (!norm) continue;
+    set.add(norm);
+    try {
+      const url = new URL(norm);
+      if (url.hostname.startsWith("www.")) {
+        const apex = `${url.protocol}//${url.hostname.slice(4)}${url.port ? `:${url.port}` : ""}`;
+        set.add(apex);
+      } else if (!url.hostname.includes("localhost") && !url.hostname.includes("127.0.0.1")) {
+        const www = `${url.protocol}//www.${url.hostname}${url.port ? `:${url.port}` : ""}`;
+        set.add(www);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return set;
 }
 
 function getAllowlist(): Set<string> {
@@ -103,5 +120,15 @@ export function assertSameOrigin(request: Request): void {
   if (!candidate) return;
 
   const allowlist = getAllowlist();
-  if (!allowlist.has(candidate)) throw new CsrfError();
+  if (allowlist.has(candidate)) return;
+
+  // Same-host validation: if candidate matches the incoming request's host/proto
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const proto = request.headers.get("x-forwarded-proto") ?? "https";
+  if (host) {
+    const reqOrigin = normalizeOrigin(`${proto}://${host}`);
+    if (reqOrigin && candidate === reqOrigin) return;
+  }
+
+  throw new CsrfError();
 }
