@@ -155,7 +155,7 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
 
         {isSuccess ? (
           <KiribeTypography sx={{ mt: 3, color: "primary.main", fontSize: "1rem", lineHeight: 1.6 }}>
-            Thanks — you're now subscribed to the Kiribé newsletter.
+            Thanks &mdash; you&rsquo;re now subscribed to the Kirib&eacute; newsletter.
           </KiribeTypography>
         ) : (
           <>
