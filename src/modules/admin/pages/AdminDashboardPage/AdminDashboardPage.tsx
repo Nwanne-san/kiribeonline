@@ -122,36 +122,59 @@ export function AdminDashboardPage() {
   });
 
   const a = data?.articles;
-  const tiles = [
+  // Tiles are gated by capability so a contributor's dashboard doesn't
+  // render "Total Views" or "Unread Messages" against numbers they can't
+  // use. The dashboard service already zeros those fields for roles
+  // without the matching capability; hiding the tile itself is cleaner
+  // UX than rendering "0" for a metric that doesn't apply to the caller.
+  const tiles: Array<{
+    label: string;
+    value: string | number;
+    sub?: string;
+    accent:
+      | "success"
+      | "warning"
+      | "brand"
+      | "info"
+      | "teal"
+      | "indigo"
+      | "neutral"
+      | "purple"
+      | "danger";
+    Icon: React.ComponentType<{ sx?: object; className?: string }>;
+  }> = [
     {
       label: "Published",
       value: a?.published ?? 0,
       sub: a?.publishedThisWeek ? `+${a.publishedThisWeek} this week` : undefined,
-      accent: "success" as const,
+      accent: "success",
       Icon: CheckCircleOutlined,
     },
-    { label: "Drafts", value: a?.draft ?? 0, accent: "warning" as const, Icon: EditOutlined },
-    // Editorial-queue tile — clicking should ideally deep-link to the In-review
-    // filter; wiring the tile navigation up is left to a UX pass once we
-    // confirm the click target with product.
-    { label: "In Review", value: a?.inReview ?? 0, accent: "brand" as const, Icon: RateReviewOutlined },
-    { label: "Scheduled", value: a?.scheduled ?? 0, accent: "info" as const, Icon: ScheduleOutlined },
-    { label: "Media Assets", value: data?.media ?? 0, accent: "teal" as const, Icon: PermMediaOutlined },
-    {
+    { label: "Drafts", value: a?.draft ?? 0, accent: "warning", Icon: EditOutlined },
+    { label: "In Review", value: a?.inReview ?? 0, accent: "brand", Icon: RateReviewOutlined },
+    { label: "Scheduled", value: a?.scheduled ?? 0, accent: "info", Icon: ScheduleOutlined },
+    { label: "Media Assets", value: data?.media ?? 0, accent: "teal", Icon: PermMediaOutlined },
+  ];
+  if (can("analytics:read")) {
+    tiles.push({
       label: "Total Views",
       value: formatCompact(data?.totalViews ?? 0),
-      accent: "indigo" as const,
+      accent: "indigo",
       Icon: VisibilityOutlined,
-    },
-    {
+    });
+  }
+  if (can("settings:manage")) {
+    tiles.push({
       label: "Unread Messages",
       value: data?.unreadMessages ?? 0,
-      accent: "neutral" as const,
+      accent: "neutral",
       Icon: ChatBubbleOutlineOutlined,
-    },
-    { label: "Categories", value: data?.categories ?? 0, accent: "purple" as const, Icon: SellOutlined },
-    { label: "Tags", value: data?.tags ?? 0, accent: "danger" as const, Icon: LocalOfferOutlined },
-  ];
+    });
+  }
+  tiles.push(
+    { label: "Categories", value: data?.categories ?? 0, accent: "purple", Icon: SellOutlined },
+    { label: "Tags", value: data?.tags ?? 0, accent: "danger", Icon: LocalOfferOutlined },
+  );
 
   const performance = data?.contentPerformance ?? [];
   const activity = data?.recentActivity ?? [];
@@ -178,12 +201,16 @@ export function AdminDashboardPage() {
           <AdminButton variant="secondary" leftIcon={<FileUploadOutlined sx={{ fontSize: 16 }} />} onClick={() => router.push(AdminRoutes.media)}>
             Upload Media
           </AdminButton>
-          <AdminButton variant="secondary" leftIcon={<SellOutlined sx={{ fontSize: 16 }} />} onClick={() => router.push(AdminRoutes.categories)}>
-            Add Category
-          </AdminButton>
-          <AdminButton variant="secondary" leftIcon={<HomeOutlined sx={{ fontSize: 16 }} />} onClick={() => router.push(AdminRoutes.homepage)}>
-            Homepage
-          </AdminButton>
+          {can("taxonomy:manage") && (
+            <AdminButton variant="secondary" leftIcon={<SellOutlined sx={{ fontSize: 16 }} />} onClick={() => router.push(AdminRoutes.categories)}>
+              Add Category
+            </AdminButton>
+          )}
+          {can("homepage:manage") && (
+            <AdminButton variant="secondary" leftIcon={<HomeOutlined sx={{ fontSize: 16 }} />} onClick={() => router.push(AdminRoutes.homepage)}>
+              Homepage
+            </AdminButton>
+          )}
         </div>
       </div>
 
@@ -198,95 +225,134 @@ export function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Performance + Activity — the activity tile is gated on `audit:view`
-          server-side (see /api/admin/dashboard) so writers/contributors get a
-          performance-only row rather than seeing other users' actions. */}
-      <div
-        className={`grid gap-5 ${can("audit:view") ? "lg:grid-cols-[1.6fr_1fr]" : ""}`}
-      >
-        <AdminPanel
-          title="Content Performance"
-          action={<PanelLink label="View Analytics" onClick={() => router.push(AdminRoutes.analytics)} />}
+      {/* Performance + Activity — each panel is gated on its own capability.
+          - Content Performance needs `analytics:read` (top articles by views).
+          - Recent Activity needs `audit:view` (other users' actions).
+          Grid layout adapts: two panels side-by-side when both present, one
+          full-width column when only one, both hidden for a contributor. */}
+      {(can("analytics:read") || can("audit:view")) && (
+        <div
+          className={`grid gap-5 ${
+            can("analytics:read") && can("audit:view")
+              ? "lg:grid-cols-[1.6fr_1fr]"
+              : ""
+          }`}
         >
-          {isLoading ? (
-            <TableSkeleton rows={5} cols={5} />
-          ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-sm">
-              <thead>
-                <tr className="border-b border-border-soft text-left text-[0.6875rem] uppercase tracking-[0.08em] text-muted-soft">
-                  <th className="px-5 py-2.5 font-semibold">#</th>
-                  <th className="px-2 py-2.5 font-semibold">Article</th>
-                  <th className="px-2 py-2.5 font-semibold">Category</th>
-                  <th className="px-2 py-2.5 font-semibold">Author</th>
-                  <th className="px-5 py-2.5 text-right font-semibold">Views</th>
-                </tr>
-              </thead>
-              <tbody>
-                {performance.map((item, i) => {
-                  const cat = item.categories[0];
+          {can("analytics:read") && (
+            <AdminPanel
+              title="Content Performance"
+              action={
+                <PanelLink
+                  label="View Analytics"
+                  onClick={() => router.push(AdminRoutes.analytics)}
+                />
+              }
+            >
+              {isLoading ? (
+                <TableSkeleton rows={5} cols={5} />
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px] text-sm">
+                    <thead>
+                      <tr className="border-b border-border-soft text-left text-[0.6875rem] uppercase tracking-[0.08em] text-muted-soft">
+                        <th className="px-5 py-2.5 font-semibold">#</th>
+                        <th className="px-2 py-2.5 font-semibold">Article</th>
+                        <th className="px-2 py-2.5 font-semibold">Category</th>
+                        <th className="px-2 py-2.5 font-semibold">Author</th>
+                        <th className="px-5 py-2.5 text-right font-semibold">Views</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {performance.map((item, i) => {
+                        const cat = item.categories[0];
+                        return (
+                          <tr
+                            key={item.id}
+                            onClick={() =>
+                              router.push(
+                                adminRoute(AdminRoutes.articleEdit, { id: item.id })
+                              )
+                            }
+                            className="cursor-pointer border-b border-border-soft transition-colors last:border-0 hover:bg-surface-alt"
+                          >
+                            <td className="px-5 py-3 text-muted-soft">{i + 1}</td>
+                            <td className="px-2 py-3 font-medium text-ink">
+                              <span className="line-clamp-1">{item.title}</span>
+                            </td>
+                            <td className="px-2 py-3">
+                              {cat ? (
+                                <CategoryTag
+                                  label={cat.name}
+                                  color={categoryColor(cat.slug)}
+                                />
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className="px-2 py-3 text-ink-secondary">
+                              {item.author?.name ?? item.author?.email ?? "—"}
+                            </td>
+                            <td className="px-5 py-3 text-right tabular-nums text-ink-secondary">
+                              {item.viewCount.toLocaleString()}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {performance.length === 0 && (
+                        <EmptyRow colSpan={5} label="No published articles yet." />
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </AdminPanel>
+          )}
+
+          {can("audit:view") && (
+            <AdminPanel
+              title="Recent Activity"
+              action={
+                <PanelLink
+                  label="See All"
+                  onClick={() => router.push(AdminRoutes.recentActivity)}
+                />
+              }
+              bodyClassName={isLoading ? "" : "divide-y divide-border-soft"}
+            >
+              {isLoading && <ListSkeleton rows={6} />}
+              {!isLoading &&
+                activity.map((item) => {
+                  const badge = actionBadge(item.action);
                   return (
-                    <tr
-                      key={item.id}
-                      onClick={() => router.push(adminRoute(AdminRoutes.articleEdit, { id: item.id }))}
-                      className="cursor-pointer border-b border-border-soft transition-colors last:border-0 hover:bg-surface-alt"
-                    >
-                      <td className="px-5 py-3 text-muted-soft">{i + 1}</td>
-                      <td className="px-2 py-3 font-medium text-ink">
-                        <span className="line-clamp-1">{item.title}</span>
-                      </td>
-                      <td className="px-2 py-3">
-                        {cat ? <CategoryTag label={cat.name} color={categoryColor(cat.slug)} /> : "—"}
-                      </td>
-                      <td className="px-2 py-3 text-ink-secondary">
-                        {item.author?.name ?? item.author?.email ?? "—"}
-                      </td>
-                      <td className="px-5 py-3 text-right tabular-nums text-ink-secondary">
-                        {item.viewCount.toLocaleString()}
-                      </td>
-                    </tr>
+                    <div key={item.id} className="flex items-start gap-3 px-5 py-3">
+                      <InitialAvatar
+                        name={actorName(item.actorEmail)}
+                        className="mt-0.5 h-8 w-8"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[0.8125rem] font-semibold text-ink">
+                            {actorName(item.actorEmail)}
+                          </span>
+                          <Pill tone={badge.tone}>{badge.label}</Pill>
+                        </div>
+                        <div className="mt-0.5 text-xs text-muted">
+                          {item.targetType ? `${item.targetType} · ` : ""}
+                          {relativeTime(item.createdAt)}
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
-                {performance.length === 0 && <EmptyRow colSpan={5} label="No published articles yet." />}
-              </tbody>
-            </table>
-          </div>
-          )}
-        </AdminPanel>
-
-        {can("audit:view") && (
-        <AdminPanel
-          title="Recent Activity"
-          action={<PanelLink label="See All" onClick={() => router.push(AdminRoutes.recentActivity)} />}
-          bodyClassName={isLoading ? "" : "divide-y divide-border-soft"}
-        >
-          {isLoading && <ListSkeleton rows={6} />}
-          {!isLoading && activity.map((item) => {
-            const badge = actionBadge(item.action);
-            return (
-              <div key={item.id} className="flex items-start gap-3 px-5 py-3">
-                <InitialAvatar name={actorName(item.actorEmail)} className="mt-0.5 h-8 w-8" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[0.8125rem] font-semibold text-ink">
-                      {actorName(item.actorEmail)}
-                    </span>
-                    <Pill tone={badge.tone}>{badge.label}</Pill>
-                  </div>
-                  <div className="mt-0.5 text-xs text-muted">
-                    {item.targetType ? `${item.targetType} · ` : ""}
-                    {relativeTime(item.createdAt)}
-                  </div>
+              {!isLoading && activity.length === 0 && (
+                <div className="px-5 py-8 text-center text-sm text-muted-soft">
+                  No recent activity.
                 </div>
-              </div>
-            );
-          })}
-          {!isLoading && activity.length === 0 && (
-            <div className="px-5 py-8 text-center text-sm text-muted-soft">No recent activity.</div>
+              )}
+            </AdminPanel>
           )}
-        </AdminPanel>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Scheduled + Recently updated */}
       <div className="grid gap-5 lg:grid-cols-2">
