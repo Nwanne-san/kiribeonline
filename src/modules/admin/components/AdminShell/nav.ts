@@ -58,10 +58,13 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       {
+        // Every authenticated admin lands here — the dashboard itself
+        // adapts its tiles/panels to the caller's capabilities. See
+        // AdminDashboardPage + /api/admin/dashboard for the per-role
+        // response shaping.
         label: "Dashboard",
         icon: GridViewOutlined,
         route: AdminRoutes.dashboard,
-        capability: "analytics:read",
       },
       { label: "Articles", icon: ArticleOutlined, route: AdminRoutes.articles },
       {
