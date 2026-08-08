@@ -56,8 +56,70 @@ if (
   );
 }
 
+/**
+ * Origins Payload's cookie strategy will honour when extracting the session
+ * token. Payload auto-adds `serverURL` (the public apex) and then, if the
+ * request's `Origin` header isn't in this list, it silently DROPS the cookie
+ * on `payload.auth()` — turning every authenticated call from a different
+ * host into a 401. Since Kiribé now serves the admin from a separate host
+ * (`admin.kiribeonline.com`) via middleware rewrite, we have to explicitly
+ * teach Payload about that origin too, or admin writes fail across the board.
+ *
+ * The list is env-driven so previews (Vercel *.vercel.app) and staging pick
+ * up the right values automatically. Duplicates de-dupe via Set.
+ */
+function buildPayloadCsrfOrigins(): string[] {
+  const origins = new Set<string>();
+  const push = (value?: string) => {
+    if (!value) return;
+    try {
+      origins.add(new URL(value).origin);
+    } catch {
+      // Ignore malformed entries — never poison the allowlist.
+    }
+  };
+
+  push(process.env.NEXT_PUBLIC_APP_URL);
+  push(process.env.APP_URL);
+
+  const primary = process.env.PRIMARY_HOST;
+  if (primary) {
+    push(`https://${primary}`);
+    push(`https://www.${primary}`);
+  }
+  const admin = process.env.ADMIN_HOST;
+  if (admin) push(`https://${admin}`);
+
+  // Explicit override wins — an operator can add a staging preview or a
+  // partner origin here without editing config.
+  const explicit = (process.env.CSRF_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  explicit.forEach(push);
+
+  // Vercel injects these at build time. VERCEL_URL is the specific deploy;
+  // VERCEL_BRANCH_URL is the stable per-branch alias; VERCEL_PROJECT_PRODUCTION_URL
+  // is the project's production domain. All three matter for preview + prod.
+  if (process.env.VERCEL_URL) push(`https://${process.env.VERCEL_URL}`);
+  if (process.env.VERCEL_BRANCH_URL) push(`https://${process.env.VERCEL_BRANCH_URL}`);
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL)
+    push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+
+  if (process.env.NODE_ENV !== "production") {
+    push("http://localhost:3000");
+    push("http://admin.localhost:3000");
+  }
+
+  return Array.from(origins);
+}
+
 export default buildConfig({
   serverURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  // Payload's cookie strategy honours only origins listed here — see
+  // buildPayloadCsrfOrigins() above. Without the admin subdomain in this
+  // list, every authenticated admin call from admin.kiribeonline.com 401s.
+  csrf: buildPayloadCsrfOrigins(),
   routes: {
     admin: "/payload-studio",
   },
