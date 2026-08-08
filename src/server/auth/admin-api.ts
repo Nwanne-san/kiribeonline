@@ -20,7 +20,6 @@ function extractPayloadValidation(
     data?: unknown;
     status?: number;
   };
-  if (e.name !== "ValidationError") return null;
 
   // Payload's ValidationError.data is either an array of field errors or
   // `{ errors: [...] }` depending on version.
@@ -31,16 +30,30 @@ function extractPayloadValidation(
       ? ((raw as { errors: PayloadFieldError[] }).errors)
       : [];
 
+  // Detect by shape, not by class name. Payload's ValidationError class name
+  // gets minified in the production build (observed as `h:` in server logs)
+  // so `e.name === "ValidationError"` false-negatives on prod and every
+  // validation error became a generic 500. A well-formed field-error array
+  // paired with the 400 status Payload assigns is the canonical signal.
+  const looksLikeValidation =
+    list.length > 0 && list.every((item) => typeof item?.message === "string");
+  const isPayloadValidation =
+    e.name === "ValidationError" || (looksLikeValidation && e.status === 400);
+  if (!isPayloadValidation) return null;
+
   const errors: Record<string, string[]> = {};
   for (const item of list) {
     const key = item.path || item.field || item.label || "form";
     (errors[key] ??= []).push(item.message);
   }
 
-  return {
-    message: e.message || "Some fields are invalid.",
-    errors,
-  };
+  // Prefer the specific field message over Payload's generic
+  // "The following field is invalid: <path>" summary. Editors need to see
+  // *what* to fix, not just which field to look at.
+  const primaryMessage =
+    list.length === 1 ? list[0].message : e.message || "Some fields are invalid.";
+
+  return { message: primaryMessage, errors };
 }
 
 export function handleAdminAuthError(error: unknown) {
