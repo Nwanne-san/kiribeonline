@@ -20,7 +20,10 @@ test.describe("Admin login", () => {
     await page.getByRole("textbox", { name: /^Password/ }).fill("definitely-not-the-password");
     await page.getByRole("button", { name: /sign in/i }).click();
 
-    await expect(page.getByText(/invalid email or password/i)).toBeVisible();
+    // Target the inline alert banner specifically — the same copy also fires
+    // in a toast, which would trip Playwright's strict-mode uniqueness check
+    // if we matched by text alone.
+    await expect(page.getByRole("alert")).toContainText(/invalid email or password/i);
     // Still on the login screen.
     expect(new URL(page.url()).pathname).toBe("/admin/login");
   });

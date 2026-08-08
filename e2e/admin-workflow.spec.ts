@@ -84,23 +84,41 @@ test.describe("Admin workflow — In-Review + calendar + reels validation", () =
 
     // The default view shows the current month. Apply an explicit range that
     // spans today → 3 days out so the newly-scheduled article definitely
-    // falls into the visible window.
+    // falls into the visible window. Target the explicit aria-labels the
+    // filter inputs carry so we don't collide with any other "To" text on
+    // the page.
     const today = new Date().toISOString().slice(0, 10);
     const rangeEnd = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
-    await page.getByLabel("From").fill(today);
-    await page.getByLabel("To").fill(rangeEnd);
+    await page.getByLabel("Filter calendar from date").fill(today);
+    await page.getByLabel("Filter calendar to date").fill(rangeEnd);
 
     await expect(page.getByText(scheduledTitle)).toBeVisible({ timeout: 10_000 });
   });
 
   test("reels form rejects a mismatched platform URL", async ({ page }) => {
+    // The reels create endpoint requires a valid thumbnailId (Zod pre-check).
+    // Pull a real media id from the seeded library so the request survives
+    // schema validation and reaches the Payload beforeValidate hook where the
+    // platform-URL guard actually lives.
+    const mediaRes = await page.request.get("/api/admin/media?limit=1");
+    expect(mediaRes.status()).toBe(200);
+    const mediaJson = await mediaRes.json();
+    const mediaDocs: Array<{ id: string | number }> =
+      mediaJson.data?.docs ?? mediaJson.docs ?? [];
+    expect(
+      mediaDocs.length,
+      "smoke media library must contain at least one asset (seed step)"
+    ).toBeGreaterThan(0);
+    const thumbnailId = mediaDocs[0].id;
+
     // Server-level rejection is the guarantee. Post a TikTok URL under the
-    // Instagram platform and expect a validation error.
+    // Instagram platform and expect the hook's mismatch error.
     const bad = await page.request.post("/api/admin/reels", {
       data: {
         title: "Mismatched reel",
         label: "TEST",
         platform: "instagram",
+        thumbnailId,
         externalUrl: "https://www.tiktok.com/@user/video/1234567890",
       },
     });
