@@ -6,10 +6,15 @@
  * POSTs, and the server rejects anything whose `Origin` (or `Referer` when
  * absent) doesn't match a trusted origin. See docs/AUTH-HARDENING.md.
  *
+ * The allowlist comes from `buildAllowedOrigins()` (shared with Payload's own
+ * cookie extractor), so one env change updates both defenses.
+ *
  * Usage: call `assertSameOrigin(request)` at the top of every mutation handler
  * (admin writes go through `requireAdminWrite`, which wraps this). Read-only
  * handlers do not need to call it — GET/HEAD/OPTIONS are exempt.
  */
+
+import { buildAllowedOrigins } from "@/lib/security/allowed-origins";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -22,59 +27,21 @@ export class CsrfError extends Error {
 }
 
 /**
- * Env-configured allowlist, cached after first read. Reload the module (server
- * restart) after changing envs — matches how our rate-limit constants behave.
+ * Cached after first read. Reload the module (server restart) after changing
+ * envs — matches how our rate-limit constants behave.
  */
 let cachedAllowlist: Set<string> | null = null;
 
 function normalizeOrigin(raw: string): string | null {
   try {
-    const url = new URL(raw);
-    // Origin is scheme + host + port, no path/hash/query. `URL#origin` handles
-    // default-port stripping (`:80`/`:443`) so we don't need to.
-    return url.origin;
+    return new URL(raw).origin;
   } catch {
     return null;
   }
 }
 
-function buildAllowlist(): Set<string> {
-  const explicit = (process.env.CSRF_ALLOWED_ORIGINS ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const fallback = [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.NEXT_PUBLIC_API_URL,
-  ].filter((value): value is string => Boolean(value));
-  const raw = [...explicit, ...fallback];
-  const set = new Set<string>();
-
-  for (const item of raw) {
-    const norm = normalizeOrigin(item);
-    if (!norm) continue;
-    set.add(norm);
-    try {
-      const url = new URL(norm);
-      if (url.hostname.startsWith("www.")) {
-        const apex = `${url.protocol}//${url.hostname.slice(4)}${url.port ? `:${url.port}` : ""}`;
-        set.add(apex);
-      } else if (!url.hostname.includes("localhost") && !url.hostname.includes("127.0.0.1")) {
-        const www = `${url.protocol}//www.${url.hostname}${url.port ? `:${url.port}` : ""}`;
-        set.add(www);
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  return set;
-}
-
 function getAllowlist(): Set<string> {
-  if (!cachedAllowlist) {
-    cachedAllowlist = buildAllowlist();
-  }
+  if (!cachedAllowlist) cachedAllowlist = new Set(buildAllowedOrigins());
   return cachedAllowlist;
 }
 
