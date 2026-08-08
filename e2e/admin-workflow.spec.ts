@@ -97,19 +97,34 @@ test.describe("Admin workflow — In-Review + calendar + reels validation", () =
 
   test("reels form rejects a mismatched platform URL", async ({ page }) => {
     // The reels create endpoint requires a valid thumbnailId (Zod pre-check).
-    // Pull a real media id from the seeded library so the request survives
-    // schema validation and reaches the Payload beforeValidate hook where the
-    // platform-URL guard actually lives.
-    const mediaRes = await page.request.get("/api/admin/media?limit=1");
-    expect(mediaRes.status()).toBe(200);
-    const mediaJson = await mediaRes.json();
-    const mediaDocs: Array<{ id: string | number }> =
-      mediaJson.data?.docs ?? mediaJson.docs ?? [];
-    expect(
-      mediaDocs.length,
-      "smoke media library must contain at least one asset (seed step)"
-    ).toBeGreaterThan(0);
-    const thumbnailId = mediaDocs[0].id;
+    // Prefer any already-seeded media, otherwise upload a 1×1 PNG on the fly
+    // — the CI e2e job starts against a fresh DB and the seed doesn't include
+    // media assets, so the "pull from library" path can't be assumed.
+    const listRes = await page.request.get("/api/admin/media?limit=1");
+    const listJson = listRes.ok() ? await listRes.json() : { data: { docs: [] } };
+    const listedDocs: Array<{ id: string | number }> =
+      listJson.data?.docs ?? listJson.docs ?? [];
+
+    let thumbnailId: string | number;
+    if (listedDocs.length > 0) {
+      thumbnailId = listedDocs[0].id;
+    } else {
+      const TINY_PNG = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgAAIAAAUAAeImBZsAAAAASUVORK5CYII=",
+        "base64"
+      );
+      const uploaded = await page.request.post("/api/admin/media", {
+        multipart: {
+          alt: `e2e-reel-thumbnail-${Date.now()}`,
+          file: { name: "reel-thumb.png", mimeType: "image/png", buffer: TINY_PNG },
+        },
+      });
+      expect(uploaded.status(), await uploaded.text()).toBe(200);
+      const uploadedJson = await uploaded.json();
+      const doc = uploadedJson.data ?? uploadedJson;
+      thumbnailId = doc.id ?? doc.doc?.id;
+      expect(thumbnailId).toBeTruthy();
+    }
 
     // Server-level rejection is the guarantee. Post a TikTok URL under the
     // Instagram platform and expect the hook's mismatch error.

@@ -21,9 +21,10 @@ test.describe("Admin login", () => {
     await page.getByRole("button", { name: /sign in/i }).click();
 
     // Target the inline alert banner specifically — the same copy also fires
-    // in a toast, which would trip Playwright's strict-mode uniqueness check
-    // if we matched by text alone.
-    await expect(page.getByRole("alert")).toContainText(/invalid email or password/i);
+    // in a toast and there's a live-region announcer sitting outside the
+    // form, so `getByRole('alert')` alone resolves to 3 elements. The
+    // testid pins us to the banner.
+    await expect(page.getByTestId("login-error")).toContainText(/invalid email or password/i);
     // Still on the login screen.
     expect(new URL(page.url()).pathname).toBe("/admin/login");
   });
