@@ -20,7 +20,11 @@ test.describe("Admin login", () => {
     await page.getByRole("textbox", { name: /^Password/ }).fill("definitely-not-the-password");
     await page.getByRole("button", { name: /sign in/i }).click();
 
-    await expect(page.getByText(/invalid email or password/i)).toBeVisible();
+    // Target the inline alert banner specifically — the same copy also fires
+    // in a toast and there's a live-region announcer sitting outside the
+    // form, so `getByRole('alert')` alone resolves to 3 elements. The
+    // testid pins us to the banner.
+    await expect(page.getByTestId("login-error")).toContainText(/invalid email or password/i);
     // Still on the login screen.
     expect(new URL(page.url()).pathname).toBe("/admin/login");
   });
