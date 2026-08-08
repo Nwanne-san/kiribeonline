@@ -215,6 +215,11 @@ export function EditorialCalendarPage() {
               value={rangeFrom}
               onChange={(e) => setRangeFrom(e.target.value)}
               max={rangeTo || undefined}
+              // Explicit aria-label so e2e locators (and screen readers) can
+              // uniquely target the filter input — a bare "From" or "To"
+              // collides with other admin controls that carry the same
+              // short text on the page.
+              aria-label="Filter calendar from date"
               className="w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
             />
           </label>
@@ -227,6 +232,7 @@ export function EditorialCalendarPage() {
               value={rangeTo}
               onChange={(e) => setRangeTo(e.target.value)}
               min={rangeFrom || undefined}
+              aria-label="Filter calendar to date"
               className="w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
             />
           </label>

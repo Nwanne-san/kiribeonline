@@ -1,4 +1,5 @@
 import type { CollectionBeforeValidateHook } from "payload";
+import { ValidationError } from "payload";
 
 type ReelPlatform = "instagram" | "tiktok" | "youtube";
 
@@ -19,7 +20,19 @@ const PLATFORM_HOSTS: Record<ReelPlatform, RegExp> = {
  *
  * Also rejects anything that isn't a valid http(s) URL up front so garbage
  * pastes ("copy this link", `javascript:...`) never make it into the row.
+ *
+ * Errors are thrown as Payload `ValidationError`s so the admin API's
+ * `extractPayloadValidation` shapes them into a 400 with the message intact.
+ * Plain `throw new Error(...)` would leak through as a generic 500 (the
+ * message would land in server logs but never reach the editor).
  */
+function fieldError(message: string): never {
+  throw new ValidationError({
+    collection: "reels",
+    errors: [{ path: "externalUrl", message }],
+  });
+}
+
 export const validateReelExternalUrl: CollectionBeforeValidateHook = ({
   data,
 }) => {
@@ -32,13 +45,13 @@ export const validateReelExternalUrl: CollectionBeforeValidateHook = ({
   try {
     url = new URL(raw.trim());
   } catch {
-    throw new Error(
+    fieldError(
       "That doesn’t look like a valid link. Paste the full URL, including https://."
     );
   }
 
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error("Reel links must start with http:// or https://.");
+    fieldError("Reel links must start with http:// or https://.");
   }
 
   const expected = PLATFORM_HOSTS[platform];
@@ -48,7 +61,7 @@ export const validateReelExternalUrl: CollectionBeforeValidateHook = ({
       platform === "instagram" ? "Instagram"
         : platform === "tiktok" ? "TikTok"
           : "YouTube";
-    throw new Error(
+    fieldError(
       `The link doesn't match the selected platform (${label}). Paste an ${label} URL or change the platform.`
     );
   }

@@ -42,6 +42,22 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await requireAdminWriteCapability(request, "media:upload");
+
+    // Pre-check Content-Length before touching request.formData(). Very large
+    // multipart payloads can throw undici internal errors during parsing on
+    // certain Node/undici combos (observed as `controller[kState].transformAlgorithm
+    // is not a function`) — that would surface to the client as a 500 instead
+    // of the intended 413. Refusing on the header alone is cheap, fires before
+    // any body I/O, and stays truthful because the header covers the whole body
+    // (including the multipart boundary overhead).
+    const contentLength = request.headers.get("content-length");
+    if (contentLength && Number(contentLength) > MAX_UPLOAD_BYTES) {
+      return apiError(
+        `File exceeds the ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB upload limit.`,
+        413,
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file");
     const alt = String(formData.get("alt") ?? "").trim();
