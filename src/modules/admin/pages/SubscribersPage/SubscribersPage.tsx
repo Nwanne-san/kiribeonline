@@ -1,5 +1,6 @@
 "use client";
 
+import CalendarTodayOutlined from "@mui/icons-material/CalendarTodayOutlined";
 import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
@@ -54,7 +55,11 @@ const STATUS_TABS: { label: string; value: "" | "confirmed" | "pending" }[] = [
   { label: "Pending", value: "pending" },
 ];
 
-const PARAM = { status: "status" } as const;
+const PARAM = {
+  status: "status",
+  subscribedFrom: "subscribedFrom",
+  subscribedTo: "subscribedTo",
+} as const;
 
 export function SubscribersPage() {
   const router = useRouter();
@@ -65,6 +70,8 @@ export function SubscribersPage() {
   const { value: search, setValue: setSearch, debouncedValue } = useDebouncedUrlParam();
 
   const status = searchParams.get(PARAM.status) ?? "";
+  const subscribedFrom = searchParams.get(PARAM.subscribedFrom) ?? "";
+  const subscribedTo = searchParams.get(PARAM.subscribedTo) ?? "";
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -84,10 +91,12 @@ export function SubscribersPage() {
     const qs = new URLSearchParams();
     if (debouncedValue) qs.set("q", debouncedValue);
     if (status) qs.set("status", status);
+    if (subscribedFrom) qs.set("subscribedFrom", subscribedFrom);
+    if (subscribedTo) qs.set("subscribedTo", subscribedTo);
     qs.set("page", String(page));
     qs.set("limit", String(limit));
     return `/api/admin/subscribers?${qs.toString()}`;
-  }, [debouncedValue, status, page, limit]);
+  }, [debouncedValue, status, subscribedFrom, subscribedTo, page, limit]);
 
   const { data, isLoading, isFetching } = useQueryService<
     Record<string, never>,
@@ -97,7 +106,7 @@ export function SubscribersPage() {
     options: {
       keys: ["admin", "subscribers"],
       keepPreviousData: true,
-      filterFingerprint: `${status}|${limit}`,
+      filterFingerprint: `${status}|${limit}|${subscribedFrom}|${subscribedTo}`,
       searchQuery: debouncedValue,
     },
   });
@@ -106,6 +115,18 @@ export function SubscribersPage() {
   const stats = data?.stats ?? { total: 0, confirmed: 0, pending: 0 };
   const totalPages = data?.totalPages ?? 1;
   const activeTab = STATUS_TABS.findIndex((t) => t.value === status);
+
+  /** Build the export URL reflecting all active filters including date range. */
+  const buildExportUrl = () => {
+    const qs = new URLSearchParams();
+    if (debouncedValue) qs.set("q", debouncedValue);
+    if (status) qs.set("status", status);
+    if (subscribedFrom) qs.set("subscribedFrom", subscribedFrom);
+    if (subscribedTo) qs.set("subscribedTo", subscribedTo);
+    return `/api/admin/subscribers/export.csv${qs.toString() ? `?${qs.toString()}` : ""}`;
+  };
+
+  const hasDateFilter = Boolean(subscribedFrom || subscribedTo);
 
   return (
     <div className="space-y-5">
@@ -123,13 +144,7 @@ export function SubscribersPage() {
           variant="secondary"
           leftIcon={<FileDownloadOutlined sx={{ fontSize: 16 }} />}
           onClick={() => {
-            // Reuse the same filter params on screen so what the operator sees
-            // matches what lands in the file.
-            const qs = new URLSearchParams();
-            if (debouncedValue) qs.set("q", debouncedValue);
-            if (status) qs.set("status", status);
-            const url = `/api/admin/subscribers/export.csv${qs.toString() ? `?${qs.toString()}` : ""}`;
-            window.location.href = url;
+            window.location.href = buildExportUrl();
           }}
           disabled={stats.total === 0}
         >
@@ -160,32 +175,82 @@ export function SubscribersPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-col gap-3 rounded-none border border-border bg-surface p-3 shadow-card lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-1.5">
-          {STATUS_TABS.map((t, i) => (
-            <button
-              key={t.label}
-              type="button"
-              onClick={() => updateParams({ [PARAM.status]: t.value || null })}
-              className={`rounded-none px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
-                activeTab === i
-                  ? "bg-[#6b1d2a] text-white"
-                  : "border border-border text-ink-secondary hover:bg-surface-muted"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+      <div className="flex flex-col gap-3 rounded-none border border-border bg-surface p-3 shadow-card">
+        {/* Row 1: status tabs + search */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-1.5">
+            {STATUS_TABS.map((t, i) => (
+              <button
+                key={t.label}
+                type="button"
+                onClick={() => updateParams({ [PARAM.status]: t.value || null })}
+                className={`rounded-none px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide transition-colors ${
+                  activeTab === i
+                    ? "bg-[#6b1d2a] text-white"
+                    : "border border-border text-ink-secondary hover:bg-surface-muted"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex min-w-0 items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2 lg:w-72">
+            <SearchRounded sx={{ fontSize: 18 }} className="shrink-0 text-muted-soft" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by email…"
+              className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted-soft"
+            />
+          </div>
         </div>
-        <div className="flex min-w-0 items-center gap-2 rounded-none border border-border bg-surface-alt px-3 py-2 lg:w-72">
-          <SearchRounded sx={{ fontSize: 18 }} className="shrink-0 text-muted-soft" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by email…"
-            className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted-soft"
-          />
+
+        {/* Row 2: date range filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <CalendarTodayOutlined sx={{ fontSize: 15 }} className="shrink-0 text-muted-soft" />
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-ink-secondary">
+            Subscribed
+          </span>
+          <div className="flex items-center gap-1.5">
+            <input
+              id="sub-from"
+              type="date"
+              value={subscribedFrom}
+              onChange={(e) =>
+                updateParams({ [PARAM.subscribedFrom]: e.target.value || null })
+              }
+              max={subscribedTo || undefined}
+              aria-label="Subscribed from"
+              className="rounded-none border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+            />
+            <span className="text-xs text-muted-soft">→</span>
+            <input
+              id="sub-to"
+              type="date"
+              value={subscribedTo}
+              onChange={(e) =>
+                updateParams({ [PARAM.subscribedTo]: e.target.value || null })
+              }
+              min={subscribedFrom || undefined}
+              aria-label="Subscribed to"
+              className="rounded-none border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+            />
+          </div>
+          {hasDateFilter && (
+            <button
+              type="button"
+              onClick={() =>
+                updateParams({
+                  [PARAM.subscribedFrom]: null,
+                  [PARAM.subscribedTo]: null,
+                })
+              }
+              className="text-[0.6875rem] font-semibold uppercase tracking-wide text-burgundy underline hover:no-underline"
+            >
+              Clear dates
+            </button>
+          )}
         </div>
       </div>
 

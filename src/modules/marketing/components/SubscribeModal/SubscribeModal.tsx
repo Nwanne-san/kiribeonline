@@ -39,7 +39,7 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
     SubscribeSubmitResponse
   >({
     service: subscribeService.submit,
-    options: { successTitle: "Check your inbox to confirm" },
+    options: { successTitle: "You're subscribed!" },
   });
 
   // Reset the form each time the modal is reopened.
@@ -155,7 +155,7 @@ export function SubscribeModal({ open, onClose }: SubscribeModalProps) {
 
         {isSuccess ? (
           <KiribeTypography sx={{ mt: 3, color: "primary.main", fontSize: "1rem", lineHeight: 1.6 }}>
-            Thanks — check your inbox to confirm your subscription.
+            Thanks — you're now subscribed to the Kiribé newsletter.
           </KiribeTypography>
         ) : (
           <>
