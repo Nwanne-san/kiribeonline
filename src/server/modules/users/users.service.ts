@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { Where } from "payload";
+import { ValidationError } from "@/lib/api";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 import { resolveRole } from "@/server/access/roles";
 import { writeAuditLog } from "@/lib/audit";
 import { sendAdminInviteEmail } from "./invite-email";
+import { sendAdminPasswordChangedEmail } from "./password-changed-email";
 import { sendAdminPasswordResetEmail } from "./reset-email";
 import type { UserInviteInput, UserUpdateInput } from "./users.dto";
 import type { AdminUserListItem } from "./users.types";
@@ -141,6 +143,21 @@ export async function inviteAdminUser(
 ) {
   const invitedByName = invitedBy?.name;
   const payload = await getPayloadClient();
+
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const existing = await payload.find({
+    collection: "users",
+    where: { email: { equals: normalizedEmail } },
+    limit: 1,
+    overrideAccess: true,
+  });
+
+  if (existing.docs.length > 0) {
+    throw new ValidationError("User with this email already exists", {
+      email: ["A team member with this email address already exists."],
+    });
+  }
+
   const { raw, hash } = generateInviteToken();
   const expiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS).toISOString();
 
@@ -312,7 +329,8 @@ export async function requestPasswordReset(email: string): Promise<void> {
  */
 export async function completePasswordReset(
   token: string,
-  password: string
+  password: string,
+  context?: { ipAddress?: string }
 ): Promise<{ id: string; email: string } | null> {
   const payload = await getPayloadClient();
   const hash = hashResetToken(token);
@@ -361,6 +379,17 @@ export async function completePasswordReset(
     actorEmail: user.email,
     targetType: "users",
     targetId: String(user.id),
+  });
+
+  // Fire-and-forget the security receipt. The reset itself already succeeded
+  // and we do not want the response blocked on the mail transport; the audit
+  // trail above is the durable record either way.
+  void sendAdminPasswordChangedEmail({
+    email: user.email,
+    changedAtISO: new Date().toISOString(),
+    ipAddress: context?.ipAddress,
+  }).catch((err) => {
+    console.error("[users] password changed notification failed", err);
   });
 
   return { id: String(user.id), email: user.email };

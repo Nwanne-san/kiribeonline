@@ -22,13 +22,31 @@ function mapSubscriber(doc: Record<string, unknown>): SubscriberEntry {
 }
 
 /**
+ * Normalise a YYYY-MM-DD date string to a full ISO datetime usable in Payload
+ * `greater_than_equal` / `less_than_equal` comparisons.
+ *
+ * - `from` dates are floored to the start of day (00:00:00.000Z)
+ * - `to`   dates are ceiled  to the end of day  (23:59:59.999Z)
+ */
+function toIsoFrom(raw: string): string {
+  if (raw.length === 10) return `${raw}T00:00:00.000Z`;
+  return raw;
+}
+
+function toIsoTo(raw: string): string {
+  if (raw.length === 10) return `${raw}T23:59:59.999Z`;
+  return raw;
+}
+
+/**
  * Admin newsletter subscribers list with filter + pagination and a
  * whole-set stats summary (confirmed / pending / total) so the table
  * header can show counts without a second round-trip.
  *
  * `q` matches on email substring. `status` filters on the `confirmed`
  * boolean — "pending" means confirmed=false (they clicked subscribe but
- * haven't clicked the confirmation link yet).
+ * haven't clicked the confirmation link yet). `subscribedFrom` /
+ * `subscribedTo` restrict on `createdAt`.
  */
 export async function listSubscribers(
   params: ListSubscribersParams = {}
@@ -44,6 +62,13 @@ export async function listSubscribers(
   } else if (params.status === "pending") {
     conditions.push({ confirmed: { equals: false } });
   }
+  if (params.subscribedFrom) {
+    conditions.push({ createdAt: { greater_than_equal: toIsoFrom(params.subscribedFrom) } });
+  }
+  if (params.subscribedTo) {
+    conditions.push({ createdAt: { less_than_equal: toIsoTo(params.subscribedTo) } });
+  }
+
   const where: Where | undefined = conditions.length
     ? conditions.length === 1
       ? conditions[0]
@@ -102,7 +127,7 @@ const EXPORT_ROW_CAP = 25_000;
  * `EXPORT_ROW_CAP` to keep the export path predictable.
  */
 export async function listSubscribersForExport(
-  params: Pick<ListSubscribersParams, "q" | "status"> = {}
+  params: Pick<ListSubscribersParams, "q" | "status" | "subscribedFrom" | "subscribedTo"> = {}
 ): Promise<SubscriberEntry[]> {
   const payload = await getPayloadClient();
 
@@ -110,6 +135,13 @@ export async function listSubscribersForExport(
   if (params.q) conditions.push({ email: { like: params.q } });
   if (params.status === "confirmed") conditions.push({ confirmed: { equals: true } });
   else if (params.status === "pending") conditions.push({ confirmed: { equals: false } });
+  if (params.subscribedFrom) {
+    conditions.push({ createdAt: { greater_than_equal: toIsoFrom(params.subscribedFrom) } });
+  }
+  if (params.subscribedTo) {
+    conditions.push({ createdAt: { less_than_equal: toIsoTo(params.subscribedTo) } });
+  }
+
   const where: Where | undefined = conditions.length
     ? conditions.length === 1 ? conditions[0] : { and: conditions }
     : undefined;
