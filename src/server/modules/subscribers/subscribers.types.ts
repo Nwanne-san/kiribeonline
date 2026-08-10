@@ -32,4 +32,8 @@ export type ListSubscribersParams = {
   status?: SubscriberStatus;
   page?: number;
   limit?: number;
+  /** ISO 8601 — include only subscribers created on or after this datetime */
+  subscribedFrom?: string;
+  /** ISO 8601 — include only subscribers created on or before this datetime */
+  subscribedTo?: string;
 };

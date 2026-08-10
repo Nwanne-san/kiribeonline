@@ -6,10 +6,15 @@
  * POSTs, and the server rejects anything whose `Origin` (or `Referer` when
  * absent) doesn't match a trusted origin. See docs/AUTH-HARDENING.md.
  *
+ * The allowlist comes from `buildAllowedOrigins()` (shared with Payload's own
+ * cookie extractor), so one env change updates both defenses.
+ *
  * Usage: call `assertSameOrigin(request)` at the top of every mutation handler
  * (admin writes go through `requireAdminWrite`, which wraps this). Read-only
  * handlers do not need to call it — GET/HEAD/OPTIONS are exempt.
  */
+
+import { buildAllowedOrigins } from "@/lib/security/allowed-origins";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -22,42 +27,21 @@ export class CsrfError extends Error {
 }
 
 /**
- * Env-configured allowlist, cached after first read. Reload the module (server
- * restart) after changing envs — matches how our rate-limit constants behave.
+ * Cached after first read. Reload the module (server restart) after changing
+ * envs — matches how our rate-limit constants behave.
  */
 let cachedAllowlist: Set<string> | null = null;
 
 function normalizeOrigin(raw: string): string | null {
   try {
-    const url = new URL(raw);
-    // Origin is scheme + host + port, no path/hash/query. `URL#origin` handles
-    // default-port stripping (`:80`/`:443`) so we don't need to.
-    return url.origin;
+    return new URL(raw).origin;
   } catch {
     return null;
   }
 }
 
-function buildAllowlist(): Set<string> {
-  const explicit = (process.env.CSRF_ALLOWED_ORIGINS ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const fallback = [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.NEXT_PUBLIC_API_URL,
-  ].filter((value): value is string => Boolean(value));
-  const raw = [...explicit, ...fallback];
-  const normalized = raw
-    .map(normalizeOrigin)
-    .filter((origin): origin is string => Boolean(origin));
-  return new Set(normalized);
-}
-
 function getAllowlist(): Set<string> {
-  if (!cachedAllowlist) {
-    cachedAllowlist = buildAllowlist();
-  }
+  if (!cachedAllowlist) cachedAllowlist = new Set(buildAllowedOrigins());
   return cachedAllowlist;
 }
 
@@ -103,5 +87,15 @@ export function assertSameOrigin(request: Request): void {
   if (!candidate) return;
 
   const allowlist = getAllowlist();
-  if (!allowlist.has(candidate)) throw new CsrfError();
+  if (allowlist.has(candidate)) return;
+
+  // Same-host validation: if candidate matches the incoming request's host/proto
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const proto = request.headers.get("x-forwarded-proto") ?? "https";
+  if (host) {
+    const reqOrigin = normalizeOrigin(`${proto}://${host}`);
+    if (reqOrigin && candidate === reqOrigin) return;
+  }
+
+  throw new CsrfError();
 }

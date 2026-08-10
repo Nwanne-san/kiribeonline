@@ -111,14 +111,25 @@ function getRecentActivity(): Promise<DashboardActivityItem[]> {
 }
 
 /**
- * `includeActivity` — surface the recent-activity preview only when the caller
- * holds `audit:view`. Writers/contributors have `analytics:read` (so they see
- * the dashboard) but must not see other users' actions or auth events on the
- * home tile; the "See All" link is already hidden client-side for them.
+ * Every authenticated admin can hit the dashboard, but we selectively skip
+ * expensive or privileged queries when the caller lacks the matching
+ * capability. That keeps the response payload honest — the client only sees
+ * tiles/panels for data it actually holds — and avoids doing the work at all
+ * (e.g. `sumViews` scans every article; contributors don't need that number).
+ *
+ * - `includeActivity` — `audit:view`: recent-activity preview
+ * - `includeAnalytics` — `analytics:read`: total views + content performance
+ * - `includeMessages` — `settings:manage`: unread inbox count
  */
 export async function getDashboardStats({
   includeActivity = true,
-}: { includeActivity?: boolean } = {}): Promise<DashboardStats> {
+  includeAnalytics = true,
+  includeMessages = true,
+}: {
+  includeActivity?: boolean;
+  includeAnalytics?: boolean;
+  includeMessages?: boolean;
+} = {}): Promise<DashboardStats> {
   const weekAgo = new Date(Date.now() - WEEK_MS).toISOString();
 
   const [
@@ -148,11 +159,13 @@ export async function getDashboardStats({
     countCollection("categories"),
     countCollection("tags"),
     countCollection("media"),
-    sumViews(),
-    countUnreadMessages(),
+    includeAnalytics ? sumViews() : Promise.resolve(0),
+    includeMessages ? countUnreadMessages() : Promise.resolve(0),
     listAdminArticles({ limit: 5 }),
     includeActivity ? getRecentActivity() : Promise.resolve([] as DashboardActivityItem[]),
-    getContentPerformance(),
+    includeAnalytics
+      ? getContentPerformance()
+      : Promise.resolve([] as DashboardPerformanceItem[]),
   ]);
 
   return {

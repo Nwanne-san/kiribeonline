@@ -37,7 +37,7 @@ const ADMIN_SEGMENT = "/admin";
  * Assets and framework routes we never touch — bypass immediately so the
  * middleware doesn't reshape asset URLs and break caching.
  */
-const BYPASS_PATTERN = /^\/(_next|api\/health|favicon\.ico|robots\.txt|sitemap\.xml|manifest\.webmanifest|.*\.(png|jpg|jpeg|webp|svg|ico|gif|css|js|map|txt|xml))/;
+const BYPASS_PATTERN = /^\/(_next|api(?:\/|$)|favicon\.ico|robots\.txt|sitemap\.xml|manifest\.webmanifest|.*\.(png|jpg|jpeg|webp|svg|ico|gif|css|js|map|txt|xml))/;
 
 /**
  * True when the host looks like a Vercel preview deployment (either the

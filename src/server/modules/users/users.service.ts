@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Where } from "payload";
+import { ValidationError } from "@/lib/api";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 import { resolveRole } from "@/server/access/roles";
 import { writeAuditLog } from "@/lib/audit";
@@ -141,6 +142,21 @@ export async function inviteAdminUser(
 ) {
   const invitedByName = invitedBy?.name;
   const payload = await getPayloadClient();
+
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const existing = await payload.find({
+    collection: "users",
+    where: { email: { equals: normalizedEmail } },
+    limit: 1,
+    overrideAccess: true,
+  });
+
+  if (existing.docs.length > 0) {
+    throw new ValidationError("User with this email already exists", {
+      email: ["A team member with this email address already exists."],
+    });
+  }
+
   const { raw, hash } = generateInviteToken();
   const expiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS).toISOString();
 

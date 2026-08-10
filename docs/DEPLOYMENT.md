@@ -129,7 +129,7 @@ Managed exclusively via **Vercel → Project → Settings → Environment Variab
 | Variable | Env | Notes |
 |---|---|---|
 | `NEXT_PUBLIC_APP_URL` | all | `https://kiribeonline.com` in prod. Full origin. |
-| `NEXT_PUBLIC_API_URL` | all | Usually same as APP_URL. |
+| `NEXT_PUBLIC_API_URL` | all | Leave empty for this multi-host deployment. Browser API requests then stay on the current origin (`admin.` stays on `admin.`), preserving the session cookie and avoiding CORS. |
 | `APP_URL` | all | Server-side canonical origin (invite links, redirects). |
 | `ENVIRONMENT` | all | `development` / `preview` / `staging` / `production`. |
 | `PRIMARY_HOST` | prod | `kiribeonline.com` (no `www.`). Middleware. |
@@ -162,7 +162,7 @@ Every non-prod branch runs on its own Neon **database branch** — never against
 | Variable | Notes |
 |---|---|
 | `RESEND_API_KEY` | Live key (`re_live_...`) in prod. Test key blocks non-allowlist recipients. |
-| `RESEND_FROM_EMAIL` | `Kiribé <hello@kiribeonline.com>`. Must belong to a verified domain. |
+| `RESEND_FROM_EMAIL` | `Kiribé <noreply@send.kiribeonline.com>`. Must belong to a verified domain. |
 
 ### 3.5 Mailchimp (newsletter audience sync)
 
@@ -475,7 +475,7 @@ Add the custom domain in Cloudflare R2 → Bucket → Settings → Custom domain
 Once the DNS in §11.3 verifies:
 
 1. **Domain** — Resend dashboard → Domains → `kiribeonline.com` shows **Verified** (green).
-2. **From address** — Set `RESEND_FROM_EMAIL="Kiribé <hello@kiribeonline.com>"` in Vercel Production. Display name freeform; the address must belong to the verified domain.
+2. **From address** — Set `RESEND_FROM_EMAIL="Kiribé <noreply@send.kiribeonline.com>"` in Vercel Production. Display name freeform; the address must belong to the verified domain.
 3. **API key** — Create a **Sending key** (Full access is fine for a single-app project). Store as `RESEND_API_KEY` in Vercel Production. Rotate on schedule.
 4. **Webhook** *(deferred)* — Resend can POST delivery/bounce events. Add `/api/webhooks/resend` when we care about bounces; verify with the signing key.
 5. **Suppression list** — Turn on "Automatic suppression list" so hard-bounces don't keep retrying.
