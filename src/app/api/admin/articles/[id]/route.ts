@@ -63,7 +63,9 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
         return apiError("Forbidden", 403);
       }
     }
-    const doc = await updateAdminArticle(id, input);
+    const doc = await updateAdminArticle(id, input, {
+      actor: { id: user.id, name: user.name ?? null },
+    });
     return apiSuccess(doc);
   } catch (error) {
     return handleAdminRouteError(error);
