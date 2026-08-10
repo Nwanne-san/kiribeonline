@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { token, password } = parseBody(resetPasswordSchema, body);
 
-    const result = await completePasswordReset(token, password);
+    const result = await completePasswordReset(token, password, { ipAddress: ip });
     if (!result) {
       return apiError("This reset link is invalid or has expired.", 400);
     }

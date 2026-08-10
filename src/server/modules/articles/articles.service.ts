@@ -4,6 +4,10 @@ import { textToLexical } from "@/server/shared/text-to-lexical";
 import { toRelId, toRelIds } from "@/server/shared/rel-id";
 import type { ArticleInput } from "@/server/modules";
 import { slugify } from "@/utils/helper";
+import {
+  sendArticleApprovedEmail,
+  sendArticleChangesRequestedEmail,
+} from "./status-emails";
 
 function mapArticleInput(input: ArticleInput) {
   const body =
@@ -202,8 +206,38 @@ export async function createAdminArticle(input: ArticleInput) {
   });
 }
 
-export async function updateAdminArticle(id: string, input: Partial<ArticleInput>) {
+export type UpdateArticleContext = {
+  /** The admin performing the update. Used only for status-change email attribution. */
+  actor?: { id: string | number; name?: string | null };
+  /** Optional editor note carried into a "changes requested" email. */
+  reviewNote?: string;
+};
+
+export async function updateAdminArticle(
+  id: string,
+  input: Partial<ArticleInput>,
+  context?: UpdateArticleContext
+) {
   const payload = await getPayloadClient();
+
+  // Snapshot the pre-update state so we can detect status transitions that
+  // deserve a notification. depth:1 pulls the author relation as a doc so we
+  // have their email + name without a second lookup.
+  const shouldTriggerEmail = input.status !== undefined;
+  const before = shouldTriggerEmail
+    ? ((await payload.findByID({
+        collection: "articles",
+        id,
+        depth: 1,
+        overrideAccess: true,
+      })) as {
+        status?: string | null;
+        title?: string | null;
+        slug?: string | null;
+        author?: unknown;
+      })
+    : null;
+
   const data: Record<string, unknown> = {};
   if (input.title) data.title = input.title;
   if (input.slug) data.slug = input.slug;
@@ -226,7 +260,109 @@ export async function updateAdminArticle(id: string, input: Partial<ArticleInput
       ogImage: toRelId(input.seo.ogImageId) ?? undefined,
     };
   }
-  return payload.update({ collection: "articles", id, data, overrideAccess: true });
+
+  const doc = await payload.update({
+    collection: "articles",
+    id,
+    data,
+    overrideAccess: true,
+  });
+
+  if (shouldTriggerEmail && before) {
+    dispatchStatusEmail({
+      id,
+      before,
+      after: doc as {
+        status?: string | null;
+        title?: string | null;
+        slug?: string | null;
+      },
+      context,
+    });
+  }
+
+  return doc;
+}
+
+type ArticleAuthorDoc = {
+  id?: string | number;
+  email?: string | null;
+  name?: string | null;
+};
+
+function extractAuthor(raw: unknown): ArticleAuthorDoc | null {
+  if (!raw || typeof raw !== "object") return null;
+  const doc = raw as ArticleAuthorDoc;
+  return doc.email ? doc : null;
+}
+
+/**
+ * Fire the right transactional email when a writer's article moves between
+ * review states — but never on self-edits (a writer publishing their own draft
+ * doesn't need congratulating themselves) and never if we can't reach them.
+ *
+ *  - approved:            in_review / draft → published or scheduled
+ *  - changes requested:   in_review          → draft (editor pushed it back)
+ *
+ * All fire-and-forget; delivery failures are logged inside the send helpers.
+ */
+function dispatchStatusEmail({
+  id,
+  before,
+  after,
+  context,
+}: {
+  id: string;
+  before: { status?: string | null; author?: unknown };
+  after: { status?: string | null; title?: string | null; slug?: string | null };
+  context?: UpdateArticleContext;
+}) {
+  const oldStatus = before.status ?? undefined;
+  const newStatus = after.status ?? undefined;
+  if (!newStatus || oldStatus === newStatus) return;
+
+  const author = extractAuthor(before.author);
+  if (!author?.email) return;
+
+  // Skip self-edits — a writer approving/pushing back their own draft is not
+  // an audience for either template.
+  if (context?.actor && String(context.actor.id) === String(author.id)) return;
+
+  const writer = { email: author.email, name: author.name };
+  const editor = context?.actor
+    ? { name: context.actor.name ?? null }
+    : undefined;
+  const articleTitle = after.title ?? "Your article";
+
+  if (newStatus === "published" || newStatus === "scheduled") {
+    const publishedAt =
+      newStatus === "scheduled"
+        ? ((after as unknown as { publishedAt?: string | null }).publishedAt ?? undefined)
+        : undefined;
+    void sendArticleApprovedEmail({
+      writer,
+      editor,
+      articleTitle,
+      articleSlug: after.slug ?? "",
+      articleId: id,
+      scheduledFor: publishedAt ?? undefined,
+    }).catch((err) => {
+      console.error("[articles] approved notification failed", err);
+    });
+    return;
+  }
+
+  if (oldStatus === "in_review" && newStatus === "draft") {
+    void sendArticleChangesRequestedEmail({
+      writer,
+      editor,
+      articleTitle,
+      articleId: id,
+      note: context?.reviewNote,
+    }).catch((err) => {
+      console.error("[articles] changes requested notification failed", err);
+    });
+  }
 }
 
 export async function deleteAdminArticle(id: string) {
