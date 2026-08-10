@@ -16,7 +16,7 @@ following exist for the **Production** environment:
 | Variable | Expected value |
 | --- | --- |
 | `RESEND_API_KEY` | Live key (`re_live_...`), NOT a test key (`re_test_...`) |
-| `RESEND_FROM_EMAIL` | `Kiribé <hello@kiribeonline.com>` (or your verified from) |
+| `RESEND_FROM_EMAIL` | `Kiribé <noreply@send.kiribeonline.com>` (or your verified from) |
 | `NEXT_PUBLIC_APP_URL` | `https://www.kiribeonline.com` (or the canonical prod URL, no trailing slash) |
 
 Common misses:
@@ -47,7 +47,7 @@ comes back as `validation_error` and the code returns `false`.
 
 `RESEND_FROM_EMAIL` must send from a domain you've verified.
 
-- `Kiribé <hello@kiribeonline.com>` → OK if kiribeonline.com is verified.
+- `Kiribé <noreply@send.kiribeonline.com>` → OK if send.kiribeonline.com is verified.
 - `Kiribé <hello@resend.dev>` → OK (Resend's shared testing domain, bounces after 30d).
 - `Kiribé <hello@gmail.com>` → REJECTED. Consumer inboxes block relayed mail.
 

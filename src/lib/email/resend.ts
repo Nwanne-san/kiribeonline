@@ -10,7 +10,7 @@ export function getResendClient(): Resend | null {
 }
 
 export const RESEND_FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL ?? "Kiribé <hello@kiribeonline.com>";
+  process.env.RESEND_FROM_EMAIL ?? "Kiribé <noreply@send.kiribeonline.com>";
 
 export const APP_URL = (
   process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
@@ -44,7 +44,12 @@ export async function sendTransactionalEmail({
   context,
 }: SendEmailArgs): Promise<boolean> {
   const resend = getResendClient();
-  if (!resend) return false;
+  if (!resend) {
+    console.warn(
+      `${context} email skipped: RESEND_API_KEY environment variable is not configured.`
+    );
+    return false;
+  }
 
   try {
     const { data, error } = await resend.emails.send({

@@ -31,8 +31,10 @@ export async function GET(request: NextRequest) {
     const statusParam = url.searchParams.get("status") ?? undefined;
     const status =
       statusParam === "confirmed" || statusParam === "pending" ? statusParam : undefined;
+    const subscribedFrom = url.searchParams.get("subscribedFrom") ?? undefined;
+    const subscribedTo = url.searchParams.get("subscribedTo") ?? undefined;
 
-    const subs = await listSubscribersForExport({ q, status });
+    const subs = await listSubscribersForExport({ q, status, subscribedFrom, subscribedTo });
 
     const header = csvRow([
       "Email",

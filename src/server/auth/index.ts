@@ -12,4 +12,5 @@ export {
   requireAdminCapability,
   requireAdminWriteCapability,
 } from "./capability";
+export { requireAdminCapabilityOrRedirect } from "./require-capability";
 export { handleAdminAuthError, handleAdminRouteError } from "./admin-api";

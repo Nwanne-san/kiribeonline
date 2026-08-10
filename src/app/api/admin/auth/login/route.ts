@@ -96,12 +96,18 @@ export async function POST(request: NextRequest) {
       const collection = payload.collections.users.config.auth;
       const prefix = payload.config.cookiePrefix;
       const maxAge = collection?.tokenExpiration ?? 604800;
+      // In production, share the cookie across the apex + admin subdomain
+      // by setting `domain` to the value of COOKIE_DOMAIN (e.g. `.kiribeonline.com`).
+      // Local dev: COOKIE_DOMAIN is unset, so no domain attribute is applied
+      // and the cookie stays scoped to the exact host (correct for localhost).
+      const cookieDomain = process.env.COOKIE_DOMAIN?.trim() || undefined;
       response.cookies.set(`${prefix}-token`, result.token, {
         httpOnly: true,
         path: "/",
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
         maxAge,
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
       });
     }
 
