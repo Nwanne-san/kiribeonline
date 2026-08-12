@@ -9,8 +9,22 @@ export function getResendClient(): Resend | null {
   return cached;
 }
 
-export const RESEND_FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL ?? "Kiribé <noreply@send.kiribeonline.com>";
+const DEFAULT_FROM = "Kiribé <noreply@send.kiribeonline.com>";
+
+/**
+ * Nullish-coalescing (`??`) leaves an empty string in place, so an env file
+ * that accidentally sets `RESEND_FROM_EMAIL=` (or line-wraps the value onto
+ * the next line, which parses as empty) would ship `""` as the from-address
+ * and every send would fail Resend validation with no obvious signal. Fall
+ * back to the default when the value is missing OR blank.
+ */
+function resolveFromEmail(): string {
+  const raw = process.env.RESEND_FROM_EMAIL?.trim();
+  if (!raw) return DEFAULT_FROM;
+  return raw;
+}
+
+export const RESEND_FROM_EMAIL = resolveFromEmail();
 
 export const APP_URL = (
   process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"

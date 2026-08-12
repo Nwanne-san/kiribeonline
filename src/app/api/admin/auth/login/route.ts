@@ -12,6 +12,12 @@ import {
 import { peekRateLimit, rateLimitForEndpoint, tooManyRequests } from "@/lib/rate-limit";
 import { assertSameOrigin } from "@/server/security";
 import { writeAuditLog } from "@/lib/audit";
+import {
+  formatLocationSummary,
+  getApproxLocation,
+  parseUserAgent,
+} from "@/lib/http/request-signals";
+import { sendAdminLoginNotificationEmail } from "@/server/modules/users/login-notification-email";
 
 export const dynamic = "force-dynamic";
 
@@ -108,6 +114,28 @@ export async function POST(request: NextRequest) {
         secure: process.env.NODE_ENV === "production",
         maxAge,
         ...(cookieDomain ? { domain: cookieDomain } : {}),
+      });
+    }
+
+    // Fire-and-forget sign-in receipt. Kept out of the try/catch above so a
+    // mail-transport failure never rejects the response — the account holder
+    // has already been let in, the audit log already records the event, and
+    // the email is a secondary security signal, not a gate.
+    const device = parseUserAgent(request.headers.get("user-agent"));
+    const location = formatLocationSummary(getApproxLocation(request));
+    const userRecord = result.user as {
+      email?: string | null;
+      name?: string | null;
+    };
+    if (userRecord.email) {
+      void sendAdminLoginNotificationEmail({
+        email: userRecord.email,
+        recipientName: userRecord.name ?? null,
+        signedInAtISO: new Date().toISOString(),
+        device,
+        location,
+      }).catch((err) => {
+        console.error("[auth] login notification failed", err);
       });
     }
 

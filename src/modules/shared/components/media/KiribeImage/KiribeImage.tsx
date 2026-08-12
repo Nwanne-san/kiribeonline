@@ -2,8 +2,16 @@
 
 import Box from "@mui/material/Box";
 import Image, { type ImageProps } from "next/image";
+import { useEffect, useState } from "react";
 import { resolveMediaUrl } from "@/lib/storage/media-url";
 import type { MediaAsset, MediaSizeName } from "@/modules/shared/types/content";
+
+/**
+ * Branded placeholder shown when an image URL fails to load — a broken R2 link,
+ * a deleted asset, or a slow-cold-cache miss that the CDN 404s on. Ships as a
+ * static SVG so it works even if R2 itself is unreachable.
+ */
+export const IMAGE_FALLBACK_SRC = "/images/fallback-image.svg";
 
 export type KiribeImageAspect = "hero" | "card" | "thumb" | "square";
 
@@ -81,19 +89,37 @@ export function KiribeImage({
 }: KiribeImageProps) {
   const { url: resolved, blurDataURL: docBlur } = resolveSource(src ?? null, aspect);
 
+  // Swap in the branded fallback when the CDN 404s on us. Reset when the
+  // source URL changes (a fresh image was slotted after a broken one).
+  const [errored, setErrored] = useState(false);
+  useEffect(() => {
+    setErrored(false);
+  }, [resolved]);
+
   if (!resolved) {
+    // No URL at all — render the branded fallback rather than a bare grey
+    // box, so a hero without a hero image still looks like the site.
     return (
-      <Box
-        sx={{
-          bgcolor: "action.hover",
-          ...(fill
-            ? { position: "absolute", inset: 0 }
-            : {
-                width: "100%",
-                ...(aspect ? { pt: aspectRatios[aspect] } : { minHeight: 120 }),
-              }),
-        }}
-        aria-label={alt}
+      <FallbackImage
+        alt={alt}
+        aspect={aspect}
+        fill={fill}
+        sizes={sizes}
+        className={className}
+        style={style}
+      />
+    );
+  }
+
+  if (errored) {
+    return (
+      <FallbackImage
+        alt={alt}
+        aspect={aspect}
+        fill={fill}
+        sizes={sizes}
+        className={className}
+        style={style}
       />
     );
   }
@@ -108,6 +134,7 @@ export function KiribeImage({
       : placeholder
         ? { placeholder }
         : {};
+  const onError = () => setErrored(true);
 
   if (fill) {
     // Fill mode relies on the caller's positioned, sized container — adding a
@@ -124,6 +151,7 @@ export function KiribeImage({
           ...style,
         }}
         className={className}
+        onError={onError}
         {...placeholderProps}
         {...props}
       />
@@ -151,6 +179,7 @@ export function KiribeImage({
             ...style,
           }}
           className={className}
+          onError={onError}
           {...placeholderProps}
           {...props}
         />
@@ -166,8 +195,78 @@ export function KiribeImage({
       priority={priority}
       style={style}
       className={className}
+      onError={onError}
       {...placeholderProps}
       {...props}
+    />
+  );
+}
+
+/**
+ * Standalone renderer for the brand fallback. Reused by the no-URL branch and
+ * the onError branch of KiribeImage — same visual either way so a broken
+ * asset and a missing one both read as the site owning the blank space.
+ */
+function FallbackImage({
+  alt,
+  aspect,
+  fill,
+  sizes,
+  className,
+  style,
+}: {
+  alt: string;
+  aspect?: KiribeImageAspect;
+  fill?: boolean;
+  sizes?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  if (fill) {
+    return (
+      <Image
+        src={IMAGE_FALLBACK_SRC}
+        alt={alt}
+        fill
+        sizes={sizes ?? "100vw"}
+        style={{ objectFit: "cover", ...style }}
+        className={className}
+        unoptimized
+      />
+    );
+  }
+  if (aspect) {
+    return (
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          pt: aspectRatios[aspect],
+          overflow: "hidden",
+        }}
+      >
+        <Image
+          src={IMAGE_FALLBACK_SRC}
+          alt={alt}
+          fill
+          sizes={sizes ?? "100vw"}
+          style={{ objectFit: "cover", ...style }}
+          className={className}
+          unoptimized
+        />
+      </Box>
+    );
+  }
+  return (
+    <Image
+      src={IMAGE_FALLBACK_SRC}
+      alt={alt}
+      width={800}
+      height={600}
+      sizes={sizes}
+      style={style}
+      className={className}
+      unoptimized
     />
   );
 }

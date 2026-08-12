@@ -69,7 +69,6 @@ type ArticleDoc = {
   categories?: Category[];
   tags?: Tag[];
   heroImage?: MediaRef | string;
-  author?: { id: string | number; name?: string | null } | string | null;
   hideByline?: boolean;
   seo?: {
     title?: string;
@@ -119,7 +118,6 @@ type SavePayload = {
   categoryIds: string[];
   tagIds: string[];
   heroImageId: string | null;
-  authorId?: string | null;
   hideByline: boolean;
   seo: {
     title?: string;
@@ -145,12 +143,10 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isEdit = Boolean(articleId);
-  const { can, me } = usePermissions();
+  const { can } = usePermissions();
   const { showToast } = useKiribeToast();
 
   const canPublish = can("articles:publish");
-  const canManageUsers = can("users:manage");
-  const canPickAuthor = canPublish || canManageUsers;
 
   /* ── Form state ── */
 
@@ -168,7 +164,6 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [heroImage, setHeroImage] = useState<AdminMediaRef | null>(null);
-  const [authorId, setAuthorId] = useState<string>("");
   const [hideByline, setHideByline] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
   const [seoTitle, setSeoTitle] = useState("");
@@ -211,18 +206,6 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     options: { keys: ["admin", "tags"] },
   });
 
-  const { data: authorList } = useQueryService<
-    Record<string, never>,
-    { docs: Array<{ id: string; name: string }> }
-  >({
-    service: { path: "/api/admin/articles/authors", method: ApiMethods.GET },
-    options: {
-      keys: ["admin", "articles", "authors"],
-      // Only fetch when the picker will render — avoids a 403 for writers.
-      enabled: canPickAuthor,
-    },
-  });
-
   /* ── Hydrate existing doc ── */
 
   useEffect(() => {
@@ -252,12 +235,6 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         if (hero && typeof hero === "object") {
           setHeroImage({ id: String(hero.id), url: hero.url, alt: hero.alt });
         }
-        const author = doc.author;
-        if (author && typeof author === "object") {
-          setAuthorId(String(author.id));
-        } else if (typeof author === "string") {
-          setAuthorId(author);
-        }
         setHideByline(Boolean(doc.hideByline));
         setSeoTitle(doc.seo?.title ?? "");
         setSeoDescription(doc.seo?.description ?? "");
@@ -271,13 +248,6 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
       }
     })();
   }, [articleId]);
-
-  // On a new article, default authorId to the current user once /me loads.
-  useEffect(() => {
-    if (isEdit) return;
-    if (authorId) return;
-    if (me?.id) setAuthorId(String(me.id));
-  }, [isEdit, authorId, me?.id]);
 
   // Keep slug in sync with title until the user touches it manually.
   useEffect(() => {
@@ -343,11 +313,9 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     categoryIds,
     tagIds,
     heroImageId: heroImage?.id ?? null,
-    // Only include authorId when the picker was rendered — a writer's editor
-    // never sends the field, so their save can't overwrite an editor-assigned
-    // byline. New articles fall through to the server default (the actor).
-    authorId: canPickAuthor && authorId ? authorId : undefined,
-    // Always sent: unlike `authorId`, a writer may opt their own byline out.
+    // authorId is intentionally never sent from the client — the server pins
+    // it to the acting user on create and refuses to change it on edit, so
+    // no one (including admins) can reassign a byline through this editor.
     hideByline,
     seo: {
       title: seoTitle || undefined,
@@ -366,8 +334,6 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     categoryIds,
     tagIds,
     heroImage?.id,
-    authorId,
-    canPickAuthor,
     hideByline,
     seoTitle,
     seoDescription,
@@ -467,7 +433,6 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         categoryIds,
         tagIds,
         heroId: heroImage?.id ?? null,
-        authorId,
         hideByline,
         seoTitle,
         seoDescription,
@@ -491,7 +456,6 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
       categoryIds,
       tagIds,
       heroImage?.id,
-      authorId,
       hideByline,
       seoTitle,
       seoDescription,
@@ -870,39 +834,9 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                 </div>
               </AdminField>
 
-              {canPickAuthor ? (
-                <AdminField
-                  label="Author"
-                  htmlFor="ae-author"
-                  hint="Byline shown on the article and used for author stats."
-                >
-                  <AdminSelect
-                    id="ae-author"
-                    value={authorId}
-                    onChange={(e) => {
-                      setAuthorId(e.target.value);
-                      bumpDirty();
-                    }}
-                  >
-                    {(authorList?.docs ?? []).map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    ))}
-                    {/* Keep the current selection visible even if it's not in
-                        the picker list (e.g. an inactive user still bylined) */}
-                    {authorId &&
-                    !(authorList?.docs ?? []).some((u) => u.id === authorId) ? (
-                      <option value={authorId}>(current author)</option>
-                    ) : null}
-                  </AdminSelect>
-                </AdminField>
-              ) : null}
-
-              {/* Deliberately outside the `canPickAuthor` guard: a writer who
-                  cannot reassign the byline may still withhold their own name.
-                  The author relationship is saved either way, so the admin
-                  keeps full attribution. */}
+              {/* Author is fixed to the acting user; the byline is never
+                  reassignable through the editor. The hide-byline checkbox
+                  below is the only public-attribution control. */}
               <AdminCheckboxRow
                 label="Hide byline on the public site"
                 hint="Publishes as “Kiribé Editor”. The author above is still recorded in the admin and counts toward author stats."
@@ -958,14 +892,19 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
           <AdminPanel title="Taxonomy">
             <div className="space-y-4 p-5">
               <AdminChipSelect
-                label="Categories"
+                label="Category"
                 options={categories?.docs ?? []}
                 value={categoryIds}
                 onChange={(next) => {
-                  setCategoryIds(next);
+                  // Single-select: hard-cap at one to keep the payload consistent
+                  // regardless of legacy multi-selected drafts. The chip UI itself
+                  // enforces this, but a hydrated doc with multiple categories
+                  // would otherwise keep both around.
+                  setCategoryIds(next.slice(0, 1));
                   bumpDirty();
                 }}
                 getColor={(o) => o.brandColor ?? "#6B1D2A"}
+                singleSelect
               />
 
               <AdminChipSelect

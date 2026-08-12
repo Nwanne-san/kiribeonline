@@ -147,14 +147,23 @@ export function AdminChipSelect({
   value,
   onChange,
   getColor,
+  singleSelect = false,
 }: {
   label: string;
   options: { id: string; name: string; brandColor?: string | null }[];
   value: string[];
   onChange: (ids: string[]) => void;
   getColor?: (opt: { id: string; name: string; brandColor?: string | null }) => string;
+  /** When true, selecting a chip replaces the current value instead of toggling it into a set. */
+  singleSelect?: boolean;
 }) {
   const toggle = (id: string) => {
+    if (singleSelect) {
+      // Tap-again deselects; tap-other replaces. Keeps the "clear it" affordance
+      // without falling back to a separate "None" chip.
+      onChange(value.includes(id) ? [] : [id]);
+      return;
+    }
     onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id]);
   };
 
@@ -174,9 +183,9 @@ export function AdminChipSelect({
               sx={{
                 fontSize: "0.6875rem",
                 fontWeight: 600,
-                px: 1.25,
+                px: 1.5,
                 py: 0.5,
-                borderRadius: 0.5,
+                borderRadius: 9999,
                 border: `1px solid ${active ? color : "divider"}`,
                 bgcolor: active ? color : "background.paper",
                 color: active ? "#fff" : "text.secondary",
