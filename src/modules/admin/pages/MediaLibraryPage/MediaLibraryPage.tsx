@@ -1,20 +1,24 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { IMAGE_FALLBACK_SRC } from "@/modules/shared/components/media/KiribeImage/KiribeImage";
 import AddRounded from "@mui/icons-material/AddRounded";
 import CloudUploadOutlined from "@mui/icons-material/CloudUploadOutlined";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import EditOutlined from "@mui/icons-material/EditOutlined";
 import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
-import BrokenImageOutlined from "@mui/icons-material/BrokenImageOutlined";
 import PermMediaOutlined from "@mui/icons-material/PermMediaOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
-import { AdminButton, AdminPanel, Pill, formatCompact } from "@/modules/admin/components/ui/AdminPrimitives";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import { AdminButton, AdminPanel, formatCompact } from "@/modules/admin/components/ui/AdminPrimitives";
 import { AdminConfirmDialog } from "@/modules/admin/components/ui/AdminDialog";
 import { MediaGridSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
-import { MediaMetadataDialog } from "@/modules/admin/components/MediaPicker";
+import { MediaMetadataDialog, MediaUploadForm } from "@/modules/admin/components/MediaPicker";
+import type { AdminMediaRef } from "@/server/modules";
 import { ApiMethods } from "../../../../../types/service";
 import { adminMediaService, adminQueryKeys } from "@/services/admin.service";
 import type { AdminListResult, AdminMediaItem } from "@/server/modules";
@@ -32,35 +36,24 @@ const ACCEPT_ATTR = ACCEPTED_MIME.join(",");
 const ACCEPTED_LABEL = "JPG, PNG, WebP, GIF";
 const MAX_UPLOAD_MB = Math.round(MAX_UPLOAD_BYTES / (1024 * 1024));
 
-/* ───────────────────────────────────────────────────────────── Helpers */
-
-/**
- * Derive a placeholder alt from a filename for bulk uploads. This is a
- * best-effort default — editors are asked to review it (see the review
- * banner below) so a machine-invented alt never quietly ships.
- */
-function altFromFilename(name: string): string {
-  const base = name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim();
-  return base || "Uploaded image";
-}
-
 /* ─────────────────────────────────────────────────────────────── Page */
 
 export function MediaLibraryPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [pendingUploads, setPendingUploads] = useState(0);
   const { showToast } = useKiribeToast();
 
   const { value: searchInput, setValue: setSearchInput, debouncedValue } =
     useDebouncedUrlParam();
 
   /**
-   * IDs whose alt was auto-generated from the filename during the current
-   * session. Kept client-side so a refresh clears the banner (the alt is real
-   * data at that point and the editor can still edit any image inline).
+   * Upload preview dialog state. Files land here first — the operator sees
+   * dimensions, size, and confirms the alt text before the upload actually
+   * hits R2. `preloadedFile` is the drag-dropped or picked file; `null` means
+   * the dialog opened via the "Upload files" button with no pre-selection.
    */
-  const [needsAltReview, setNeedsAltReview] = useState<AdminMediaItem[]>([]);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [preloadedFile, setPreloadedFile] = useState<File | null>(null);
   const [editing, setEditing] = useState<AdminMediaItem | null>(null);
 
   const {
@@ -98,11 +91,6 @@ export function MediaLibraryPage() {
     [items],
   );
 
-  const uploadMutation = useMutationService<FormData, AdminMediaItem>({
-    service: adminMediaService.upload,
-    options: { invalidateKeys: [adminQueryKeys.media] },
-  });
-
   const deleteMutation = useMutationService<{ id: string }, null>({
     service: (variables) => adminMediaService.remove(variables.id),
     options: {
@@ -129,20 +117,27 @@ export function MediaLibraryPage() {
     },
   });
 
-  const uploadFiles = useCallback(
+  /**
+   * Route every file that arrives (drag-drop or file picker) into the preview
+   * dialog. Pre-flight the type + size here so unsupported files never even
+   * open the dialog — a helpful toast is friendlier than a preview that can't
+   * be uploaded. Multi-file drops are not supported through the preview flow;
+   * the first valid file wins and the rest surface a note so the operator can
+   * queue them one at a time.
+   */
+  const stageFiles = useCallback(
     (fileList: FileList | File[]) => {
       const files = Array.from(fileList);
       if (files.length === 0) return;
 
-      let queued = 0;
-      for (const file of files) {
+      const first = files.find((file) => {
         if (!ACCEPTED_MIME.includes(file.type)) {
           showToast({
             message: "Unsupported file",
             description: `${file.name} is not a ${ACCEPTED_LABEL} image.`,
             severity: "error",
           });
-          continue;
+          return false;
         }
         if (file.size > MAX_UPLOAD_BYTES) {
           showToast({
@@ -150,48 +145,43 @@ export function MediaLibraryPage() {
             description: `${file.name} exceeds the ${MAX_UPLOAD_MB}MB limit.`,
             severity: "error",
           });
-          continue;
+          return false;
         }
+        return true;
+      });
+      if (!first) return;
 
-        const derivedAlt = altFromFilename(file.name);
-        const form = new FormData();
-        form.append("file", file);
-        form.append("alt", derivedAlt);
-
-        queued += 1;
-        setPendingUploads((count) => count + 1);
-        uploadMutation.mutate(form, {
-          onSuccess: (media) => {
-            // Surface the machine-invented alt for the editor to review. The
-            // review banner links each one to the metadata dialog so alt text
-            // is a deliberate authorial choice, not a filename echo.
-            setNeedsAltReview((current) => {
-              if (current.some((item) => item.id === media.id)) return current;
-              return [...current, media];
-            });
-          },
-          onSettled: () => setPendingUploads((count) => Math.max(0, count - 1)),
-        });
-      }
-
-      if (queued > 0) {
+      if (files.length > 1) {
         showToast({
-          message: queued === 1 ? "Uploading image…" : `Uploading ${queued} images…`,
-          description: "Review the auto-generated alt text after they finish.",
+          message: "One at a time",
+          description: `Previewing “${first.name}”. Drop the rest after this one uploads.`,
           severity: "info",
         });
       }
+
+      setPreloadedFile(first);
+      setUploadOpen(true);
     },
-    [showToast, uploadMutation],
+    [showToast],
   );
+
+  const openUploadDialog = useCallback(() => {
+    setPreloadedFile(null);
+    setUploadOpen(true);
+  }, []);
+
+  const closeUploadDialog = useCallback(() => {
+    setUploadOpen(false);
+    setPreloadedFile(null);
+  }, []);
 
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       setIsDragging(false);
-      if (event.dataTransfer.files?.length) uploadFiles(event.dataTransfer.files);
+      if (event.dataTransfer.files?.length) stageFiles(event.dataTransfer.files);
     },
-    [uploadFiles],
+    [stageFiles],
   );
 
   const handleCopyUrl = useCallback(
@@ -217,13 +207,18 @@ export function MediaLibraryPage() {
     setEditing(item);
   }, []);
 
-  const dismissReview = useCallback((id: string) => {
-    setNeedsAltReview((current) => current.filter((item) => item.id !== id));
-  }, []);
-
-  const reviewIds = useMemo(
-    () => new Set(needsAltReview.map((i) => i.id)),
-    [needsAltReview],
+  const handleUploaded = useCallback(
+    (media: AdminMediaRef) => {
+      // Refresh happens through the invalidate hook attached to the upload
+      // mutation inside MediaUploadForm. Close the preview and offer the
+      // metadata editor so the operator can polish alt/caption/credit if the
+      // preview default wasn't quite right.
+      closeUploadDialog();
+      const asItem = items.find((item) => item.id === media.id);
+      if (asItem) setEditing(asItem);
+      else refetch();
+    },
+    [closeUploadDialog, items, refetch],
   );
 
   return (
@@ -241,22 +236,21 @@ export function MediaLibraryPage() {
         </div>
         <AdminButton
           variant="primary"
-          onClick={() => inputRef.current?.click()}
+          onClick={openUploadDialog}
           leftIcon={<AddRounded sx={{ fontSize: 16 }} />}
         >
-          Upload files
+          Upload file
         </AdminButton>
       </div>
 
-      {/* Hidden shared file input */}
+      {/* Hidden file input — kept for the dropzone's click-to-choose affordance. */}
       <input
         ref={inputRef}
         type="file"
         accept={ACCEPT_ATTR}
-        multiple
         hidden
         onChange={(event) => {
-          if (event.target.files?.length) uploadFiles(event.target.files);
+          if (event.target.files?.length) stageFiles(event.target.files);
           event.target.value = "";
         }}
       />
@@ -276,75 +270,6 @@ export function MediaLibraryPage() {
           className="w-full rounded-none border border-border bg-surface py-2 pl-9 pr-3 text-sm text-ink placeholder:text-muted-soft focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20 sm:max-w-sm"
         />
       </div>
-
-      {/* Alt review banner — surfaces machine-generated alt from bulk uploads */}
-      {needsAltReview.length > 0 ? (
-        <div className="rounded-none border border-[#fbd38d] bg-[#fffaf0] px-4 py-3 shadow-card">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#7b341e]">
-                Review auto-generated alt text
-              </p>
-              <p className="mt-0.5 text-xs text-[#7b341e]/80">
-                We guessed alt text from the filename for {needsAltReview.length}{" "}
-                image{needsAltReview.length === 1 ? "" : "s"}. Tap Edit to write a
-                real description before publishing anything that uses them.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setNeedsAltReview([])}
-              className="whitespace-nowrap text-[0.6875rem] font-semibold uppercase tracking-wide text-[#7b341e]/80 underline-offset-2 hover:underline"
-            >
-              Dismiss all
-            </button>
-          </div>
-          <ul className="mt-3 space-y-1.5">
-            {needsAltReview.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-3 rounded-none bg-white/70 px-3 py-2"
-              >
-                {item.url ? (
-                  <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-none border border-border">
-                    <Image
-                      src={item.url}
-                      alt={item.alt ?? item.filename ?? "Uploaded image"}
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                  </div>
-                ) : null}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-ink" title={item.filename}>
-                    {item.filename ?? "Uploaded image"}
-                  </p>
-                  <p className="truncate text-[0.6875rem] text-muted" title={item.alt}>
-                    Alt: {item.alt || "(missing)"}
-                  </p>
-                </div>
-                <AdminButton
-                  variant="secondary"
-                  size="sm"
-                  leftIcon={<EditOutlined sx={{ fontSize: 14 }} />}
-                  onClick={() => handleEdit(item)}
-                >
-                  Edit
-                </AdminButton>
-                <button
-                  type="button"
-                  onClick={() => dismissReview(item.id)}
-                  aria-label={`Dismiss review for ${item.filename ?? "image"}`}
-                  className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted hover:text-ink"
-                >
-                  Skip
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       {/* Dropzone */}
       <div
@@ -372,16 +297,11 @@ export function MediaLibraryPage() {
       >
         <CloudUploadOutlined sx={{ fontSize: 40 }} className="text-muted-soft" />
         <div className="font-semibold uppercase tracking-wide text-ink-secondary">
-          Drag &amp; drop or click to upload
+          Drag &amp; drop or click to preview
         </div>
         <p className="text-xs text-muted-soft">
-          {ACCEPTED_LABEL} up to {MAX_UPLOAD_MB}MB
+          {ACCEPTED_LABEL} up to {MAX_UPLOAD_MB}MB · one at a time
         </p>
-        {pendingUploads > 0 ? (
-          <Pill tone="info" className="mt-1">
-            Uploading {pendingUploads} file{pendingUploads === 1 ? "" : "s"}…
-          </Pill>
-        ) : null}
       </div>
 
       {/* Grid */}
@@ -417,7 +337,6 @@ export function MediaLibraryPage() {
                   onCopy={handleCopyUrl}
                   onDelete={handleDelete}
                   onEdit={handleEdit}
-                  needsAltReview={reviewIds.has(item.id)}
                   deleting={
                     deleteMutation.isPending && deleteMutation.variables?.id === item.id
                   }
@@ -451,12 +370,18 @@ export function MediaLibraryPage() {
           item={editing}
           open={Boolean(editing)}
           onClose={() => setEditing(null)}
-          onSaved={(updated) => {
-            // Once edited, treat the alt as reviewed.
-            dismissReview(updated.id);
-          }}
         />
       ) : null}
+
+      <Dialog open={uploadOpen} onClose={closeUploadDialog} fullWidth maxWidth="sm">
+        <DialogTitle>Preview &amp; upload</DialogTitle>
+        <DialogContent dividers>
+          <MediaUploadForm
+            onUploaded={handleUploaded}
+            initialFile={preloadedFile}
+          />
+        </DialogContent>
+      </Dialog>
 
       <AdminConfirmDialog
         open={pendingDelete !== null}
@@ -487,38 +412,18 @@ function MediaTile({
   onDelete,
   onEdit,
   deleting,
-  needsAltReview,
 }: {
   item: AdminMediaItem;
   onCopy: (item: AdminMediaItem) => void;
   onDelete: (item: AdminMediaItem) => void;
   onEdit: (item: AdminMediaItem) => void;
   deleting: boolean;
-  needsAltReview?: boolean;
 }) {
   const alt = item.alt || item.filename || "Media asset";
 
   return (
     <figure className="group relative aspect-square overflow-hidden rounded-none border border-border bg-surface-muted">
-      {item.url ? (
-        <Image
-          src={item.url}
-          alt={alt}
-          fill
-          sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 480px) 33vw, 50vw"
-          className="object-cover"
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-muted-soft">
-          <BrokenImageOutlined sx={{ fontSize: 28 }} />
-        </div>
-      )}
-
-      {needsAltReview ? (
-        <div className="pointer-events-none absolute left-1.5 top-1.5">
-          <Pill tone="warning">Review alt</Pill>
-        </div>
-      ) : null}
+      <TileImage src={item.url ?? null} alt={alt} />
 
       {/* Hover overlay */}
       <figcaption className="pointer-events-none absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/70 via-black/10 to-transparent p-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
@@ -565,6 +470,30 @@ function MediaTile({
         </div>
       </figcaption>
     </figure>
+  );
+}
+
+/**
+ * Media tile image that falls back to the brand placeholder for missing URLs
+ * or CDN errors. Local state resets when `src` changes so a stale error from
+ * a previous asset doesn't stick to a freshly slotted one.
+ */
+function TileImage({ src, alt }: { src: string | null; alt: string }) {
+  const [errored, setErrored] = useState(false);
+  useEffect(() => {
+    setErrored(false);
+  }, [src]);
+  const shouldFallback = !src || errored;
+  return (
+    <Image
+      src={shouldFallback ? IMAGE_FALLBACK_SRC : src}
+      alt={alt}
+      fill
+      sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 480px) 33vw, 50vw"
+      className="object-cover"
+      onError={() => setErrored(true)}
+      unoptimized={shouldFallback}
+    />
   );
 }
 

@@ -491,22 +491,23 @@ function InviteUserModal({ onClose }: { onClose: () => void }) {
     service: adminUsersService.invite,
     options: {
       invalidateKeys: [adminQueryKeys.users],
-      // Split the title on outcome — a silent "Invite sent" toast on delivery
-      // failure was hiding a real Resend problem on production.
-      successTitle: (r) => (r.emailSent ? "Invite sent" : "Invite created — email did not go out"),
+      // Toast title still splits on outcome so the admin can see at a glance
+      // whether Resend accepted the send. Message copy makes clear that even
+      // an accepted send is not the same as delivery.
+      successTitle: (r) =>
+        r.emailSent ? "Invite created, email queued" : "Invite created, email did not go out",
       successMessage: (r) =>
         r.emailSent
-          ? "An invitation email is on its way."
-          : "Resend did not accept the email (check the domain is verified and the recipient isn't in your sandbox allowlist). Share the invite link below.",
+          ? "An invitation email is on the way. If it does not land in a minute, share the link on the next screen instead."
+          : "Resend did not accept the email. Share the invite link below with the new member directly.",
       errorTitle: "Could not send invite",
+      // Always land on the invite-link panel. Even a successful email send
+      // can silently fail downstream (bounce, spam filter, unverified
+      // domain), so the admin needs a shareable link as a backup on every
+      // invite. The panel copy reflects delivery state.
       onSuccess: (r) => {
-        // If the email went out there's nothing to hand off — close. Otherwise
-        // keep the modal open on the fallback panel so the link can be copied.
-        if (r.emailSent || !r.inviteToken) {
-          onClose();
-        } else {
-          setFallback(r);
-        }
+        if (r.inviteToken) setFallback(r);
+        else onClose();
       },
     },
   });
@@ -625,9 +626,9 @@ function formatExpiry(iso: string): string {
 }
 
 /**
- * Shown after an invite is created but email delivery is unavailable. Surfaces
- * the one-time accept-invite link so the admin can hand it to the invitee —
- * without this the invited account can never be activated.
+ * Shown after an invite is created. Surfaces the one-time accept-invite link
+ * so the admin can always hand it to the invitee as a backup, regardless of
+ * whether Resend accepted the send. Copy adapts to email delivery state.
  */
 function InviteLinkPanel({
   invite,
@@ -641,6 +642,7 @@ function InviteLinkPanel({
   const [copied, setCopied] = useState(false);
   const url = buildInviteUrl(invite.inviteToken ?? "");
   const expiry = formatExpiry(invite.inviteExpiresAt);
+  const emailQueued = invite.emailSent;
 
   async function copy() {
     try {
@@ -663,8 +665,9 @@ function InviteLinkPanel({
             Invite link
           </h2>
           <p className="mt-1 text-xs text-muted">
-            Email delivery is off, so share this link with
-            {email ? ` ${email}` : " the new member"} directly.
+            {emailQueued
+              ? `An invitation email is on the way to${email ? ` ${email}` : " the new member"}. Keep this link handy in case it does not land.`
+              : `Email delivery did not go out. Share this link with${email ? ` ${email}` : " the new member"} directly.`}
           </p>
         </div>
         <CloseButton onClose={onClose} />
@@ -673,8 +676,8 @@ function InviteLinkPanel({
       <div className="flex items-start gap-2 rounded-none border border-[#fed7aa] bg-[#fffbeb] p-3">
         <WarningAmberRounded sx={{ fontSize: 18 }} className="mt-0.5 shrink-0 text-[#b54708]" />
         <p className="text-xs text-[#b54708]">
-          This link is shown <strong>once</strong> and can&apos;t be retrieved
-          later. Copy it now{expiry ? ` — it expires ${expiry}.` : "."}
+          This link is shown <strong>once</strong> and cannot be retrieved
+          later. Copy it now{expiry ? `. It expires ${expiry}.` : "."}
         </p>
       </div>
 

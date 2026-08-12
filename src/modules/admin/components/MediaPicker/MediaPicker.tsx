@@ -468,7 +468,19 @@ export function MediaMetadataDialog({
   );
 }
 
-function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) => void }) {
+export function MediaUploadForm({
+  onUploaded,
+  initialFile,
+}: {
+  onUploaded: (media: AdminMediaRef) => void;
+  /**
+   * Pre-selected file (drag-and-drop from a parent surface, e.g. the media
+   * library). When present, the form skips the pick-a-file step and drops
+   * straight into the preview + alt review — same landing state you'd get
+   * after clicking the dropzone yourself.
+   */
+  initialFile?: File | null;
+}) {
   const fileRef = useRef<HTMLInputElement>(null);
   const { showToast } = useKiribeToast();
   const [alt, setAlt] = useState("");
@@ -543,6 +555,15 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
       setIsPreparing(false);
     }
   };
+
+  // Preload a file handed in by the parent (drag-and-drop from the outer
+  // surface). Run once per file identity so a re-render with the same file
+  // doesn't reset the alt/rename the operator has been typing into.
+  useEffect(() => {
+    if (!initialFile) return;
+    void acceptFile(initialFile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFile]);
 
   const handleUpload = async () => {
     if (!selected || !alt.trim()) return;
@@ -706,10 +727,43 @@ function MediaUploadForm({ onUploaded }: { onUploaded: (media: AdminMediaRef) =>
 export function MediaPicker({ label, value, onChange, helperText }: MediaPickerProps) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState(0);
+  /**
+   * The image that will be attached to the article when the operator confirms.
+   * This is *not* the parent's `value` — the parent only receives it after the
+   * "Use this image" button is clicked, so upload + attach are two steps and
+   * the modal doesn't shut in your face mid-review.
+   */
+  const [pending, setPending] = useState<AdminMediaRef | null>(null);
 
-  const handleSelect = (media: AdminMediaRef) => {
-    onChange(media);
+  const openPicker = () => {
+    setPending(value ?? null);
+    setOpen(true);
+  };
+
+  const closePicker = () => {
     setOpen(false);
+    setPending(null);
+  };
+
+  const confirmSelection = () => {
+    if (!pending) return;
+    onChange(pending);
+    setOpen(false);
+    setPending(null);
+  };
+
+  // Library click: stage the pick, don't close.
+  const handleLibraryPick = (media: AdminMediaRef) => {
+    setPending(media);
+  };
+
+  // Upload finished: stage the freshly-uploaded asset, jump to Library so the
+  // operator sees it slotted alongside the rest, and wait for them to hit
+  // "Use this image". Prior behaviour closed the modal on upload success,
+  // which felt like the app was making the choice for them.
+  const handleUploaded = (media: AdminMediaRef) => {
+    setPending(media);
+    setTab(0);
   };
 
   return (
@@ -747,7 +801,7 @@ export function MediaPicker({ label, value, onChange, helperText }: MediaPickerP
           )}
         </Box>
         <Stack spacing={1}>
-          <Button variant="outlined" size="small" onClick={() => setOpen(true)}>
+          <Button variant="outlined" size="small" onClick={openPicker}>
             {value ? "Change image" : "Choose image"}
           </Button>
           {value ? (
@@ -763,7 +817,7 @@ export function MediaPicker({ label, value, onChange, helperText }: MediaPickerP
         </Typography>
       ) : null}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
+      <Dialog open={open} onClose={closePicker} fullWidth maxWidth="md">
         <DialogTitle>Select image</DialogTitle>
         <DialogContent dividers>
           <Tabs value={tab} onChange={(_, next) => setTab(next)} sx={{ mb: 2 }}>
@@ -771,11 +825,59 @@ export function MediaPicker({ label, value, onChange, helperText }: MediaPickerP
             <Tab label="Upload" />
           </Tabs>
           {tab === 0 ? (
-            <MediaLibraryGrid onSelect={handleSelect} editable />
+            <MediaLibraryGrid
+              onSelect={handleLibraryPick}
+              selectedIds={pending ? new Set([pending.id]) : undefined}
+              editable
+            />
           ) : (
-            <MediaUploadForm onUploaded={handleSelect} />
+            <MediaUploadForm onUploaded={handleUploaded} />
           )}
         </DialogContent>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            px: 3,
+            py: 2,
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderTop: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+            {pending?.url ? (
+              <Box
+                component="img"
+                src={pending.url}
+                alt={pending.alt ?? ""}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  objectFit: "cover",
+                  borderRadius: 1,
+                  border: "1px solid",
+                  borderColor: "divider",
+                  flexShrink: 0,
+                }}
+              />
+            ) : null}
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {pending ? "Selected · click Use this image to attach." : "Pick or upload an image, then click Use this image."}
+            </Typography>
+          </Stack>
+          <Stack direction="row" spacing={1}>
+            <Button onClick={closePicker}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={confirmSelection}
+              disabled={!pending || pending.id === value?.id}
+            >
+              Use this image
+            </Button>
+          </Stack>
+        </Stack>
       </Dialog>
     </Box>
   );

@@ -48,22 +48,19 @@ export async function PATCH(request: NextRequest, { params }: RouteProps) {
     if (wantsPublish && !can(user.role, "articles:publish")) {
       return apiError("Forbidden", 403);
     }
+    // Authorship is immutable through this API: no client may reassign a
+    // byline, not even an admin. Strip the field before the update so a stale
+    // client can't overwrite it and an attacker can't launder attribution.
+    const safeInput = { ...input };
+    delete safeInput.authorId;
     // Ownership scope: writers/contributors may only edit their own articles.
-    // Reassigning author to someone else (or null-ing it out) is editor-only —
-    // otherwise a writer could hand off (or launder) authorship. See DECISIONS.md.
     if (!isEditorOrAbove(user.role)) {
       const authorId = await getAdminArticleAuthorId(id);
       if (!authorId || authorId !== String(user.id)) {
         return apiError("Forbidden", 403);
       }
-      if (
-        input.authorId !== undefined &&
-        (input.authorId === null || String(input.authorId) !== String(user.id))
-      ) {
-        return apiError("Forbidden", 403);
-      }
     }
-    const doc = await updateAdminArticle(id, input, {
+    const doc = await updateAdminArticle(id, safeInput, {
       actor: { id: user.id, name: user.name ?? null },
     });
     return apiSuccess(doc);

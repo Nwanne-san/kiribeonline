@@ -2,8 +2,8 @@ import { renderEmailShell, type EmailShellOutput } from "./shell";
 
 /**
  * Sent to a writer when an editor moves their article from in_review to
- * published (or scheduled). Warm, congratulatory — the writer's byline is
- * live on the site now.
+ * published (or scheduled). Tone stays close to a desk note: short, warm,
+ * factual. The writer's byline is live on the site now.
  */
 export function renderArticleApprovedEmail({
   writerName,
@@ -17,7 +17,7 @@ export function renderArticleApprovedEmail({
   articleTitle: string;
   articleUrl: string;
   editorName?: string;
-  /** ISO 8601 — set when the article is scheduled instead of live now. */
+  /** ISO 8601 timestamp. Set when the article is scheduled instead of live now. */
   scheduledFor?: string;
   brand?: string;
 }): EmailShellOutput {
@@ -25,24 +25,29 @@ export function renderArticleApprovedEmail({
   const scheduled = scheduledFor
     ? new Date(scheduledFor).toUTCString()
     : undefined;
-  const editorLine = editorName ? `${editorName} on the desk` : "The editorial desk";
-  const kicker = scheduled ? "Scheduled" : "Published";
-  const heading = scheduled ? "You're on the schedule." : "Your piece is live.";
+  const editorSentence = editorName ? ` Edited by ${editorName}.` : "";
+  const kicker = scheduled ? "Scheduled" : "Now live";
+  const heading = scheduled
+    ? `"${articleTitle}" is scheduled.`
+    : `"${articleTitle}" is now live on ${brand}.`;
 
-  const paragraphs = [
-    scheduled
-      ? `Nice work, ${firstName}. ${editorLine} has approved "${articleTitle}" and set it to go live at the time below. When it publishes, it will appear on the front of the site — you don't need to do anything else.`
-      : `Nice work, ${firstName}. ${editorLine} has published "${articleTitle}" — it is on the site right now, byline and all. Reads best with a coffee, we've heard.`,
-    `Feel free to share the link with your people. If you spot a typo or want to file a follow-up, the admin is the fastest way in — everything else can wait.`,
-  ];
+  const paragraphs = scheduled
+    ? [
+        `${firstName}, the desk cleared "${articleTitle}" for publication.${editorSentence} It will go live at the time listed below and appear across the site automatically.`,
+        `No further action is required. If you would like changes before it publishes, open the piece in the admin and file the edit.`,
+      ]
+    : [
+        `${firstName}, "${articleTitle}" is now live on ${brand}.${editorSentence}`,
+        `You can share the link freely. If anything needs correcting after publication, open the piece in the admin. That is the fastest route for a fix.`,
+      ];
 
   return renderEmailShell({
     subject: scheduled
-      ? `"${articleTitle}" is scheduled to publish on ${brand}`
-      : `"${articleTitle}" is now live on ${brand}`,
+      ? `Scheduled: "${articleTitle}" (${brand})`
+      : `Now live: "${articleTitle}" (${brand})`,
     preheader: scheduled
-      ? `Your piece is on the schedule — details below.`
-      : `Your piece is live. Read it, share it, take a beat.`,
+      ? `Cleared for publication. Goes live at the time listed below.`
+      : `Cleared and published. Byline included.`,
     kicker,
     heading,
     paragraphs,
@@ -56,7 +61,7 @@ export function renderArticleApprovedEmail({
       url: articleUrl,
     },
     finePrint:
-      "You are receiving this because you are the byline on this article. Notifications for your own writing cannot be turned off.",
+      "You are receiving this because you are the byline on this article. These publication receipts cannot be turned off. They are the record of your work going out under your name.",
     brand,
   });
 }

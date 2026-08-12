@@ -9,7 +9,10 @@ import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
 import RemoveCircleOutlineOutlined from "@mui/icons-material/RemoveCircleOutlineOutlined";
 import ArchiveOutlined from "@mui/icons-material/ArchiveOutlined";
 import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import MoreVertRounded from "@mui/icons-material/MoreVertRounded";
 import Image from "next/image";
+import { IMAGE_FALLBACK_SRC } from "@/modules/shared/components/media/KiribeImage/KiribeImage";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -270,6 +273,8 @@ export function ArticlesListPage() {
   });
 
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
+  /** Which article's overflow menu is open (only ever one at a time). */
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const runBulk = (action: "publish" | "unpublish" | "archive" | "delete") => {
     const ids = Array.from(selected);
@@ -279,6 +284,17 @@ export function ArticlesListPage() {
       return;
     }
     bulk.mutate({ ids, action });
+  };
+
+  /**
+   * Per-row status change without going through the bulk API — clearer intent
+   * in the audit log ("editor demoted article X to draft") and keeps the
+   * dropdown snappy for a common shortcut. Reuses the same bulk endpoint under
+   * the hood so publish/edit capability is enforced identically.
+   */
+  const runRowStatus = (id: string, action: "publish" | "unpublish" | "archive") => {
+    bulk.mutate({ ids: [id], action });
+    setOpenMenuId(null);
   };
 
   /* ── Selection helpers ── */
@@ -508,6 +524,7 @@ export function ArticlesListPage() {
                 <th className="px-2 py-3 font-semibold">Date</th>
                 <th className="px-2 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 text-right font-semibold">Views</th>
+                <th className="w-10 px-2 py-3" aria-label="Row actions" />
               </tr>
             </thead>
             <tbody>
@@ -538,19 +555,14 @@ export function ArticlesListPage() {
                     <td className="px-2 py-3">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 shrink-0 overflow-hidden rounded-none bg-surface-muted">
-                          {hero ? (
-                            <Image
-                              src={hero}
-                              alt={
-                                (typeof article.heroImage === "object" &&
-                                  article.heroImage?.alt) ||
-                                article.title
-                              }
-                              width={40}
-                              height={40}
-                              className="h-10 w-10 object-cover"
-                            />
-                          ) : null}
+                          <RowHero
+                            src={hero}
+                            alt={
+                              (typeof article.heroImage === "object" &&
+                                article.heroImage?.alt) ||
+                              article.title
+                            }
+                          />
                         </div>
                         <Link
                           href={adminRoute(AdminRoutes.articleEdit, { id: article.id })}
@@ -592,6 +604,34 @@ export function ArticlesListPage() {
                     <td className="px-4 py-3 text-right tabular-nums text-ink-secondary">
                       {formatCompact(article.viewCount ?? 0)}
                     </td>
+                    <td
+                      className="px-2 py-3 text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <RowMenu
+                        open={openMenuId === article.id}
+                        onOpen={() =>
+                          setOpenMenuId((current) =>
+                            current === article.id ? null : article.id
+                          )
+                        }
+                        onClose={() => setOpenMenuId(null)}
+                        onEdit={() => {
+                          router.push(
+                            adminRoute(AdminRoutes.articleEdit, { id: article.id })
+                          );
+                          setOpenMenuId(null);
+                        }}
+                        onDraft={() => runRowStatus(article.id, "unpublish")}
+                        onDelete={() => {
+                          setPendingDelete([article.id]);
+                          setOpenMenuId(null);
+                        }}
+                        canDraft={canPublish && article.status !== "draft"}
+                        canDelete={canDelete}
+                        disabled={bulk.isPending}
+                      />
+                    </td>
                   </tr>
                 );
               })}
@@ -599,7 +639,7 @@ export function ArticlesListPage() {
               {!isLoading && rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-4 py-12 text-center text-sm text-muted-soft"
                   >
                     {status || debouncedValue || category || author
@@ -738,6 +778,155 @@ function PagerButton({
       className="inline-flex h-8 w-8 items-center justify-center rounded-none border border-border bg-surface text-ink-secondary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
     >
       <Icon sx={{ fontSize: 18 }} />
+    </button>
+  );
+}
+
+/**
+ * Per-row overflow menu — click a 3-dot button to reveal Edit / Draft / Delete.
+ * A tiny anchored popover instead of MUI Menu because the admin is mid-Tailwind
+ * migration and the interactions here are simple enough that pulling in a
+ * portal + backdrop for every row wouldn't be worth the weight.
+ *
+ * Closes on: outside click, Escape, an action firing. Opens above or below
+ * automatically via CSS positioning — the anchor is `relative` so the popover
+ * uses standard offset math (no portal).
+ */
+function RowMenu({
+  open,
+  onOpen,
+  onClose,
+  onEdit,
+  onDraft,
+  onDelete,
+  canDraft,
+  canDelete,
+  disabled,
+}: {
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  onEdit: () => void;
+  onDraft: () => void;
+  onDelete: () => void;
+  canDraft: boolean;
+  canDelete: boolean;
+  disabled?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointer = (event: MouseEvent) => {
+      if (!ref.current) return;
+      if (event.target instanceof Node && ref.current.contains(event.target)) return;
+      onClose();
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("mousedown", handlePointer);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handlePointer);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open, onClose]);
+
+  return (
+    <div ref={ref} className="relative inline-block text-left">
+      <button
+        type="button"
+        aria-label="Row actions"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpen();
+        }}
+        disabled={disabled}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-none border border-transparent text-ink-secondary transition-colors hover:border-border hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-burgundy/30 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <MoreVertRounded sx={{ fontSize: 18 }} />
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute right-0 z-30 mt-1 w-40 rounded-none border border-border bg-surface shadow-card"
+        >
+          <MenuItem
+            label="Edit"
+            Icon={EditOutlined}
+            onClick={onEdit}
+          />
+          {canDraft ? (
+            <MenuItem
+              label="Move to draft"
+              Icon={RemoveCircleOutlineOutlined}
+              onClick={onDraft}
+            />
+          ) : null}
+          {canDelete ? (
+            <MenuItem
+              label="Delete"
+              Icon={DeleteOutlineOutlined}
+              onClick={onDelete}
+              danger
+            />
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * 40×40 row thumbnail with a branded fallback for missing / broken URLs.
+ * Kept per-row rather than swapping the outer parent so a mid-scroll load
+ * error doesn't force a full re-layout of the table.
+ */
+function RowHero({ src, alt }: { src: string | null; alt: string }) {
+  const [errored, setErrored] = useState(false);
+  const shouldFallback = !src || errored;
+  const resolved = shouldFallback ? IMAGE_FALLBACK_SRC : src;
+  return (
+    <Image
+      src={resolved}
+      alt={alt}
+      width={40}
+      height={40}
+      className="h-10 w-10 object-cover"
+      onError={() => setErrored(true)}
+      unoptimized={shouldFallback}
+    />
+  );
+}
+
+function MenuItem({
+  label,
+  Icon,
+  onClick,
+  danger = false,
+}: {
+  label: string;
+  Icon: React.ComponentType<{ sx?: object }>;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted ${
+        danger ? "text-[#b42318] hover:bg-[#fef2f2]" : "text-ink-secondary"
+      }`}
+    >
+      <Icon sx={{ fontSize: 15 }} />
+      {label}
     </button>
   );
 }
