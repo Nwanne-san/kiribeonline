@@ -7,6 +7,7 @@ import { slugify } from "@/utils/helper";
 import {
   sendArticleApprovedEmail,
   sendArticleChangesRequestedEmail,
+  sendArticleSubmittedEmailToAdmins,
 } from "./status-emails";
 
 function mapArticleInput(input: ArticleInput) {
@@ -301,7 +302,8 @@ function extractAuthor(raw: unknown): ArticleAuthorDoc | null {
  * review states — but never on self-edits (a writer publishing their own draft
  * doesn't need congratulating themselves) and never if we can't reach them.
  *
- *  - approved:            in_review / draft → published or scheduled
+ *  - submitted:           any                → in_review (fan-out to admins)
+ *  - approved:            in_review / draft  → published or scheduled
  *  - changes requested:   in_review          → draft (editor pushed it back)
  *
  * All fire-and-forget; delivery failures are logged inside the send helpers.
@@ -322,6 +324,30 @@ function dispatchStatusEmail({
   if (!newStatus || oldStatus === newStatus) return;
 
   const author = extractAuthor(before.author);
+  const articleTitle = after.title ?? "Your article";
+
+  // A transition INTO in_review is a review-queue notification to admins.
+  // This fires whether or not the writer has an email on file (unlike the
+  // other status emails, the audience here is not the writer) and whether
+  // the actor is the writer themselves (a writer filing their own piece is
+  // the whole point — admins still need to see it).
+  if (newStatus === "in_review") {
+    const writerForAdmins = author
+      ? { name: author.name, email: author.email, id: author.id }
+      : context?.actor
+        ? { name: context.actor.name ?? null, email: null, id: context.actor.id }
+        : { name: null, email: null };
+    void sendArticleSubmittedEmailToAdmins({
+      articleTitle,
+      articleId: id,
+      writer: writerForAdmins,
+      submittedAtISO: new Date().toISOString(),
+    }).catch((err) => {
+      console.error("[articles] admin review notification failed", err);
+    });
+    return;
+  }
+
   if (!author?.email) return;
 
   // Skip self-edits — a writer approving/pushing back their own draft is not
@@ -332,7 +358,6 @@ function dispatchStatusEmail({
   const editor = context?.actor
     ? { name: context.actor.name ?? null }
     : undefined;
-  const articleTitle = after.title ?? "Your article";
 
   if (newStatus === "published" || newStatus === "scheduled") {
     const publishedAt =

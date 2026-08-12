@@ -26,17 +26,17 @@ export function renderArticleChangesRequestedEmail({
   const trimmedNote = note?.trim();
 
   const paragraphs = [
-    `Hi ${firstName} — ${editor} has taken a pass on "${articleTitle}" and would like another round of edits before it publishes. Nothing dramatic; just a few things they'd like your eyes on.`,
+    `Hi ${firstName}. ${editor} has taken a pass on "${articleTitle}" and would like another round of edits before it publishes. Nothing dramatic. Just a few things they would like your eyes on.`,
     trimmedNote
-      ? `Here's what they left in the notes:`
-      : `Open the piece in the admin to see the editor's inline comments and revise. Once you're ready, submit it for review again and it will pop back into their queue.`,
+      ? `Here is what they left in the notes:`
+      : `Open the piece in the admin to see the editor's inline comments and revise. Once you are ready, submit it for review again and it will land back in their queue.`,
   ];
 
   return renderEmailShell({
     subject: `"${articleTitle}" needs one more pass`,
-    preheader: `Not a rejection — an editor wants another look before it publishes.`,
+    preheader: `Not a rejection. An editor wants another look before it publishes.`,
     kicker: "Revisions requested",
-    heading: "One more pass, and we're there.",
+    heading: "One more pass, and we are there.",
     paragraphs,
     infoRows: [
       { label: "Title", value: articleTitle },
@@ -45,7 +45,7 @@ export function renderArticleChangesRequestedEmail({
     ],
     cta: { label: "Open in editor", url: articleEditUrl },
     finePrint:
-      "Send it back to review whenever you're ready — there is no clock on this. If you'd like to talk it through instead of trading drafts, reply to this email and it will reach the editor directly.",
+      "Send it back to review whenever you are ready. There is no clock on this. If you would like to talk it through instead of trading drafts, reply to this email and it will reach the editor directly.",
     brand,
   });
 }

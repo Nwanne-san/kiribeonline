@@ -5,7 +5,7 @@ import {
   requireAdminUserFromRequest,
   requireAdminWriteCapability,
 } from "@/server/auth";
-import { can, isEditorOrAbove } from "@/server/access/roles";
+import { can } from "@/server/access/roles";
 import {
   createAdminArticle,
   listAdminArticles,
@@ -53,20 +53,11 @@ export async function POST(request: NextRequest) {
     if (wantsPublish && !can(user.role, "articles:publish")) {
       return apiError("Forbidden", 403);
     }
-    // Ownership scope: writers/contributors may only file under their own
-    // byline; editors may file for anyone. See DECISIONS.md.
-    if (
-      !isEditorOrAbove(user.role) &&
-      input.authorId !== undefined &&
-      input.authorId !== null &&
-      String(input.authorId) !== String(user.id)
-    ) {
-      return apiError("Forbidden", 403);
-    }
-    // Default attribution to the creating user so articles are never
-    // unassigned; an explicit authorId (e.g. an editor filing for someone
-    // else) still wins.
-    const doc = await createAdminArticle({ ...input, authorId: input.authorId ?? user.id });
+    // Authorship is pinned server-side to the acting user for every role,
+    // admin included. The editor UI never sends `authorId`; if any caller
+    // does, drop it. There is no supported flow for filing under someone
+    // else's byline through the API.
+    const doc = await createAdminArticle({ ...input, authorId: user.id });
     return apiSuccess(doc);
   } catch (error) {
     return handleAdminRouteError(error);

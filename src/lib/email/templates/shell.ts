@@ -20,6 +20,7 @@ const BRAND = {
   mustard: "#c9a227",
   mustardContrast: "#1a1a1a",
   cream: "#faf8f5",
+  creamDeep: "#f4efe4",
   surface: "#ffffff",
   surfaceAlt: "#f9fafb",
   ink: "#1a1a1a",
@@ -30,6 +31,39 @@ const BRAND = {
 
 const FONT_HEADLINE = "'Outfit',Georgia,'Times New Roman',serif";
 const FONT_BODY = "'Open Sans',Helvetica,Arial,sans-serif";
+
+const BRAND_TAGLINE = "Editorial on film, television, and culture.";
+const SITE_URL = "https://kiribeonline.com";
+const CONTACT_URL = "https://kiribeonline.com/contact";
+
+/**
+ * Subtle watermark — a mustard "K" set inside a hairline rule, repeated at
+ * very low opacity across the body surface. Encoded as an SVG data URI so it
+ * renders in every client that supports HTML email backgrounds (Gmail, Apple
+ * Mail, iOS Mail, Yahoo, Outlook web). Clients that ignore backgrounds
+ * (Outlook desktop's Word renderer) fall back to the base cream tint — the
+ * shell doesn't rely on the mark being visible, only on it being tasteful
+ * when it does render.
+ */
+const WATERMARK_SVG_DATA_URI = (() => {
+  const raw = `<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'>` +
+    `<g fill='none' stroke='#c9a227' stroke-opacity='0.08'>` +
+    `<circle cx='130' cy='130' r='96' stroke-width='1.2'/>` +
+    `<circle cx='130' cy='130' r='72' stroke-width='0.9'/>` +
+    `</g>` +
+    `<text x='130' y='158' text-anchor='middle' font-family='Outfit, Georgia, serif' font-size='108' font-weight='700' fill='#6b1d2a' fill-opacity='0.045' letter-spacing='6'>K</text>` +
+    `</svg>`;
+  // Percent-encode the reserved characters that break inline data URIs.
+  // btoa isn't available in every Node runtime we target, so hand-roll it.
+  const encoded = raw
+    .replace(/%/g, "%25")
+    .replace(/#/g, "%23")
+    .replace(/</g, "%3C")
+    .replace(/>/g, "%3E")
+    .replace(/"/g, "%22")
+    .replace(/\n/g, "%0A");
+  return `data:image/svg+xml;utf8,${encoded}`;
+})();
 
 export type EmailCta = {
   label: string;
@@ -140,7 +174,7 @@ export function renderEmailShell(input: EmailShellInput): EmailShellOutput {
     ? `<p style="margin:24px 0 0;padding-top:20px;border-top:1px solid ${BRAND.border};font-family:${FONT_BODY};font-size:12px;line-height:18px;color:${BRAND.muted};">${escapeHtml(input.finePrint)}</p>`
     : "";
   const footerNote = input.footerNote
-    ? `<div style="margin-top:6px;font-family:${FONT_BODY};font-size:11px;line-height:16px;color:${BRAND.muted};">${escapeHtml(input.footerNote)}</div>`
+    ? `<div style="margin-top:8px;font-family:${FONT_BODY};font-size:11px;line-height:16px;color:rgba(255,255,255,0.6);">${escapeHtml(input.footerNote)}</div>`
     : "";
   const preheader = input.preheader
     ? `<div style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0;font-size:1px;">${escapeHtml(input.preheader)}</div>`
@@ -160,15 +194,20 @@ export function renderEmailShell(input: EmailShellInput): EmailShellOutput {
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${BRAND.cream};padding:32px 16px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:580px;background:${BRAND.surface};border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.06);">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background:${BRAND.surface};border-radius:10px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.08);">
+            <!-- Editorial banner: brand mark, gold rule, tagline, sub-hairline -->
             <tr>
-              <td style="background:${BRAND.burgundy};padding:36px 32px 28px;text-align:center;color:${BRAND.surface};">
-                <div style="font-family:${FONT_HEADLINE};font-weight:700;font-size:22px;letter-spacing:.14em;text-transform:uppercase;">${escapeHtml(brand)}</div>
-                <div style="height:2px;width:56px;background:${BRAND.mustard};margin:14px auto 0;"></div>
+              <td style="background:${BRAND.burgundy};padding:40px 32px 28px;text-align:center;color:${BRAND.surface};background-image:linear-gradient(180deg, ${BRAND.burgundy} 0%, ${BRAND.burgundy} 78%, ${BRAND.burgundyDark} 100%);">
+                <div style="font-family:${FONT_HEADLINE};font-weight:700;font-size:24px;letter-spacing:.22em;text-transform:uppercase;line-height:1;">${escapeHtml(brand)}</div>
+                <div style="height:2px;width:64px;background:${BRAND.mustard};margin:14px auto 12px;"></div>
+                <div style="font-family:${FONT_HEADLINE};font-weight:400;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,0.78);">${escapeHtml(BRAND_TAGLINE)}</div>
               </td>
             </tr>
+            <!-- Thin mustard hairline underscoring the masthead -->
+            <tr><td style="height:3px;background:${BRAND.mustard};line-height:3px;font-size:0;">&nbsp;</td></tr>
+            <!-- Body — subtle KIRIBÉ watermark tiled at low opacity behind the copy -->
             <tr>
-              <td style="padding:36px 32px 32px;">
+              <td style="padding:40px 36px 32px;background-color:${BRAND.surface};background-image:url('${WATERMARK_SVG_DATA_URI}');background-repeat:repeat;background-position:center top;">
                 ${kicker}
                 <h1 style="margin:0 0 18px;font-family:${FONT_HEADLINE};font-weight:600;font-size:26px;line-height:34px;color:${BRAND.ink};">${escapeHtml(input.heading)}</h1>
                 ${paragraphs}
@@ -177,10 +216,20 @@ export function renderEmailShell(input: EmailShellInput): EmailShellOutput {
                 ${finePrint}
               </td>
             </tr>
+            <!-- Footer — editorial mark, tagline, contact + site links, © line -->
             <tr>
-              <td style="background:${BRAND.burgundyDark};padding:20px 32px;text-align:center;font-family:${FONT_BODY};font-size:12px;line-height:18px;color:rgba(255,255,255,.72);">
-                <div style="font-family:${FONT_HEADLINE};font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:${BRAND.mustard};">${escapeHtml(brand)}</div>
-                <div style="margin-top:4px;">&copy; ${year} ${escapeHtml(brand)}. Editorial on film, television, and culture.</div>
+              <td style="background:${BRAND.burgundyDark};padding:26px 32px 22px;text-align:center;color:rgba(255,255,255,0.78);font-family:${FONT_BODY};">
+                <div style="font-family:${FONT_HEADLINE};font-size:12px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;color:${BRAND.mustard};">${escapeHtml(brand)}</div>
+                <div style="height:1px;width:36px;background:rgba(201,162,39,0.5);margin:10px auto 12px;"></div>
+                <div style="font-family:${FONT_HEADLINE};font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,0.82);">${escapeHtml(BRAND_TAGLINE)}</div>
+                <div style="margin-top:14px;font-size:12px;line-height:18px;">
+                  <a href="${SITE_URL}" style="color:${BRAND.mustard};text-decoration:none;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Read on the site</a>
+                  <span style="color:rgba(255,255,255,0.35);padding:0 8px;">·</span>
+                  <a href="${CONTACT_URL}" style="color:${BRAND.mustard};text-decoration:none;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Reach the desk</a>
+                </div>
+                <div style="margin-top:16px;font-size:11px;line-height:16px;color:rgba(255,255,255,0.55);">
+                  &copy; ${year} ${escapeHtml(brand)}. Sent from our editorial desk.
+                </div>
                 ${footerNote}
               </td>
             </tr>
@@ -206,7 +255,9 @@ export function renderEmailShell(input: EmailShellInput): EmailShellOutput {
     }
   }
   if (input.finePrint) textLines.push(input.finePrint, "");
-  textLines.push(`— ${brand}`);
+  textLines.push(`Sent by ${brand}.`);
+  textLines.push(BRAND_TAGLINE);
+  textLines.push(SITE_URL);
   if (input.footerNote) textLines.push(input.footerNote);
 
   return {

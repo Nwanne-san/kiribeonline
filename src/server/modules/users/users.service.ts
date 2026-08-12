@@ -186,7 +186,7 @@ export async function inviteAdminUser(
 
   await writeAuditLog(payload, {
     action: "users.invited",
-    // Audit rows must stay queryable by actor email — the display name goes to
+    // Audit rows must stay queryable by actor email; the display name goes to
     // the invite email only. Review finding N1.
     actorEmail: invitedBy?.email ?? invitedByName,
     targetType: "users",
@@ -196,9 +196,13 @@ export async function inviteAdminUser(
 
   return {
     user: toListItem(doc, 0),
-    // Only hand the raw token back when we couldn't email it — avoids exposing
-    // a live credential in the API response when delivery succeeded.
-    inviteToken: emailSent ? undefined : raw,
+    // Always hand the raw token back. Resend accepting a send is not the same
+    // as the recipient actually receiving it (bounces, spam filters, an
+    // unverified domain), so the inviting admin needs a shareable link as a
+    // backup regardless of whether the mail transport reported success. The
+    // token is single-use, expires with the invite, and is only reachable to
+    // an admin who already holds `users:manage` on this same request.
+    inviteToken: raw,
     inviteExpiresAt: expiresAt,
     emailSent,
   };
@@ -279,15 +283,19 @@ export async function requestPasswordReset(email: string): Promise<void> {
   });
   const user = match.docs[0] as UserDoc | undefined;
 
-  // Audit the request either way so we can spot reset-token spray. The audit
-  // trail records the *requested* email, not user existence — read it with
-  // that in mind. AUTH-HARDENING §8b.
+  // Audit the request first, so a "requested but never delivered" pattern is
+  // still queryable even if the fire-and-forget path below crashes. Records
+  // the *requested* email, not user existence, so a spray campaign shows up
+  // as high volume against unknown accounts. AUTH-HARDENING §8b.
   await writeAuditLog(payload, {
     action: "auth.password_reset_requested",
     actorEmail: normalized,
     targetType: user ? "users" : undefined,
     targetId: user ? String(user.id) : undefined,
-    metadata: { emailDelivered: false },
+    metadata: {
+      userMatched: Boolean(user),
+      userStatus: user?.status ?? null,
+    },
   });
 
   if (!user || user.status !== "active") return;
@@ -298,9 +306,11 @@ export async function requestPasswordReset(email: string): Promise<void> {
   // Fire-and-forget the DB write + email so hit-branch response time matches
   // the miss branch. `await`-ing here would leak a timing oracle (extra ms
   // measurable across many probes even under the 5/min + 3/hour caps),
-  // defeating the generic-200 defense the route relies on. Errors are logged;
-  // the token expires in 30 min regardless.
+  // defeating the generic-200 defense the route relies on. Errors are logged
+  // and a follow-up audit row records the actual send outcome so a "did the
+  // reset email go out?" question has a real answer to check.
   void (async () => {
+    let emailDelivered = false;
     try {
       await payload.update({
         collection: "users",
@@ -311,9 +321,26 @@ export async function requestPasswordReset(email: string): Promise<void> {
         } as never,
         overrideAccess: true,
       });
-      await sendAdminPasswordResetEmail({ email: user.email, token: raw });
+      emailDelivered = await sendAdminPasswordResetEmail({
+        email: user.email,
+        token: raw,
+      });
     } catch (err) {
       console.error("[users] password reset delivery failed", err);
+    }
+    // Second audit row carries the real delivery signal. Kept as a separate
+    // row so the first audit (recorded synchronously above) stays intact even
+    // if this async block never finishes.
+    try {
+      await writeAuditLog(payload, {
+        action: "auth.password_reset_delivered",
+        actorEmail: normalized,
+        targetType: "users",
+        targetId: String(user.id),
+        metadata: { emailDelivered },
+      });
+    } catch (err) {
+      console.error("[users] password reset audit failed", err);
     }
   })();
 }
@@ -402,34 +429,34 @@ export async function deleteAdminUser(id: string) {
 }
 
 /**
- * Slim author-picker payload for the article editor: id + display name only,
- * active users, no emails or roles. The full user list is still gated by
- * `users:manage` (see /api/admin/users); this list is reachable to publish
- * holders too so an editor can file for someone else without granting them
- * team-admin visibility. Suspended and pending users are excluded — you can't
- * assign a byline to an inactive account.
+ * Return every active user with the `admin` role, id + email + name only.
+ * Used to fan out review-queue notifications (see article-submitted email).
+ * Skips pending and suspended accounts so a dormant admin doesn't receive
+ * transactional mail.
  */
-export async function listAuthorPickerCandidates(): Promise<
-  Array<{ id: string; name: string }>
+export async function listActiveAdminRecipients(): Promise<
+  Array<{ id: string; email: string; name: string | null }>
 > {
   const payload = await getPayloadClient();
   const result = await payload.find({
     collection: "users",
-    where: { status: { equals: "active" } },
+    where: {
+      and: [{ role: { equals: "admin" } }, { status: { equals: "active" } }],
+    },
     limit: 200,
     depth: 0,
-    sort: "name",
     overrideAccess: true,
     pagination: false,
   });
-
-  return (result.docs as Array<{ id: string | number; name?: string | null; email: string }>)
-    .map((doc) => ({
-      id: String(doc.id),
-      // Fall back to the email local-part when a user has no display name yet
-      // — the picker still needs a label to render, but we never return the
-      // full address (prior review flagged the leak).
-      name: doc.name?.trim() || doc.email.split("@")[0] || `User ${doc.id}`,
-    }))
-    .filter((u) => u.name);
+  return (
+    result.docs as Array<{
+      id: string | number;
+      email: string;
+      name?: string | null;
+    }>
+  ).map((doc) => ({
+    id: String(doc.id),
+    email: doc.email,
+    name: doc.name ?? null,
+  }));
 }
