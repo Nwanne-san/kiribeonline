@@ -2,6 +2,7 @@ import { revalidateTag } from "next/cache";
 import { getPayloadClient } from "@/lib/payload/get-payload";
 import { getSiteBaseUrl } from "@/lib/seo/site-url";
 import { PublicRoutes } from "@/routes/public.routes";
+import { notifySubscribersOnArticlePublished } from "@/server/modules/articles/subscriber-notification";
 
 export type SitemapEntry = {
   url: string;
@@ -140,6 +141,12 @@ export async function publishScheduledArticles(): Promise<number> {
         overrideAccess: true,
       });
       promoted += 1;
+
+      void notifySubscribersOnArticlePublished({
+        articleTitle: (article.title as string) ?? "New article",
+        articleSlug: (article.slug as string) ?? "",
+        articleExcerpt: (article.excerpt as string) ?? null,
+      });
     } catch (err) {
       // A single bad article shouldn't abort the batch — log and move on so
       // the rest still ship, and the next cron tick retries.
@@ -153,6 +160,19 @@ export async function publishScheduledArticles(): Promise<number> {
   if (promoted) {
     revalidateTag("articles");
     revalidateTag("homepage");
+    revalidateTag("categories");
+    revalidateTag("tags");
+    try {
+      const { revalidatePath } = await import("next/cache");
+      revalidatePath("/");
+      revalidatePath("/articles");
+      revalidatePath("/feed.xml");
+      for (const article of docs) {
+        if (article.slug) {
+          revalidatePath(`/articles/${article.slug}`);
+        }
+      }
+    } catch {}
     console.info(`[cron] promoted ${promoted}/${docs.length} scheduled articles`);
   }
 

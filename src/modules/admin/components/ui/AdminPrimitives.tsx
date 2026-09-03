@@ -3,7 +3,6 @@ import type {
   ComponentType,
   InputHTMLAttributes,
   ReactNode,
-  SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from "react";
 
@@ -375,46 +374,11 @@ export function AdminTextarea({
   );
 }
 
-/**
- * A native `<select>` renders the OS chevron and, on macOS, a rounded-none bezel
- * that ignores our border styling — which is exactly what made these look like
- * unstyled browser defaults. `appearance-none` strips that, and the chevron is
- * redrawn as an inline SVG background so it matches the mustard accent and
- * sits on our own spacing.
- */
-const SELECT_CHEVRON =
-  "data:image/svg+xml;charset=utf-8," +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5 6 6.5l5-5" stroke="#6B7280" stroke-width="1.5" stroke-linecap="square"/></svg>`
-  );
-
-/** Standard admin select. Wrap `<option>` children as usual. */
-export function AdminSelect({
-  invalid = false,
-  className = "",
-  children,
-  style,
-  ...rest
-}: {
-  invalid?: boolean;
-} & SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      className={`${CONTROL_BASE} appearance-none bg-no-repeat pr-9 ${invalid ? CONTROL_ERROR : ""} ${className}`}
-      // Merged rather than overwritten so a caller passing `style` doesn't
-      // silently drop the chevron.
-      style={{
-        backgroundImage: `url("${SELECT_CHEVRON}")`,
-        backgroundPosition: "right 12px center",
-        backgroundSize: "12px 8px",
-        ...style,
-      }}
-      {...rest}
-    >
-      {children}
-    </select>
-  );
-}
+export {
+  AdminSearchableSelect,
+  type AdminSearchableOption,
+  type AdminSearchableSelectProps,
+} from "./AdminSearchableSelect";
 
 /**
  * A checkbox row with an inline label — the compact form control pattern used

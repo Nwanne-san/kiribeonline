@@ -11,7 +11,7 @@ import {
   AdminInput,
   AdminPageHeader,
   AdminPanel,
-  AdminSelect,
+  AdminSearchableSelect,
 } from "@/modules/admin/components/ui/AdminPrimitives";
 import { PanelListSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
 import { usePermissions } from "@/modules/admin/hooks/usePermissions";
@@ -300,29 +300,33 @@ export function NavigationAdminPage() {
                           }
                           placeholder="URL"
                         />
-                        <AdminSelect
-                          value={link.visible ? "1" : "0"}
-                          disabled={!canManage}
-                          onChange={(e) =>
-                            setFooterColumns((prev) =>
-                              prev.map((c, i) =>
-                                i === colIndex
-                                  ? {
-                                      ...c,
-                                      links: c.links.map((l, j) =>
-                                        j === linkIndex
-                                          ? { ...l, visible: e.target.value === "1" }
-                                          : l
-                                      ),
-                                    }
-                                  : c
+                        <div className="w-24 shrink-0">
+                          <AdminSearchableSelect
+                            value={link.visible ? "1" : "0"}
+                            disabled={!canManage}
+                            onChange={(val) =>
+                              setFooterColumns((prev) =>
+                                prev.map((c, i) =>
+                                  i === colIndex
+                                    ? {
+                                        ...c,
+                                        links: c.links.map((l, j) =>
+                                          j === linkIndex
+                                            ? { ...l, visible: val === "1" }
+                                            : l
+                                        ),
+                                      }
+                                    : c
+                                )
                               )
-                            )
-                          }
-                        >
-                          <option value="1">On</option>
-                          <option value="0">Off</option>
-                        </AdminSelect>
+                            }
+                            options={[
+                              { value: "1", label: "On" },
+                              { value: "0", label: "Off" },
+                            ]}
+                            searchable={false}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>

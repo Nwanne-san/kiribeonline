@@ -10,18 +10,18 @@ export function buildArticleWhere(filters: ArticleFilterInput = {}): Where {
     },
   ];
 
-  if (filters.categorySlug) {
+  if (filters.categoryId !== undefined && filters.categoryId !== null && filters.categoryId !== "") {
     conditions.push({
-      "categories.slug": {
-        equals: filters.categorySlug,
+      categories: {
+        equals: filters.categoryId,
       },
     });
   }
 
-  if (filters.tagSlug) {
+  if (filters.tagId !== undefined && filters.tagId !== null && filters.tagId !== "") {
     conditions.push({
-      "tags.slug": {
-        equals: filters.tagSlug,
+      tags: {
+        equals: filters.tagId,
       },
     });
   }
