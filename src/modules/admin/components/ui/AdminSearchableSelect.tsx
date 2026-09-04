@@ -39,6 +39,13 @@ export type AdminSearchableSelectProps = {
   ariaLabel?: string;
   /** No results text when filter matches nothing. */
   noResultsLabel?: string;
+  /** Show search bar in dropdown (defaults to true if options > 3, or explicitly configured). */
+  searchable?: boolean;
+  /** Renders error styling when invalid. */
+  invalid?: boolean;
+  className?: string;
+  buttonClassName?: string;
+  clearable?: boolean;
 };
 
 export function AdminSearchableSelect({
@@ -51,12 +58,19 @@ export function AdminSearchableSelect({
   id,
   ariaLabel,
   noResultsLabel = "No matches",
+  searchable,
+  invalid = false,
+  className = "",
+  buttonClassName = "",
+  clearable = false,
 }: AdminSearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const showSearch = searchable !== undefined ? searchable : options.length > 3;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -123,7 +137,7 @@ export function AdminSearchableSelect({
   };
 
   return (
-    <div ref={rootRef} className="relative" onKeyDown={handleKey}>
+    <div ref={rootRef} className={`relative ${className}`} onKeyDown={handleKey}>
       <button
         type="button"
         id={id}
@@ -132,33 +146,55 @@ export function AdminSearchableSelect({
         aria-expanded={open}
         aria-label={ariaLabel}
         onClick={() => !disabled && setOpen((o) => !o)}
-        className={`flex w-full items-center justify-between gap-2 rounded-none border border-border bg-surface px-3 py-2 text-left text-sm text-ink transition-colors focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20 disabled:cursor-not-allowed disabled:opacity-60`}
+        className={`flex w-full items-center justify-between gap-2 rounded-none border bg-surface px-3 py-2 text-left text-sm text-ink transition-colors focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20 disabled:cursor-not-allowed disabled:opacity-60 ${
+          invalid ? "border-red-500 ring-1 ring-red-500/20" : "border-border"
+        } ${buttonClassName}`}
       >
-        <span className={currentLabel ? "" : "text-muted-soft"}>
+        <span className={`truncate ${currentLabel ? "font-normal" : "text-muted-soft"}`}>
           {currentLabel || placeholder}
         </span>
-        <ExpandMoreRounded sx={{ fontSize: 18 }} className="shrink-0 text-muted-soft" />
+        <div className="flex shrink-0 items-center gap-1">
+          {clearable && value && !disabled && (
+            <span
+              role="button"
+              tabIndex={-1}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange("");
+              }}
+              className="text-muted-soft hover:text-ink text-xs px-1"
+            >
+              ×
+            </span>
+          )}
+          <ExpandMoreRounded
+            sx={{ fontSize: 18 }}
+            className={`text-muted-soft transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+          />
+        </div>
       </button>
 
       {open && (
         <div
           role="listbox"
-          className="absolute left-0 right-0 z-40 mt-1 max-h-72 overflow-hidden border border-border bg-surface shadow-card"
+          className="absolute left-0 right-0 z-50 mt-1 max-h-72 overflow-hidden border border-border bg-surface shadow-lg"
         >
-          <div className="flex items-center gap-2 border-b border-border-soft bg-surface-alt px-2.5 py-2">
-            <SearchRounded sx={{ fontSize: 16 }} className="shrink-0 text-muted-soft" />
-            <input
-              ref={inputRef}
-              type="search"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setCursor(0);
-              }}
-              placeholder="Search…"
-              className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted-soft"
-            />
-          </div>
+          {showSearch && (
+            <div className="flex items-center gap-2 border-b border-border-soft bg-surface-alt px-2.5 py-2">
+              <SearchRounded sx={{ fontSize: 16 }} className="shrink-0 text-muted-soft" />
+              <input
+                ref={inputRef}
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setCursor(0);
+                }}
+                placeholder="Search…"
+                className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted-soft"
+              />
+            </div>
+          )}
           <div className="max-h-56 overflow-y-auto py-1">
             {options.length === 0 ? (
               <div className="px-3 py-2 text-xs text-muted-soft">{emptyLabel}</div>
@@ -183,11 +219,11 @@ export function AdminSearchableSelect({
                     }}
                     className={`flex w-full items-start gap-2 px-3 py-2 text-left text-sm transition-colors disabled:opacity-50 ${
                       active ? "bg-surface-alt" : ""
-                    } ${selected ? "text-burgundy" : "text-ink"}`}
+                    } ${selected ? "text-burgundy font-medium bg-burgundy/5" : "text-ink"}`}
                   >
                     <CheckRounded
                       sx={{ fontSize: 16 }}
-                      className={`mt-0.5 shrink-0 ${selected ? "opacity-100" : "opacity-0"}`}
+                      className={`mt-0.5 shrink-0 ${selected ? "opacity-100 text-burgundy" : "opacity-0"}`}
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{option.label}</span>

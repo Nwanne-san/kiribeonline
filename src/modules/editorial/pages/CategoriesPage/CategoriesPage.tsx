@@ -26,9 +26,10 @@ function resolveAccent(category: PublicCategorySummary): string {
 function CategoryCard({ category }: { category: PublicCategorySummary }) {
   const accent = resolveAccent(category);
   const href = publicRoute(PublicRoutes.categoryDetail, { slug: category.slug });
-  const countLabel = `${category.articleCount} ${
-    category.articleCount === 1 ? "story" : "stories"
-  }`;
+  const countLabel =
+    category.slug === "spotlight"
+      ? `${category.articleCount} ${category.articleCount === 1 ? "creator" : "creators"}`
+      : `${category.articleCount} ${category.articleCount === 1 ? "story" : "stories"}`;
 
   return (
     <NextLink

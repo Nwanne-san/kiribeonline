@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { URL_PARAMS } from "@/constants";
 
@@ -27,7 +27,13 @@ export function useFilter(defaultFilters: FilterState = {}) {
   const searchParams = useSearchParams();
   const filterRaw = searchParams.get(URL_PARAMS.filter);
 
-  const filters = useMemo(() => parseFilters(filterRaw), [filterRaw]);
+  const filters = useMemo(() => {
+    const parsed = parseFilters(filterRaw);
+    if (!filterRaw && defaultFilters) {
+      return { ...defaultFilters, ...parsed };
+    }
+    return parsed;
+  }, [filterRaw, defaultFilters]);
 
   const setFilters = useCallback(
     (filterState: FilterState, resetPage = true) => {
@@ -54,16 +60,6 @@ export function useFilter(defaultFilters: FilterState = {}) {
     },
     [pathname, router, searchParams]
   );
-
-  useEffect(() => {
-    const hasDefault = Object.values(defaultFilters).some(
-      (value) => value !== null && value !== undefined && value !== ""
-    );
-    if (hasDefault && !filterRaw) {
-      setFilters(defaultFilters, false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const clearFilters = useCallback(
     (keys?: string[]) => {

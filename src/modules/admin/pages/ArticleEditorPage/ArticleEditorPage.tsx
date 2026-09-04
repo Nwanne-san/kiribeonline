@@ -27,7 +27,7 @@ import {
   AdminInput,
   AdminPageHeader,
   AdminPanel,
-  AdminSelect,
+  AdminSearchableSelect,
   AdminTextarea,
 } from "@/modules/admin/components/ui/AdminPrimitives";
 import { PanelListSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
@@ -45,7 +45,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useQueryService } from "@/utils/hooks/useQueryService";
 import client from "@/utils/client";
 import { unwrapApiData } from "@/lib/api/unwrap";
-import { slugify } from "@/utils/helper";
+import {
+  fromLocalDatetimeInputValue,
+  slugify,
+  toLocalDatetimeInputValue,
+} from "@/utils/helper";
 import { ARTICLE_AUTOSAVE_DEBOUNCE_MS, DEFAULT_DEBOUNCE_MS } from "@/constants";
 import type { AdminMediaRef } from "@/server/modules";
 import {
@@ -226,7 +230,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         setBody(normalizeLexicalBody(doc.body));
         setEditorReady(true);
         setStatus(doc.status);
-        setPublishedAt(doc.publishedAt ? doc.publishedAt.slice(0, 16) : "");
+        setPublishedAt(toLocalDatetimeInputValue(doc.publishedAt));
         setFeatured(Boolean(doc.featured));
         setFeaturedPriority(doc.featuredPriority ?? 0);
         setCategoryIds((doc.categories ?? []).map((c) => String(c.id)));
@@ -307,7 +311,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     excerpt,
     body,
     status,
-    publishedAt: publishedAt || null,
+    publishedAt: fromLocalDatetimeInputValue(publishedAt),
     featured,
     featuredPriority,
     categoryIds,
@@ -768,27 +772,31 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                     : undefined
                 }
               >
-                <AdminSelect
+                <AdminSearchableSelect
                   id="ae-status"
                   value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value);
+                  onChange={(val) => {
+                    setStatus(val);
                     bumpDirty();
                   }}
-                >
-                  {statusOptions.map((s) => (
-                    <option
-                      key={s.value}
-                      value={s.value}
-                      disabled={s.label.endsWith("(locked)")}
-                    >
-                      {s.label}
-                    </option>
-                  ))}
-                </AdminSelect>
+                  options={statusOptions.map((s) => ({
+                    value: s.value,
+                    label: s.label,
+                    disabled: s.label.endsWith("(locked)"),
+                  }))}
+                  searchable={false}
+                />
               </AdminField>
 
-              <AdminField label="Publish date" htmlFor="ae-publish-date">
+              <AdminField
+                label="Publish date"
+                htmlFor="ae-publish-date"
+                hint={
+                  publishedAt
+                    ? `Publishes at ${new Date(publishedAt).toUTCString()} (server time).`
+                    : "Uses your browser's local time; stored and compared in UTC."
+                }
+              >
                 <AdminInput
                   id="ae-publish-date"
                   type="datetime-local"

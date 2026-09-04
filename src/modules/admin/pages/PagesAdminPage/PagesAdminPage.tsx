@@ -11,7 +11,7 @@ import {
   AdminInput,
   AdminPageHeader,
   AdminPanel,
-  AdminSelect,
+  AdminSearchableSelect,
   AdminTextarea,
   Pill,
   type PillTone,
@@ -323,20 +323,22 @@ export function PagesAdminPage() {
               </AdminField>
 
               <AdminField label="Status" htmlFor="page-status">
-                <AdminSelect
+                <AdminSearchableSelect
                   id="page-status"
                   value={draft.status}
                   disabled={!canManage}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setDraft((prev) => ({
                       ...prev,
-                      status: e.target.value as PageStatus,
+                      status: val as PageStatus,
                     }))
                   }
-                >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                </AdminSelect>
+                  options={[
+                    { value: "draft", label: "Draft" },
+                    { value: "published", label: "Published" },
+                  ]}
+                  searchable={false}
+                />
               </AdminField>
 
               <AdminField

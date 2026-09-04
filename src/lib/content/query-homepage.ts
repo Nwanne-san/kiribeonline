@@ -180,37 +180,54 @@ async function fetchHomepageFromPayload(): Promise<HomepageData> {
 
   const heroRaw = homepage.heroArticle;
   let heroArticle =
-    heroRaw && typeof heroRaw === "object" ? mapPayloadArticle(heroRaw as never) : null;
+    heroRaw && typeof heroRaw === "object" && "slug" in (heroRaw as object)
+      ? mapPayloadArticle(heroRaw as never)
+      : null;
 
-  // Editor's Picks come exclusively from the homepage builder's own section —
-  // featured articles never spill into this sidebar.
-  let editorsPicks = (homepage.editorsPicks ?? [])
-    .slice()
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .map((pick) => pick.article)
-    .filter((a) => a && typeof a === "object")
-    // Strip Lexical body + derive read-time so card lists don't ship the full
-    // article payload to the browser.
-    .map((a) => toArticleCardDoc(a as ArticleCardDoc & { body?: unknown }));
+  // If heroArticle was an ID or not fully populated at depth 2, fetch it
+  if (!heroArticle && heroRaw) {
+    const rawId =
+      typeof heroRaw === "object" && "id" in heroRaw
+        ? String((heroRaw as { id: string | number }).id)
+        : typeof heroRaw === "string" || typeof heroRaw === "number"
+          ? String(heroRaw)
+          : null;
 
-  // The article editor's "Featured" section (checkbox + priority) is the
-  // source of truth for the Featured Story slot: the highest-priority
-  // featured article takes the hero, and the builder's pinned hero article is
-  // only the fallback when no published article is currently flagged.
-  const featured = await payload.find({
-    collection: "articles",
-    where: {
-      and: [
-        { featured: { equals: true } },
-        { status: { equals: "published" } },
-      ],
-    },
-    sort: ["-featuredPriority", "-publishedAt"],
-    limit: 1,
-    depth: 2,
-  });
-  if (featured.docs.length > 0) {
-    heroArticle = mapPayloadArticle(featured.docs[0] as never);
+    if (rawId) {
+      try {
+        const doc = await payload.findByID({
+          collection: "articles",
+          id: rawId,
+          depth: 2,
+        });
+        if (doc && doc.status === "published") {
+          heroArticle = mapPayloadArticle(doc as never);
+        }
+      } catch (err) {
+        console.warn("[query-homepage] failed to resolve pinned hero article:", err);
+      }
+    }
+  }
+
+  // If the builder has not pinned a specific hero article, fall back to:
+  // 1) The highest-priority featured story (featured: true)
+  // 2) Newest published article
+  if (!heroArticle) {
+    const featured = await payload.find({
+      collection: "articles",
+      where: {
+        and: [
+          { featured: { equals: true } },
+          { status: { equals: "published" } },
+        ],
+      },
+      sort: ["-featuredPriority", "-publishedAt"],
+      limit: 1,
+      depth: 2,
+    });
+    if (featured.docs.length > 0) {
+      heroArticle = mapPayloadArticle(featured.docs[0] as never);
+    }
   }
 
   // Final hero fallback: newest published article. Same "auto" spirit as the
@@ -228,6 +245,17 @@ async function fetchHomepageFromPayload(): Promise<HomepageData> {
       heroArticle = mapPayloadArticle(latest.docs[0] as never);
     }
   }
+
+  // Editor's Picks come exclusively from the homepage builder's own section —
+  // featured articles never spill into this sidebar.
+  let editorsPicks = (homepage.editorsPicks ?? [])
+    .slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map((pick) => pick.article)
+    .filter((a) => a && typeof a === "object")
+    // Strip Lexical body + derive read-time so card lists don't ship the full
+    // article payload to the browser.
+    .map((a) => toArticleCardDoc(a as ArticleCardDoc & { body?: unknown }));
 
   // Editor's picks fallback: latest published articles (skip the hero) so the
   // sidebar has something to show before the admin curates its own list.
