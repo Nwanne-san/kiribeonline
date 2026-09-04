@@ -1,5 +1,6 @@
 import { ARTICLE_LIST_SORT } from "@/constants";
 import { getPayloadClient } from "@/lib/payload/get-payload";
+import { promoteDueScheduledArticlesIfIdle } from "@/services/cron.service";
 import { buildArticleWhere } from "./article-filters";
 import {
   buildSearchWhere,
@@ -13,6 +14,13 @@ import type { ArticleCardDoc, ArticleListParams, ArticleListResult } from "./typ
 export async function queryArticles(
   params: ArticleListParams = {}
 ): Promise<ArticleListResult<ArticleCardDoc>> {
+  // Listings surface due scheduled articles via `buildArticleWhere`'s OR
+  // clause, but the DB row stays `status: scheduled` until cron runs (up to
+  // 24h on Hobby-plan cron). Kick a throttled promotion so the row flips and
+  // subscribers get notified from the first bit of traffic, not the next
+  // cron tick.
+  promoteDueScheduledArticlesIfIdle();
+
   const payload = await getPayloadClient();
   const page = parsePage(params.page);
   const limit = clampLimit(params.limit);
@@ -136,6 +144,7 @@ export async function queryArticleBySlug(slug: string) {
         "@/server/modules/articles/subscriber-notification"
       );
       void notifySubscribersOnArticlePublished({
+        articleId: dueArticle.id,
         articleTitle: (dueArticle.title as string) ?? "New article",
         articleSlug: (dueArticle.slug as string) ?? slug,
         articleExcerpt: (dueArticle.excerpt as string) ?? null,

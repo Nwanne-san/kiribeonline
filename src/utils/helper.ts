@@ -31,6 +31,34 @@ export function formatShortDate(date: string | Date): string {
   return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
+/**
+ * Format a UTC instant as the local-wall-clock string an `<input
+ * type="datetime-local">` expects (`YYYY-MM-DDTHH:mm`).
+ *
+ * The bug this exists to prevent: `iso.slice(0, 16)` strips the `Z` and hands
+ * UTC digits to the input, which then renders them as the *editor's* local
+ * time. Re-saving that value drifts the timestamp by the editor's UTC offset
+ * every round-trip.
+ */
+export function toLocalDatetimeInputValue(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * Parse a `<input type="datetime-local">` value (`YYYY-MM-DDTHH:mm`, no
+ * timezone) as the editor's local wall-clock time and return a UTC ISO string.
+ */
+export function fromLocalDatetimeInputValue(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
 /** Cutoff past which a byline shows the calendar date instead of "N days ago". */
 const RELATIVE_DATE_WINDOW_DAYS = 7;
 

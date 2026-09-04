@@ -4,6 +4,13 @@ import { getPayloadClient } from "@/lib/payload/get-payload";
 import { PublicRoutes } from "@/routes/public.routes";
 
 export type NotifySubscribersInput = {
+  /**
+   * Article ID. When provided, the notifier atomically claims the row (sets
+   * `publishNotifiedAt`) before sending — concurrent callers (cron +
+   * on-demand promotion) see the second attempt as a no-op instead of a
+   * double-send. Omit only when the caller has already claimed the row.
+   */
+  articleId?: string | number;
   articleTitle: string;
   articleSlug: string;
   articleExcerpt?: string | null;
@@ -18,15 +25,44 @@ const BATCH_SIZE = 10;
  *
  * Runs fire-and-forget: failure to send to one or all subscribers is logged and
  * will never block the publishing mutation or cron handler.
+ *
+ * Dedupe: when `articleId` is provided the notifier issues a conditional
+ * UPDATE that only succeeds while `publishNotifiedAt IS NULL`. If the row was
+ * already claimed by another path (cron vs. on-demand vs. admin update racing
+ * on the same publish), the send is skipped.
  */
 export async function notifySubscribersOnArticlePublished({
+  articleId,
   articleTitle,
   articleSlug,
   articleExcerpt,
   categoryName,
-}: NotifySubscribersInput): Promise<{ total: number; sent: number }> {
+}: NotifySubscribersInput): Promise<{ total: number; sent: number; skipped?: boolean }> {
   try {
     const payload = await getPayloadClient();
+
+    if (articleId !== undefined) {
+      // Atomic claim: Postgres serializes concurrent UPDATEs on the same row,
+      // so only one caller sees a non-empty `docs` result. The other becomes
+      // a no-op — no duplicate emails.
+      const claim = await payload.update({
+        collection: "articles",
+        where: {
+          and: [
+            { id: { equals: articleId } },
+            { publishNotifiedAt: { exists: false } },
+          ],
+        },
+        data: { publishNotifiedAt: new Date().toISOString() },
+        overrideAccess: true,
+      });
+      if (!claim.docs || claim.docs.length === 0) {
+        console.info(
+          `[subscribers] skip notify — "${articleTitle}" already claimed`
+        );
+        return { total: 0, sent: 0, skipped: true };
+      }
+    }
 
     // Query all confirmed subscribers
     const subscribersResult = await payload.find({

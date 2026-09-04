@@ -11,6 +11,7 @@ import * as migration_20260719_120000_article_status_in_review from './20260719_
 import * as migration_20260721_090000_reset_token_fields from './20260721_090000_reset_token_fields';
 import * as migration_20260729_160424_pages_and_navigation_chrome from './20260729_160424_pages_and_navigation_chrome';
 import * as migration_20260731_120000_article_hide_byline from './20260731_120000_article_hide_byline';
+import * as migration_20260904_120000_article_publish_notified_at from './20260904_120000_article_publish_notified_at';
 
 export const migrations = [
   {
@@ -77,5 +78,10 @@ export const migrations = [
     up: migration_20260731_120000_article_hide_byline.up,
     down: migration_20260731_120000_article_hide_byline.down,
     name: '20260731_120000_article_hide_byline',
+  },
+  {
+    up: migration_20260904_120000_article_publish_notified_at.up,
+    down: migration_20260904_120000_article_publish_notified_at.down,
+    name: '20260904_120000_article_publish_notified_at',
   },
 ];
