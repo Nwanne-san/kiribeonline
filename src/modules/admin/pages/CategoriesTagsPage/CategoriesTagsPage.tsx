@@ -3,12 +3,14 @@
 import AddRounded from "@mui/icons-material/AddRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import DragIndicatorRounded from "@mui/icons-material/DragIndicatorRounded";
 import SaveOutlined from "@mui/icons-material/SaveOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import VisibilityOffOutlined from "@mui/icons-material/VisibilityOffOutlined";
 import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
 import { useEffect, useMemo, useState } from "react";
+import { AdminConfirmDialog } from "@/modules/admin/components/ui/AdminDialog";
 import { AdminButton, AdminPanel, CategoryTag } from "@/modules/admin/components/ui/AdminPrimitives";
 import { ListSkeleton, Skeleton } from "@/modules/admin/components/ui/AdminSkeletons";
 import { usePermissions } from "@/modules/admin/hooks/usePermissions";
@@ -89,6 +91,10 @@ export function CategoriesTagsPage() {
   }, [categories]);
 
   const [showCreate, setShowCreate] = useState(false);
+  /** Tag pending the delete confirm dialog. Null when the dialog is closed. */
+  const [pendingDeleteTag, setPendingDeleteTag] = useState<AdminTag | null>(null);
+  /** Category pending the delete confirm dialog. Null when closed. */
+  const [pendingDeleteCategory, setPendingDeleteCategory] = useState<AdminCategory | null>(null);
 
   /* ───────────────────────────────────────── Mutations */
 
@@ -128,7 +134,22 @@ export function CategoriesTagsPage() {
 
   const deleteTag = useMutationService<{ id: string }>({
     service: (vars) => adminTagsService.remove(vars.id),
-    options: { invalidateKeys: [adminQueryKeys.tags] },
+    options: {
+      invalidateKeys: [adminQueryKeys.tags],
+      // Also invalidate articles since we scrub the tag from every article's
+      // `tags[]` server-side.
+      successMessage: "Tag deleted.",
+      onSuccess: () => setPendingDeleteTag(null),
+    },
+  });
+
+  const deleteCategory = useMutationService<{ id: string }>({
+    service: (vars) => adminCategoriesService.remove(vars.id),
+    options: {
+      invalidateKeys: [adminQueryKeys.categories],
+      successMessage: "Category deleted.",
+      onSuccess: () => setPendingDeleteCategory(null),
+    },
   });
 
   /* ───────────────────────────────────────── Drag reorder */
@@ -218,23 +239,43 @@ export function CategoriesTagsPage() {
                   {cat.articleCount} article{cat.articleCount === 1 ? "" : "s"}
                 </span>
                 {canManage ? (
-                  <button
-                    type="button"
-                    onClick={() => toggleVisibility.mutate({ id: cat.id, showInNav: !cat.showInNav })}
-                    disabled={toggleVisibility.isPending}
-                    aria-label={
-                      cat.showInNav === false
-                        ? `Show ${cat.name} in navigation`
-                        : `Hide ${cat.name} from navigation`
-                    }
-                    className="shrink-0 rounded-none p-1 text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
-                  >
-                    {cat.showInNav === false ? (
-                      <VisibilityOffOutlined sx={{ fontSize: 16 }} />
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => toggleVisibility.mutate({ id: cat.id, showInNav: !cat.showInNav })}
+                      disabled={toggleVisibility.isPending}
+                      aria-label={
+                        cat.showInNav === false
+                          ? `Show ${cat.name} in navigation`
+                          : `Hide ${cat.name} from navigation`
+                      }
+                      className="shrink-0 rounded-none p-1 text-muted-soft transition-colors hover:bg-surface-muted hover:text-ink"
+                    >
+                      {cat.showInNav === false ? (
+                        <VisibilityOffOutlined sx={{ fontSize: 16 }} />
+                      ) : (
+                        <VisibilityOutlined sx={{ fontSize: 16 }} />
+                      )}
+                    </button>
+                    {cat.isSystem ? (
+                      <span
+                        className="shrink-0 p-1 text-muted-soft"
+                        aria-label={`${cat.name} is a system category and cannot be deleted`}
+                      >
+                        <DeleteOutlineRounded sx={{ fontSize: 16, opacity: 0.3 }} />
+                      </span>
                     ) : (
-                      <VisibilityOutlined sx={{ fontSize: 16 }} />
+                      <button
+                        type="button"
+                        onClick={() => setPendingDeleteCategory(cat)}
+                        disabled={deleteCategory.isPending}
+                        aria-label={`Delete category ${cat.name}`}
+                        className="shrink-0 rounded-none p-1 text-muted-soft transition-colors hover:bg-[#fee4e2] hover:text-[#b42318] disabled:opacity-50"
+                      >
+                        <DeleteOutlineRounded sx={{ fontSize: 16 }} />
+                      </button>
                     )}
-                  </button>
+                  </>
                 ) : (
                   <span className="shrink-0 p-1 text-muted-soft" aria-hidden>
                     <VisibilityOutlined sx={{ fontSize: 16 }} />
@@ -272,7 +313,10 @@ export function CategoriesTagsPage() {
                       search={search}
                       canManage={canManage}
                       deleting={deleteTag.isPending}
-                      onDelete={(id) => deleteTag.mutate({ id })}
+                      onDelete={(id) => {
+                        const tag = tags.find((t) => t.id === id);
+                        if (tag) setPendingDeleteTag(tag);
+                      }}
                     />
                   )
                 }
@@ -288,6 +332,64 @@ export function CategoriesTagsPage() {
         </AdminPanel>
         )}
       </div>
+
+      <AdminConfirmDialog
+        open={pendingDeleteTag !== null}
+        title="Delete tag?"
+        description={
+          pendingDeleteTag ? (
+            <>
+              <p>
+                Delete the <strong>{pendingDeleteTag.name}</strong> tag?
+              </p>
+              {pendingDeleteTag.articleCount > 0 ? (
+                <p className="mt-2 text-sm text-muted">
+                  {`It will be removed from ${pendingDeleteTag.articleCount} article${pendingDeleteTag.articleCount === 1 ? "" : "s"}. The articles themselves aren't affected.`}
+                </p>
+              ) : null}
+            </>
+          ) : null
+        }
+        confirmLabel="Delete tag"
+        tone="danger"
+        isPending={deleteTag.isPending}
+        onConfirm={() => {
+          if (pendingDeleteTag) deleteTag.mutate({ id: pendingDeleteTag.id });
+        }}
+        onCancel={() => setPendingDeleteTag(null)}
+      />
+
+      <AdminConfirmDialog
+        open={pendingDeleteCategory !== null}
+        title="Delete category?"
+        description={
+          pendingDeleteCategory ? (
+            <>
+              <p>
+                Delete the <strong>{pendingDeleteCategory.name}</strong> category?
+              </p>
+              {pendingDeleteCategory.articleCount > 0 ? (
+                <p className="mt-2 text-sm text-muted">
+                  {pendingDeleteCategory.articleCount} article
+                  {pendingDeleteCategory.articleCount === 1 ? "" : "s"} will be
+                  archived and lose this category. The delete is blocked if the
+                  category is also linked from the header or footer navigation
+                  — remove the nav entry first if so.
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-muted">No articles reference this category.</p>
+              )}
+            </>
+          ) : null
+        }
+        confirmLabel="Delete category"
+        tone="danger"
+        isPending={deleteCategory.isPending}
+        onConfirm={() => {
+          if (pendingDeleteCategory) deleteCategory.mutate({ id: pendingDeleteCategory.id });
+        }}
+        onCancel={() => setPendingDeleteCategory(null)}
+      />
     </div>
   );
 }

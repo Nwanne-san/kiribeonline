@@ -1,6 +1,7 @@
 import { apiError, handleRouteError } from "@/lib/api";
 import { RateLimitError, tooManyRequests } from "@/lib/rate-limit";
 import { CsrfError } from "@/server/security";
+import { DomainError } from "@/server/errors";
 import { AdminAuthError } from "./session";
 
 /**
@@ -90,6 +91,10 @@ export function handleAdminRouteError(error: unknown) {
   const payloadValidation = extractPayloadValidation(error);
   if (payloadValidation) {
     return apiError(payloadValidation.message, 400, payloadValidation.errors);
+  }
+
+  if (error instanceof DomainError) {
+    return apiError(error.message, error.statusCode);
   }
 
   return handleRouteError(error);
