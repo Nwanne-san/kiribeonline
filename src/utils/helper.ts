@@ -32,6 +32,35 @@ export function formatShortDate(date: string | Date): string {
 }
 
 /**
+ * English ordinal suffix — 1st, 2nd, 3rd, 4th, 21st, 22nd, 23rd, …
+ *
+ * The 11–13 special-case is why this is a helper and not `n + "th"`.
+ */
+function ordinalSuffix(n: number): string {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return "th";
+  switch (n % 10) {
+    case 1: return "st";
+    case 2: return "nd";
+    case 3: return "rd";
+    default: return "th";
+  }
+}
+
+/**
+ * `18th August 2026` — the ordinal editorial form used on the article detail
+ * page byline once a story is no longer "recent". Renders the calendar month
+ * in full to match the print-editorial voice; use `formatShortDate` for
+ * space-constrained surfaces (cards, list metadata).
+ */
+export function formatOrdinalDate(date: string | Date): string {
+  const d = new Date(date);
+  const day = d.getDate();
+  const month = d.toLocaleString("en-US", { month: "long" });
+  return `${day}${ordinalSuffix(day)} ${month} ${d.getFullYear()}`;
+}
+
+/**
  * Format a UTC instant as the local-wall-clock string an `<input
  * type="datetime-local">` expects (`YYYY-MM-DDTHH:mm`).
  *
@@ -76,14 +105,15 @@ const RELATIVE_DATE_WINDOW_DAYS = 7;
  */
 export function formatBylineDate(
   date: string | Date,
-  now: Date = new Date()
+  now: Date = new Date(),
+  fallback: (d: Date) => string = formatShortDate
 ): string {
   const then = new Date(date);
   const diffMs = now.getTime() - then.getTime();
 
   // Future or clock-skewed dates fall back to the calendar date rather than
   // rendering a nonsensical "-3 hours ago".
-  if (diffMs < 0) return formatShortDate(then);
+  if (diffMs < 0) return fallback(then);
 
   const minutes = Math.floor(diffMs / 60_000);
   if (minutes < 1) return "just now";
@@ -96,7 +126,16 @@ export function formatBylineDate(
   if (days === 1) return "yesterday";
   if (days < RELATIVE_DATE_WINDOW_DAYS) return `${days} days ago`;
 
-  return formatShortDate(then);
+  return fallback(then);
+}
+
+/**
+ * Article-detail byline: relative for fresh stories, ordinal editorial date
+ * (e.g. `18th August 2026`) once older than a week. Cards keep the numeric
+ * `DD-MM-YYYY` form for space reasons — see [[formatBylineDate]].
+ */
+export function formatDetailByline(date: string | Date, now: Date = new Date()): string {
+  return formatBylineDate(date, now, formatOrdinalDate);
 }
 
 export function getRelativeTime(dateString: string | Date) {
