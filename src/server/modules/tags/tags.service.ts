@@ -58,8 +58,42 @@ export async function createTag(input: TagInput) {
   });
 }
 
+/**
+ * Delete a tag and remove its reference from every article that carries it.
+ *
+ * Payload doesn't cascade many-to-many joins, so a naïve `payload.delete` would
+ * leave orphaned rows in the join table (or, worse, articles with a stale
+ * relationship pointing at nothing). We fetch every article carrying the tag,
+ * rewrite each `tags[]` array minus the deleted id, then delete the tag. If any
+ * article update fails, we abort before the delete so the join stays coherent.
+ *
+ * Tags aren't structural — no status changes on the article, only the tag
+ * chip disappears.
+ */
 export async function deleteTag(id: string) {
   const payload = await getPayloadClient();
+
+  const impacted = await payload.find({
+    collection: "articles",
+    where: { tags: { contains: id } },
+    limit: 10_000,
+    pagination: false,
+    depth: 0,
+    overrideAccess: true,
+  });
+
+  for (const article of impacted.docs) {
+    const nextTags = ((article as { tags?: Array<string | number | { id: string | number }> }).tags ?? [])
+      .map((t) => (typeof t === "object" && t !== null ? t.id : t))
+      .filter((tid) => String(tid) !== String(id));
+    await payload.update({
+      collection: "articles",
+      id: article.id,
+      data: { tags: nextTags as never },
+      overrideAccess: true,
+    });
+  }
+
   await payload.delete({ collection: "tags", id, overrideAccess: true });
-  return { deleted: true };
+  return { deleted: true, articlesUpdated: impacted.docs.length };
 }
