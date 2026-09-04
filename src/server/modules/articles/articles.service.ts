@@ -209,6 +209,7 @@ export async function createAdminArticle(input: ArticleInput) {
 
   if (input.status === "published" && doc) {
     void notifySubscribersOnArticlePublished({
+      articleId: (doc as { id?: string | number }).id,
       articleTitle: (doc as { title?: string }).title ?? input.title,
       articleSlug: (doc as { slug?: string }).slug ?? input.slug ?? "",
       articleExcerpt: (doc as { excerpt?: string }).excerpt ?? input.excerpt,
@@ -297,6 +298,7 @@ export async function updateAdminArticle(
     // If transitioned into published, notify all confirmed subscribers
     if (before.status !== "published" && (doc as { status?: string }).status === "published") {
       void notifySubscribersOnArticlePublished({
+        articleId: id,
         articleTitle: (doc as { title?: string }).title ?? input.title ?? "",
         articleSlug: (doc as { slug?: string }).slug ?? input.slug ?? "",
         articleExcerpt: (doc as { excerpt?: string }).excerpt ?? input.excerpt,

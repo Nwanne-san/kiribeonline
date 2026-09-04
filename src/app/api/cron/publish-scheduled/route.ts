@@ -7,8 +7,16 @@ export async function GET(request: NextRequest) {
   const authError = requireCronSecret(request);
   if (authError) return authError;
 
-  console.info("[cron] publish-scheduled started");
-  const count = await publishScheduledArticles();
+  const startedAt = new Date().toISOString();
+  console.info(`[cron] publish-scheduled started at ${startedAt}`);
+  const result = await publishScheduledArticles();
+  console.info(
+    `[cron] publish-scheduled finished at ${new Date().toISOString()} — ` +
+      `${result.promoted}/${result.candidates} promoted`
+  );
 
-  return apiSuccess({ published: count }, `Published ${count} scheduled articles`);
+  return apiSuccess(
+    { published: result.promoted, candidates: result.candidates, slugs: result.promotedSlugs },
+    `Published ${result.promoted} scheduled articles`
+  );
 }

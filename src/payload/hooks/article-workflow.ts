@@ -1,10 +1,16 @@
 import type { CollectionBeforeChangeHook, CollectionBeforeValidateHook } from "payload";
 
-export const articleBeforeValidate: CollectionBeforeValidateHook = ({ data }) => {
-  if (data?.status === "scheduled" && !data?.publishedAt) {
+export const articleBeforeValidate: CollectionBeforeValidateHook = ({ data, originalDoc }) => {
+  // Merge behavior: for PATCH-style updates Payload only passes changed fields
+  // in `data`. Fall back to the persisted row so a partial patch that changes
+  // only `status` still validates against the existing `publishedAt`.
+  const status = data?.status ?? originalDoc?.status;
+  const publishedAt = data?.publishedAt ?? originalDoc?.publishedAt;
+
+  if (status === "scheduled" && !publishedAt) {
     throw new Error("Scheduled articles require a publish date.");
   }
-  if (data?.status === "published" && !data?.title) {
+  if (status === "published" && !data?.title && !originalDoc?.title) {
     throw new Error("Published articles require a title.");
   }
   return data;

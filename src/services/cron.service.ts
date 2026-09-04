@@ -107,7 +107,36 @@ export async function generateSitemapXml(): Promise<string> {
   return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`;
 }
 
-export async function publishScheduledArticles(): Promise<number> {
+// In-process throttle for `promoteDueScheduledArticlesIfIdle`. A DB-backed
+// throttle would be more accurate across serverless instances, but the goal
+// here is just to avoid hammering the DB from a single hot request path —
+// even one promotion per instance per minute is more than enough to close
+// the daily-cron gap.
+let lastPromotionRunAt = 0;
+const PROMOTION_THROTTLE_MS = 60_000;
+
+/**
+ * Fire-and-forget wrapper around `publishScheduledArticles` for the public
+ * listing path. Throttled per process so the homepage/list pages can trigger
+ * promotion without adding a DB write to every request. Silent on error —
+ * the daily cron is still the primary path.
+ */
+export function promoteDueScheduledArticlesIfIdle(): void {
+  const now = Date.now();
+  if (now - lastPromotionRunAt < PROMOTION_THROTTLE_MS) return;
+  lastPromotionRunAt = now;
+  void publishScheduledArticles().catch((err) => {
+    console.warn("[promote-scheduled] on-demand run failed", err);
+  });
+}
+
+export type PublishScheduledResult = {
+  promoted: number;
+  candidates: number;
+  promotedSlugs: string[];
+};
+
+export async function publishScheduledArticles(): Promise<PublishScheduledResult> {
   const payload = await getPayloadClient();
   const now = new Date().toISOString();
 
@@ -124,6 +153,7 @@ export async function publishScheduledArticles(): Promise<number> {
   });
 
   let promoted = 0;
+  const promotedSlugs: string[] = [];
   for (const article of docs) {
     try {
       // Pass the existing scheduled `publishedAt` back explicitly so the
@@ -141,8 +171,10 @@ export async function publishScheduledArticles(): Promise<number> {
         overrideAccess: true,
       });
       promoted += 1;
+      if (article.slug) promotedSlugs.push(article.slug as string);
 
       void notifySubscribersOnArticlePublished({
+        articleId: article.id,
         articleTitle: (article.title as string) ?? "New article",
         articleSlug: (article.slug as string) ?? "",
         articleExcerpt: (article.excerpt as string) ?? null,
@@ -173,8 +205,10 @@ export async function publishScheduledArticles(): Promise<number> {
         }
       }
     } catch {}
-    console.info(`[cron] promoted ${promoted}/${docs.length} scheduled articles`);
+    console.info(
+      `[cron] promoted ${promoted}/${docs.length} scheduled articles: ${promotedSlugs.join(", ")}`
+    );
   }
 
-  return promoted;
+  return { promoted, candidates: docs.length, promotedSlugs };
 }
