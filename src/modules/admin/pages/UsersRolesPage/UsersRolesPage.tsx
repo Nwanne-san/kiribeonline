@@ -16,6 +16,7 @@ import { AdminRoutes } from "@/routes/admin.routes";
 import {
   AdminButton,
   AdminPanel,
+  AdminSearchableSelect,
   InitialAvatar,
   Pill,
   type PillTone,
@@ -575,18 +576,16 @@ function InviteUserModal({ onClose }: { onClose: () => void }) {
         </Field>
 
         <Field label="Role" htmlFor="invite-role">
-          <select
+          <AdminSearchableSelect
             id="invite-role"
             value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
-            className={inputClass}
-          >
-            {USER_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABELS[r]}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setRole(val as UserRole)}
+            options={USER_ROLES.map((r) => ({
+              value: r,
+              label: ROLE_LABELS[r],
+            }))}
+            searchable={false}
+          />
         </Field>
 
         <div className="mt-1 flex justify-end gap-2">
@@ -775,33 +774,29 @@ function UserEditDrawer({
 
       <div className="flex flex-1 flex-col gap-4 px-5 py-5">
         <Field label="Role" htmlFor="edit-role">
-          <select
+          <AdminSearchableSelect
             id="edit-role"
             value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
-            className={inputClass}
-          >
-            {USER_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABELS[r]}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setRole(val as UserRole)}
+            options={USER_ROLES.map((r) => ({
+              value: r,
+              label: ROLE_LABELS[r],
+            }))}
+            searchable={false}
+          />
         </Field>
 
         <Field label="Status" htmlFor="edit-status">
-          <select
+          <AdminSearchableSelect
             id="edit-status"
             value={status}
-            onChange={(e) => setStatus(e.target.value as UserStatus)}
-            className={inputClass}
-          >
-            {USER_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {titleCase(s)}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setStatus(val as UserStatus)}
+            options={USER_STATUSES.map((s) => ({
+              value: s,
+              label: titleCase(s),
+            }))}
+            searchable={false}
+          />
         </Field>
 
         <AdminButton

@@ -154,6 +154,22 @@ export const Articles: CollectionConfig = {
       },
     },
     {
+      // Set atomically the first time subscribers are notified of a publish.
+      // Both the cron and on-demand promotion paths claim this row before
+      // sending — if the claim finds it already set, the send is skipped.
+      name: "publishNotifiedAt",
+      type: "date",
+      access: {
+        update: denyFieldWrite,
+      },
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description:
+          "Timestamp of the subscriber notification for this article. Set once and never reset.",
+      },
+    },
+    {
       name: "seo",
       type: "group",
       fields: [

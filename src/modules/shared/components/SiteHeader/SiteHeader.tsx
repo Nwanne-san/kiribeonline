@@ -615,19 +615,6 @@ export function SiteFooter({
             >
               Terms of Use
             </Link>
-            <Link
-              component={NextLink}
-              href="/admin"
-              underline="hover"
-              sx={{
-                color: "#4A5565",
-                fontSize: "0.75rem",
-                transition: "color var(--duration-fast) ease",
-                "&:hover": { color: "common.white" },
-              }}
-            >
-              Admin ↗
-            </Link>
           </Stack>
         </Box>
       </Container>

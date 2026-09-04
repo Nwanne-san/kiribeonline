@@ -60,16 +60,37 @@ async function fetchCategoriesIndexUncached(): Promise<PublicCategorySummary[]> 
       depth: 0,
     });
 
-    // One lightweight query per category (a handful at most). A `limit: 1` find
-    // returns both `totalDocs` (the published count) and the latest headline in
-    // a single round-trip, so we avoid a separate count + teaser fetch and never
-    // fan out into an N+1 over articles.
-    return await Promise.all(
+    const categories = await Promise.all(
       result.docs.map(async (doc) => {
         const slug = doc.slug as string;
+
+        if (slug === "spotlight") {
+          const creators = await payload.find({
+            collection: "creators",
+            sort: "-createdAt",
+            limit: 1,
+            depth: 0,
+          });
+          const latestCreator = creators.docs[0];
+          return {
+            id: String(doc.id),
+            name: doc.name as string,
+            slug,
+            brandColor: (doc as { brandColor?: string }).brandColor ?? "#7c2d12",
+            showInNav: (doc as { showInNav?: boolean }).showInNav,
+            description:
+              (doc as { description?: string }).description ??
+              "In-depth profiles of the directors, actors, and creatives defining contemporary culture.",
+            articleCount: creators.totalDocs,
+            latestArticleTitle: latestCreator?.name
+              ? `${latestCreator.name}${latestCreator.role ? ` · ${latestCreator.role}` : ""}`
+              : null,
+          } satisfies PublicCategorySummary;
+        }
+
         const articles = await payload.find({
           collection: "articles",
-          where: buildArticleWhere({ categorySlug: slug }),
+          where: buildArticleWhere({ categoryId: doc.id }),
           sort: ARTICLE_LIST_SORT,
           limit: 1,
           depth: 0,
@@ -88,6 +109,33 @@ async function fetchCategoriesIndexUncached(): Promise<PublicCategorySummary[]> 
         } satisfies PublicCategorySummary;
       })
     );
+
+    // If spotlight category was not in CMS categories, append it from creators
+    const hasSpotlight = categories.some((c) => c.slug === "spotlight");
+    if (!hasSpotlight) {
+      const creators = await payload.find({
+        collection: "creators",
+        sort: "-createdAt",
+        limit: 1,
+        depth: 0,
+      });
+      const latestCreator = creators.docs[0];
+      categories.push({
+        id: "spotlight",
+        name: "Spotlight",
+        slug: "spotlight",
+        brandColor: "#7c2d12",
+        showInNav: true,
+        description:
+          "In-depth profiles of the directors, actors, and creatives defining contemporary culture.",
+        articleCount: creators.totalDocs,
+        latestArticleTitle: latestCreator?.name
+          ? `${latestCreator.name}${latestCreator.role ? ` · ${latestCreator.role}` : ""}`
+          : null,
+      });
+    }
+
+    return categories;
   } catch {
     return [];
   }

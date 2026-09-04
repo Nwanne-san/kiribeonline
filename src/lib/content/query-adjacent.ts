@@ -20,14 +20,16 @@ export type AdjacentArticles = {
 export type AdjacentSourceArticle = {
   id: string | number;
   publishedAt?: string | null;
-  categories?: Array<{ slug?: string } | string | null> | null;
+  categories?: Array<{ id?: string | number; slug?: string } | string | null> | null;
 };
 
-function firstCategorySlug(article: AdjacentSourceArticle): string | undefined {
+function firstCategory(article: AdjacentSourceArticle): { id?: string | number; slug?: string } | undefined {
   const first = (article.categories ?? [])[0];
   if (!first) return undefined;
-  if (typeof first === "string") return undefined;
-  return first.slug;
+  if (typeof first === "string" || typeof first === "number") {
+    return { id: first };
+  }
+  return first;
 }
 
 /**
@@ -57,7 +59,17 @@ export async function getAdjacentArticles(
   try {
     const payload = await getPayloadClient();
     const sourceId = String(article.id);
-    const categorySlug = firstCategorySlug(article);
+    const cat = firstCategory(article);
+    let categoryId = cat?.id;
+    if (!categoryId && cat?.slug) {
+      const catDoc = await payload.find({
+        collection: "categories",
+        where: { slug: { equals: cat.slug } },
+        limit: 1,
+        depth: 0,
+      });
+      categoryId = catDoc.docs[0]?.id;
+    }
 
     const baseNotSelf: Where = { id: { not_equals: sourceId } };
     const published: Where = { status: { equals: "published" } };
@@ -72,8 +84,8 @@ export async function getAdjacentArticles(
           : { publishedAt: { greater_than: publishedAt } };
 
       const conditions: Where[] = [published, baseNotSelf, timeClause];
-      if (withinCategory && categorySlug) {
-        conditions.push({ "categories.slug": { equals: categorySlug } });
+      if (withinCategory && categoryId) {
+        conditions.push({ categories: { equals: categoryId } });
       }
 
       const res = await payload.find({
@@ -92,10 +104,10 @@ export async function getAdjacentArticles(
 
     // Try category-scoped first, fall back to site-wide per slot so an article
     // at the edge of its category still gets a functional footer nav.
-    let prev = categorySlug ? await findOne("prev", true) : null;
+    let prev = categoryId ? await findOne("prev", true) : null;
     if (!prev) prev = await findOne("prev", false);
 
-    let next = categorySlug ? await findOne("next", true) : null;
+    let next = categoryId ? await findOne("next", true) : null;
     if (!next) next = await findOne("next", false);
 
     return { prev, next };

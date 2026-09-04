@@ -269,6 +269,10 @@ export interface Article {
   featured?: boolean | null;
   featuredPriority?: number | null;
   viewCount?: number | null;
+  /**
+   * Timestamp of the subscriber notification for this article. Set once and never reset.
+   */
+  publishNotifiedAt?: string | null;
   seo?: {
     title?: string | null;
     description?: string | null;
@@ -612,6 +616,7 @@ export interface ArticlesSelect<T extends boolean = true> {
   featured?: T;
   featuredPriority?: T;
   viewCount?: T;
+  publishNotifiedAt?: T;
   seo?:
     | T
     | {

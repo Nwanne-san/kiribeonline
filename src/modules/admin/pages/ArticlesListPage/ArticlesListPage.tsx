@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
 import {
   AdminButton,
+  AdminSearchableSelect,
   CategoryTag,
   Pill,
   formatCompact,
@@ -659,18 +660,18 @@ export function ArticlesListPage() {
             <label htmlFor="page-size" className="font-semibold uppercase tracking-wide">
               Per page
             </label>
-            <select
-              id="page-size"
-              value={limit}
-              onChange={(e) => setLimit(Number(e.target.value))}
-              className="rounded-none border border-border bg-surface px-2 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
-            >
-              {ADMIN_PAGE_LIMIT_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+            <div className="w-20">
+              <AdminSearchableSelect
+                id="page-size"
+                value={String(limit)}
+                onChange={(val) => setLimit(Number(val))}
+                options={ADMIN_PAGE_LIMIT_OPTIONS.map((opt) => ({
+                  value: String(opt),
+                  label: String(opt),
+                }))}
+                searchable={false}
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -741,19 +742,16 @@ function FilterSelect({
       >
         {label}
       </label>
-      <select
+      <AdminSearchableSelect
         id={id}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
-      >
-        {placeholder ? <option value="">{placeholder}</option> : null}
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+        onChange={onChange}
+        placeholder={placeholder ?? "Select…"}
+        options={[
+          ...(placeholder ? [{ value: "", label: placeholder }] : []),
+          ...options,
+        ]}
+      />
     </div>
   );
 }

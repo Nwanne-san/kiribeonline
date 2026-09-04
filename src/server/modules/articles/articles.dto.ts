@@ -115,6 +115,15 @@ export const articleInputSchema = z
   .refine((data) => Boolean(data.body) || Boolean(data.bodyText?.trim()), {
     message: "Body is required",
     path: ["body"],
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === "scheduled" && !data.publishedAt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["publishedAt"],
+        message: "Scheduled articles require a publish date.",
+      });
+    }
   });
 
 const articleBaseSchema = z.object({
@@ -141,6 +150,18 @@ const articleBaseSchema = z.object({
     .optional(),
 });
 
-export const articlePatchSchema = articleBaseSchema.partial();
+export const articlePatchSchema = articleBaseSchema.partial().superRefine((data, ctx) => {
+  // Only enforce when both fields are present in the patch — if only `status`
+  // is being changed, the collection `beforeValidate` hook still checks the
+  // merged doc so a null `publishedAt` on the persisted row is caught server-
+  // side. This keeps the API error focused on the user's intent.
+  if (data.status === "scheduled" && data.publishedAt === null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["publishedAt"],
+      message: "Scheduled articles require a publish date.",
+    });
+  }
+});
 
 export type ArticleInput = z.infer<typeof articleInputSchema>;
