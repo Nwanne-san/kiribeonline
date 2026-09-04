@@ -29,7 +29,7 @@ import {
 } from "@/modules/shared/components/ui";
 import { PublicRoutes } from "@/routes/public.routes";
 import { hasNamedAuthor, resolvePublicByline } from "@/lib/content/byline";
-import { estimateReadingTime, formatDate } from "@/utils/helper";
+import { estimateReadingTime, formatDetailByline } from "@/utils/helper";
 import { CATEGORY_COLORS } from "@/theme/category-colors";
 
 type ArticleDetailPageProps = {
@@ -334,7 +334,9 @@ function ArticleDetailContent({
             <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.3)" }} />
             {article.publishedAt && (
               <KiribeTypography sx={{ fontSize: "0.875rem", color: "inherit" }}>
-                {formatDate(article.publishedAt)}
+                <time dateTime={article.publishedAt} suppressHydrationWarning>
+                  {formatDetailByline(article.publishedAt)}
+                </time>
               </KiribeTypography>
             )}
             <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.3)" }} />
