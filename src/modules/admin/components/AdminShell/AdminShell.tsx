@@ -130,7 +130,6 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
           collapsed={collapsed}
           pathname={pathname}
           onNavigate={navigate}
-          onViewSite={() => window.open(PublicRoutes.home, "_blank")}
           onLogout={requestLogout}
         />
       </aside>
@@ -150,7 +149,6 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
               collapsed={false}
               pathname={pathname}
               onNavigate={navigate}
-              onViewSite={() => window.open(PublicRoutes.home, "_blank")}
               onLogout={requestLogout}
             />
           </aside>
@@ -178,14 +176,13 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
 
       <AdminConfirmDialog
         open={logoutOpen}
-        title="Log out?"
-        description="You'll be signed out of the admin. Any unsaved changes on the current page could be lost."
-        confirmLabel="Log out"
-        cancelLabel="Stay signed in"
+        title="Log out of Kiribé CMS?"
+        description="Any unsaved changes on the current screen will be lost."
+        confirmLabel={loggingOut ? "Logging out…" : "Log Out"}
         tone="danger"
-        onCancel={() => setLogoutOpen(false)}
-        onConfirm={() => void performLogout()}
         isPending={loggingOut}
+        onConfirm={() => void performLogout()}
+        onCancel={() => !loggingOut && setLogoutOpen(false)}
       />
     </div>
   );
@@ -198,14 +195,12 @@ function Sidebar({
   collapsed,
   pathname,
   onNavigate,
-  onViewSite,
   onLogout,
 }: {
   groups: NavGroup[];
   collapsed: boolean;
   pathname: string;
   onNavigate: (route: string) => void;
-  onViewSite: () => void;
   onLogout: () => void;
 }) {
   return (
@@ -255,7 +250,7 @@ function Sidebar({
           icon={<PublicOutlined fontSize="small" />}
           label="View Website"
           collapsed={collapsed}
-          onClick={onViewSite}
+          href={PublicRoutes.home}
         />
         <FooterRow
           icon={<LogoutRounded fontSize="small" />}
@@ -322,20 +317,39 @@ function FooterRow({
   label,
   collapsed,
   onClick,
+  href,
 }: {
   icon: React.ReactNode;
   label: string;
   collapsed: boolean;
-  onClick: () => void;
+  onClick?: () => void;
+  href?: string;
 }) {
+  const className = `flex w-full items-center rounded-none text-[0.8125rem] font-medium text-[#99a1af] transition-colors hover:bg-white/[0.06] hover:text-white ${
+    collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
+  }`;
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={collapsed ? label : undefined}
+        className={className}
+      >
+        {icon}
+        {!collapsed && <span className="truncate">{label}</span>}
+      </a>
+    );
+  }
+
   return (
     <button
       type="button"
       title={collapsed ? label : undefined}
       onClick={onClick}
-      className={`flex w-full items-center rounded-none text-[0.8125rem] font-medium text-[#99a1af] transition-colors hover:bg-white/[0.06] hover:text-white ${
-        collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"
-      }`}
+      className={className}
     >
       {icon}
       {!collapsed && <span className="truncate">{label}</span>}

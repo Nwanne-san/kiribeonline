@@ -14,6 +14,7 @@ import { ApiMethods } from "../../../../../types/service";
 import {
   AdminButton,
   AdminPanel,
+  AdminSearchableSelect,
   Pill,
   StatTile,
   formatCompact,
@@ -309,18 +310,18 @@ export function SubscribersPage() {
               <label htmlFor="subs-page-size" className="font-semibold uppercase tracking-wide">
                 Per page
               </label>
-              <select
-                id="subs-page-size"
-                value={limit}
-                onChange={(ev) => setLimit(Number(ev.target.value))}
-                className="rounded-none border border-border bg-surface px-2 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
-              >
-                {ADMIN_PAGE_LIMIT_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+              <div className="w-20">
+                <AdminSearchableSelect
+                  id="subs-page-size"
+                  value={String(limit)}
+                  onChange={(val) => setLimit(Number(val))}
+                  options={ADMIN_PAGE_LIMIT_OPTIONS.map((opt) => ({
+                    value: String(opt),
+                    label: String(opt),
+                  }))}
+                  searchable={false}
+                />
+              </div>
             </div>
 
             <div className="flex items-center gap-3">

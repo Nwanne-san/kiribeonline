@@ -2,26 +2,42 @@ import type { Where } from "payload";
 import type { ArticleFilterInput } from "./types";
 
 export function buildArticleWhere(filters: ArticleFilterInput = {}): Where {
-  const conditions: Where[] = [
-    {
-      status: {
-        equals: filters.status ?? "published",
-      },
-    },
-  ];
+  const targetStatus = filters.status ?? "published";
+  const now = new Date().toISOString();
 
-  if (filters.categorySlug) {
+  const statusCondition: Where =
+    targetStatus === "published"
+      ? {
+          or: [
+            { status: { equals: "published" } },
+            {
+              and: [
+                { status: { equals: "scheduled" } },
+                { publishedAt: { less_than_equal: now } },
+              ],
+            },
+          ],
+        }
+      : {
+          status: {
+            equals: targetStatus,
+          },
+        };
+
+  const conditions: Where[] = [statusCondition];
+
+  if (filters.categoryId !== undefined && filters.categoryId !== null && filters.categoryId !== "") {
     conditions.push({
-      "categories.slug": {
-        equals: filters.categorySlug,
+      categories: {
+        equals: filters.categoryId,
       },
     });
   }
 
-  if (filters.tagSlug) {
+  if (filters.tagId !== undefined && filters.tagId !== null && filters.tagId !== "") {
     conditions.push({
-      "tags.slug": {
-        equals: filters.tagSlug,
+      tags: {
+        equals: filters.tagId,
       },
     });
   }

@@ -55,9 +55,19 @@ export async function updateHomepageAdmin(input: HomepagePatch) {
   if (input.reelIds) data.reels = toRelIds(input.reelIds) ?? [];
   if (input.archiveCtaEnabled !== undefined) data.archiveCtaEnabled = input.archiveCtaEnabled;
 
-  return payload.updateGlobal({
+  const res = await payload.updateGlobal({
     slug: "homepage",
     data,
     overrideAccess: true,
   });
+
+  try {
+    const { revalidateTag, revalidatePath } = await import("next/cache");
+    revalidateTag("homepage");
+    revalidatePath("/");
+  } catch (err) {
+    console.warn("[homepage.service] revalidate failed:", err);
+  }
+
+  return res;
 }
