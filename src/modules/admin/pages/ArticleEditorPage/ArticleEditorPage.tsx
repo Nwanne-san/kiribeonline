@@ -27,7 +27,7 @@ import {
   AdminInput,
   AdminPageHeader,
   AdminPanel,
-  AdminSelect,
+  AdminSearchableSelect,
   AdminTextarea,
 } from "@/modules/admin/components/ui/AdminPrimitives";
 import { PanelListSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
@@ -307,7 +307,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     excerpt,
     body,
     status,
-    publishedAt: publishedAt || null,
+    publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
     featured,
     featuredPriority,
     categoryIds,
@@ -768,24 +768,20 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
                     : undefined
                 }
               >
-                <AdminSelect
+                <AdminSearchableSelect
                   id="ae-status"
                   value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value);
+                  onChange={(val) => {
+                    setStatus(val);
                     bumpDirty();
                   }}
-                >
-                  {statusOptions.map((s) => (
-                    <option
-                      key={s.value}
-                      value={s.value}
-                      disabled={s.label.endsWith("(locked)")}
-                    >
-                      {s.label}
-                    </option>
-                  ))}
-                </AdminSelect>
+                  options={statusOptions.map((s) => ({
+                    value: s.value,
+                    label: s.label,
+                    disabled: s.label.endsWith("(locked)"),
+                  }))}
+                  searchable={false}
+                />
               </AdminField>
 
               <AdminField label="Publish date" htmlFor="ae-publish-date">

@@ -9,6 +9,7 @@ import {
   sendArticleChangesRequestedEmail,
   sendArticleSubmittedEmailToAdmins,
 } from "./status-emails";
+import { notifySubscribersOnArticlePublished } from "./subscriber-notification";
 
 function mapArticleInput(input: ArticleInput) {
   const body =
@@ -25,7 +26,7 @@ function mapArticleInput(input: ArticleInput) {
     author: toRelId(input.authorId),
     heroImage: toRelId(input.heroImageId),
     status: input.status,
-    publishedAt: input.publishedAt ?? undefined,
+    publishedAt: input.publishedAt ? new Date(input.publishedAt).toISOString() : undefined,
     featured: input.featured ?? false,
     featuredPriority: input.featuredPriority ?? 0,
     hideByline: input.hideByline ?? false,
@@ -200,11 +201,21 @@ function normalizeAuthorId(author: unknown): string | null {
 
 export async function createAdminArticle(input: ArticleInput) {
   const payload = await getPayloadClient();
-  return payload.create({
+  const doc = await payload.create({
     collection: "articles",
     data: mapArticleInput(input) as never,
     overrideAccess: true,
   });
+
+  if (input.status === "published" && doc) {
+    void notifySubscribersOnArticlePublished({
+      articleTitle: (doc as { title?: string }).title ?? input.title,
+      articleSlug: (doc as { slug?: string }).slug ?? input.slug ?? "",
+      articleExcerpt: (doc as { excerpt?: string }).excerpt ?? input.excerpt,
+    });
+  }
+
+  return doc;
 }
 
 export type UpdateArticleContext = {
@@ -250,7 +261,9 @@ export async function updateAdminArticle(
   if (input.authorId !== undefined) data.author = toRelId(input.authorId) ?? null;
   if (input.heroImageId !== undefined) data.heroImage = toRelId(input.heroImageId) ?? null;
   if (input.status) data.status = input.status;
-  if (input.publishedAt !== undefined) data.publishedAt = input.publishedAt;
+  if (input.publishedAt !== undefined) {
+    data.publishedAt = input.publishedAt ? new Date(input.publishedAt).toISOString() : null;
+  }
   if (input.featured !== undefined) data.featured = input.featured;
   if (input.featuredPriority !== undefined) data.featuredPriority = input.featuredPriority;
   if (input.hideByline !== undefined) data.hideByline = input.hideByline;
@@ -280,6 +293,15 @@ export async function updateAdminArticle(
       },
       context,
     });
+
+    // If transitioned into published, notify all confirmed subscribers
+    if (before.status !== "published" && (doc as { status?: string }).status === "published") {
+      void notifySubscribersOnArticlePublished({
+        articleTitle: (doc as { title?: string }).title ?? input.title ?? "",
+        articleSlug: (doc as { slug?: string }).slug ?? input.slug ?? "",
+        articleExcerpt: (doc as { excerpt?: string }).excerpt ?? input.excerpt,
+      });
+    }
   }
 
   return doc;

@@ -12,6 +12,7 @@ import { ApiMethods } from "../../../../../types/service";
 import {
   AdminButton,
   AdminPanel,
+  AdminSearchableSelect,
   InitialAvatar,
   Pill,
 } from "@/modules/admin/components/ui/AdminPrimitives";
@@ -178,18 +179,19 @@ export function RecentActivityPage() {
 
         <div className="grid gap-3 sm:grid-cols-3">
           <FilterField label="Entity">
-            <select
+            <AdminSearchableSelect
               value={targetType}
-              onChange={(e) => updateParams({ [PARAM.targetType]: e.target.value })}
-              className="w-full rounded-none border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
-            >
-              <option value="">All entities</option>
-              {(targetTypes ?? []).map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => updateParams({ [PARAM.targetType]: val })}
+              placeholder="All entities"
+              options={[
+                { value: "", label: "All entities" },
+                ...(targetTypes ?? []).map((t) => ({
+                  value: t,
+                  label: t,
+                })),
+              ]}
+              searchable={false}
+            />
           </FilterField>
           <FilterField label="From">
             <DateInput value={from} onChange={(v) => updateParams({ [PARAM.from]: v })} />
@@ -289,18 +291,18 @@ export function RecentActivityPage() {
               <label htmlFor="audit-page-size" className="font-semibold uppercase tracking-wide">
                 Per page
               </label>
-              <select
-                id="audit-page-size"
-                value={limit}
-                onChange={(ev) => setLimit(Number(ev.target.value))}
-                className="rounded-none border border-border bg-surface px-2 py-1.5 text-xs text-ink focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
-              >
-                {ADMIN_PAGE_LIMIT_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+              <div className="w-20">
+                <AdminSearchableSelect
+                  id="audit-page-size"
+                  value={String(limit)}
+                  onChange={(val) => setLimit(Number(val))}
+                  options={ADMIN_PAGE_LIMIT_OPTIONS.map((opt) => ({
+                    value: String(opt),
+                    label: String(opt),
+                  }))}
+                  searchable={false}
+                />
+              </div>
             </div>
 
             <div className="flex items-center gap-3">

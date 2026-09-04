@@ -14,7 +14,7 @@ import {
   AdminInput,
   AdminPageHeader,
   AdminPanel,
-  AdminSelect,
+  AdminSearchableSelect,
 } from "@/modules/admin/components/ui/AdminPrimitives";
 import { PanelListSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
 import { useMutationService } from "@/utils/hooks/useMutationService";
@@ -277,18 +277,19 @@ export function HomepageBuilderPage() {
               <AdminPanel title="Hero article">
                 <div className="p-5">
                   <AdminField label="Featured story" htmlFor="hb-hero">
-                    <AdminSelect
+                    <AdminSearchableSelect
                       id="hb-hero"
                       value={heroArticleId}
-                      onChange={(e) => setHeroArticleId(e.target.value)}
-                    >
-                      <option value="">None</option>
-                      {(articles?.docs ?? []).map((a) => (
-                        <option key={a.id} value={String(a.id)}>
-                          {a.title}
-                        </option>
-                      ))}
-                    </AdminSelect>
+                      onChange={setHeroArticleId}
+                      options={[
+                        { value: "", label: "Auto (highest priority featured or latest)" },
+                        ...(articles?.docs ?? []).map((a) => ({
+                          value: String(a.id),
+                          label: a.title,
+                        })),
+                      ]}
+                      placeholder="Select hero article…"
+                    />
                   </AdminField>
                 </div>
               </AdminPanel>
@@ -329,22 +330,20 @@ export function HomepageBuilderPage() {
                         />
                         <div className="min-w-0 flex-1">
                           <AdminField label={`Pick ${index + 1}`} htmlFor={`hb-pick-${index}`}>
-                            <AdminSelect
+                            <AdminSearchableSelect
                               id={`hb-pick-${index}`}
                               value={pick.articleId}
-                              onChange={(e) => {
+                              onChange={(val) => {
                                 const next = [...picks];
-                                next[index] = { ...pick, articleId: e.target.value };
+                                next[index] = { ...pick, articleId: val };
                                 setPicks(next);
                               }}
-                            >
-                              <option value="">Select article</option>
-                              {(articles?.docs ?? []).map((a) => (
-                                <option key={a.id} value={String(a.id)}>
-                                  {a.title}
-                                </option>
-                              ))}
-                            </AdminSelect>
+                              options={(articles?.docs ?? []).map((a) => ({
+                                value: String(a.id),
+                                label: a.title,
+                              }))}
+                              placeholder="Select article…"
+                            />
                           </AdminField>
                         </div>
                         <IconRoundBtn onClick={() => removePick(index)} label="Remove pick">
@@ -419,21 +418,20 @@ export function HomepageBuilderPage() {
 
                       <div className="grid gap-3 sm:grid-cols-2">
                         <AdminField label="Category" htmlFor={`hb-cat-${index}`}>
-                          <AdminSelect
+                          <AdminSearchableSelect
                             id={`hb-cat-${index}`}
                             value={mod.categoryId}
-                            onChange={(e) => {
+                            onChange={(val) => {
                               const next = [...modules];
-                              next[index] = { ...mod, categoryId: e.target.value };
+                              next[index] = { ...mod, categoryId: val };
                               setModules(next);
                             }}
-                          >
-                            {(categories?.docs ?? []).map((c) => (
-                              <option key={c.id} value={String(c.id)}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </AdminSelect>
+                            options={(categories?.docs ?? []).map((c) => ({
+                              value: String(c.id),
+                              label: c.name,
+                            }))}
+                            placeholder="Select category…"
+                          />
                         </AdminField>
                         <AdminField label="Section title" htmlFor={`hb-title-${index}`}>
                           <AdminInput
@@ -447,21 +445,17 @@ export function HomepageBuilderPage() {
                           />
                         </AdminField>
                         <AdminField label="Layout" htmlFor={`hb-layout-${index}`}>
-                          <AdminSelect
+                          <AdminSearchableSelect
                             id={`hb-layout-${index}`}
                             value={mod.layout}
-                            onChange={(e) => {
+                            onChange={(val) => {
                               const next = [...modules];
-                              next[index] = { ...mod, layout: e.target.value };
+                              next[index] = { ...mod, layout: val };
                               setModules(next);
                             }}
-                          >
-                            {LAYOUT_OPTIONS.map((l) => (
-                              <option key={l.value} value={l.value}>
-                                {l.label}
-                              </option>
-                            ))}
-                          </AdminSelect>
+                            options={LAYOUT_OPTIONS}
+                            searchable={false}
+                          />
                         </AdminField>
                         <AdminField label="Max items" htmlFor={`hb-max-${index}`}>
                           <AdminInput
@@ -490,18 +484,19 @@ export function HomepageBuilderPage() {
               <AdminPanel title="Spotlight creator">
                 <div className="p-5">
                   <AdminField label="Featured spotlight" htmlFor="hb-spotlight">
-                    <AdminSelect
+                    <AdminSearchableSelect
                       id="hb-spotlight"
                       value={spotlightCreatorId}
-                      onChange={(e) => setSpotlightCreatorId(e.target.value)}
-                    >
-                      <option value="">None</option>
-                      {(creators?.docs ?? []).map((c) => (
-                        <option key={c.id} value={String(c.id)}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </AdminSelect>
+                      onChange={setSpotlightCreatorId}
+                      options={[
+                        { value: "", label: "None (hidden)" },
+                        ...(creators?.docs ?? []).map((c) => ({
+                          value: String(c.id),
+                          label: c.name,
+                        })),
+                      ]}
+                      placeholder="Select creator…"
+                    />
                   </AdminField>
                 </div>
               </AdminPanel>

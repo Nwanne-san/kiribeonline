@@ -10,7 +10,7 @@ import {
   AdminInput,
   AdminPageHeader,
   AdminPanel,
-  AdminSelect,
+  AdminSearchableSelect,
   AdminTextarea,
 } from "@/modules/admin/components/ui/AdminPrimitives";
 import { PanelListSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
@@ -234,25 +234,22 @@ export function SettingsAdminPage() {
                 >
                   <div className="sm:w-48">
                     <AdminField label="Platform" htmlFor={`settings-social-platform-${index}`}>
-                      <AdminSelect
+                      <AdminSearchableSelect
                         id={`settings-social-platform-${index}`}
                         value={row.platform}
-                        onChange={(e) => updateSocialRow(index, { platform: e.target.value })}
+                        onChange={(val) => updateSocialRow(index, { platform: val })}
                         disabled={!canManage}
-                      >
-                        <option value="">Select platform</option>
-                        {SOCIAL_PLATFORMS.map((platform) => (
-                          <option
-                            key={platform.key}
-                            value={platform.key}
-                            disabled={
-                              platform.key !== row.platform && usedPlatforms.has(platform.key)
-                            }
-                          >
-                            {platform.label}
-                          </option>
-                        ))}
-                      </AdminSelect>
+                        options={[
+                          { value: "", label: "Select platform" },
+                          ...SOCIAL_PLATFORMS.map((platform) => ({
+                            value: platform.key,
+                            label: platform.label,
+                            disabled:
+                              platform.key !== row.platform && usedPlatforms.has(platform.key),
+                          })),
+                        ]}
+                        searchable={false}
+                      />
                     </AdminField>
                   </div>
 

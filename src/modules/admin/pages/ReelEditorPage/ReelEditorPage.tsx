@@ -13,7 +13,7 @@ import {
   AdminInput,
   AdminPageHeader,
   AdminPanel,
-  AdminSelect,
+  AdminSearchableSelect,
 } from "@/modules/admin/components/ui/AdminPrimitives";
 import { AdminRoutes } from "@/routes/admin.routes";
 import { useMutationService } from "@/utils/hooks/useMutationService";
@@ -149,15 +149,17 @@ export function ReelEditorPage({ reelId }: ReelEditorPageProps) {
             </AdminField>
 
             <AdminField label="Platform" htmlFor="reel-platform" required>
-              <AdminSelect
+              <AdminSearchableSelect
                 id="reel-platform"
                 value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
-              >
-                <option value="youtube">YouTube</option>
-                <option value="instagram">Instagram</option>
-                <option value="tiktok">TikTok</option>
-              </AdminSelect>
+                onChange={(val) => setPlatform(val as "youtube" | "instagram" | "tiktok")}
+                options={[
+                  { value: "youtube", label: "YouTube" },
+                  { value: "instagram", label: "Instagram" },
+                  { value: "tiktok", label: "TikTok" },
+                ]}
+                searchable={false}
+              />
             </AdminField>
 
             <AdminField

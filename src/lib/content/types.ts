@@ -4,7 +4,9 @@ import type { Article } from "@/modules/shared/types/content";
 export type ArticleListParams = {
   page?: number | string;
   limit?: number | string;
+  categoryId?: string | number;
   categorySlug?: string;
+  tagId?: string | number;
   tagSlug?: string;
   q?: string;
   sort?: string;
@@ -48,7 +50,9 @@ export type ArticleCardDoc = Pick<
 };
 
 export type ArticleFilterInput = {
+  categoryId?: string | number;
   categorySlug?: string;
+  tagId?: string | number;
   tagSlug?: string;
   status?: string;
 };
