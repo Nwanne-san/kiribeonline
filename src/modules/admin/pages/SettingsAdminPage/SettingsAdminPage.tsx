@@ -3,7 +3,7 @@
 import AddRounded from "@mui/icons-material/AddRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import SaveRounded from "@mui/icons-material/SaveRounded";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AdminButton,
   AdminField,
@@ -66,6 +66,30 @@ export function SettingsAdminPage() {
   const nextFreePlatform =
     SOCIAL_PLATFORMS.find((platform) => !usedPlatforms.has(platform.key))?.key ?? "";
 
+  /**
+   * Social rows are one of three states: fully empty (dropped on save),
+   * half-filled (blocked — editor probably meant to keep it), or valid.
+   * Show per-row errors on the half-filled ones and disable Save until all
+   * rows are resolved.
+   */
+  const socialErrors = useMemo(() => {
+    return socialLinks.map((row) => {
+      const hasPlatform = Boolean(row.platform.trim());
+      const hasUrl = Boolean(row.url.trim());
+      if (!hasPlatform && !hasUrl) return { platform: null, url: null, empty: true };
+      let urlError: string | null = null;
+      if (!hasUrl) urlError = "URL is required";
+      else if (!/^https?:\/\//i.test(row.url.trim()))
+        urlError = "Use a full https:// URL";
+      return {
+        platform: hasPlatform ? null : "Pick a platform",
+        url: urlError,
+        empty: false,
+      };
+    });
+  }, [socialLinks]);
+  const hasSocialErrors = socialErrors.some((e) => e.platform !== null || e.url !== null);
+
   const addSocialRow = () => {
     setSocialLinks((prev) => [...prev, { platform: nextFreePlatform, url: "" }]);
   };
@@ -103,10 +127,14 @@ export function SettingsAdminPage() {
   const saveButton = canManage ? (
     <AdminButton
       onClick={save}
-      disabled={isPending || isLoading || !siteName.trim()}
+      disabled={isPending || isLoading || !siteName.trim() || hasSocialErrors}
       leftIcon={<SaveRounded className="text-[16px]" />}
     >
-      {isPending ? "Saving…" : "Save settings"}
+      {isPending
+        ? "Saving…"
+        : hasSocialErrors
+          ? "Fix social links to save"
+          : "Save settings"}
     </AdminButton>
   ) : null;
 
@@ -227,13 +255,19 @@ export function SettingsAdminPage() {
                 No social links yet.
               </div>
             ) : (
-              socialLinks.map((row, index) => (
+              socialLinks.map((row, index) => {
+                const rowError = socialErrors[index];
+                return (
                 <div
                   key={index}
                   className="flex flex-col gap-2 border border-border bg-surface-alt p-3 sm:flex-row sm:items-end"
                 >
                   <div className="sm:w-48">
-                    <AdminField label="Platform" htmlFor={`settings-social-platform-${index}`}>
+                    <AdminField
+                      label="Platform"
+                      htmlFor={`settings-social-platform-${index}`}
+                      error={rowError?.platform ?? undefined}
+                    >
                       <AdminSearchableSelect
                         id={`settings-social-platform-${index}`}
                         value={row.platform}
@@ -254,11 +288,16 @@ export function SettingsAdminPage() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <AdminField label="URL" htmlFor={`settings-social-url-${index}`}>
+                    <AdminField
+                      label="URL"
+                      htmlFor={`settings-social-url-${index}`}
+                      error={rowError?.url ?? undefined}
+                    >
                       <AdminInput
                         id={`settings-social-url-${index}`}
                         type="url"
                         value={row.url}
+                        invalid={Boolean(rowError?.url)}
                         onChange={(e) => updateSocialRow(index, { url: e.target.value })}
                         placeholder="https://instagram.com/kiribeonline"
                         disabled={!canManage}
@@ -277,7 +316,8 @@ export function SettingsAdminPage() {
                     </button>
                   )}
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         )}

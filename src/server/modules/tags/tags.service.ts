@@ -1,4 +1,5 @@
 import { getPayloadClient } from "@/lib/payload/get-payload";
+import { assertNoTaxonomyCollision } from "@/server/modules/shared/taxonomy-collision";
 import type { tagInputSchema } from "./tags.dto";
 import type { AdminTag } from "./tags.types";
 import type { z } from "zod";
@@ -50,6 +51,7 @@ export async function listTags(): Promise<{ docs: AdminTag[] }> {
 }
 
 export async function createTag(input: TagInput) {
+  await assertNoTaxonomyCollision("tags", input);
   const payload = await getPayloadClient();
   return payload.create({
     collection: "tags",

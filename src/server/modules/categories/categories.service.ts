@@ -1,5 +1,6 @@
 import { getPayloadClient } from "@/lib/payload/get-payload";
 import { DomainError } from "@/server/errors";
+import { assertNoTaxonomyCollision } from "@/server/modules/shared/taxonomy-collision";
 import type { categoryInputSchema, categoryUpdateInputSchema } from "./categories.dto";
 import type { AdminCategory } from "./categories.types";
 import type { z } from "zod";
@@ -58,6 +59,7 @@ export async function listCategories(): Promise<{ docs: AdminCategory[] }> {
 }
 
 export async function createCategory(input: CategoryInput) {
+  await assertNoTaxonomyCollision("categories", input);
   const payload = await getPayloadClient();
   return payload.create({
     collection: "categories",
@@ -67,6 +69,7 @@ export async function createCategory(input: CategoryInput) {
 }
 
 export async function updateCategory(id: string, input: CategoryUpdateInput) {
+  await assertNoTaxonomyCollision("categories", input, id);
   const payload = await getPayloadClient();
   return payload.update({
     collection: "categories",
