@@ -6,6 +6,8 @@ export enum PublicRoutes {
   categoryDetail = "/categories/:slug",
   /** Special-cased categories route — renders the reels grid, not an article archive. */
   categoryVideos = "/categories/videos",
+  /** Spotlight — creator profiles archive, distinct from the article-tagged categories. */
+  spotlight = "/spotlight",
   tags = "/tags",
   tagDetail = "/tags/:slug",
   search = "/search",
