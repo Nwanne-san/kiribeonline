@@ -5,7 +5,7 @@ import ArrowDownwardRounded from "@mui/icons-material/ArrowDownwardRounded";
 import ArrowUpwardRounded from "@mui/icons-material/ArrowUpwardRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import SaveRounded from "@mui/icons-material/SaveRounded";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApiMethods } from "../../../../../types/service";
 import {
   AdminButton,
@@ -186,21 +186,43 @@ export function HomepageBuilderPage() {
     setPicks((prev) => prev.filter((_, i) => i !== index));
   };
 
+  /**
+   * Rows the editor added but never filled in. We silently strip them on save
+   * — but show inline errors + disable Save if the editor's only issue is
+   * empty slots so nothing is lost by accident.
+   */
+  const validation = useMemo(() => {
+    const emptyPickIndexes = picks
+      .map((p, i) => (p.articleId ? -1 : i))
+      .filter((i) => i >= 0);
+    const emptyModuleIndexes = modules
+      .map((m, i) => (m.categoryId ? -1 : i))
+      .filter((i) => i >= 0);
+    return {
+      emptyPickIndexes,
+      emptyModuleIndexes,
+      hasErrors: emptyPickIndexes.length > 0 || emptyModuleIndexes.length > 0,
+    };
+  }, [picks, modules]);
+
   const save = () => {
+    if (validation.hasErrors) return;
     mutate({
       heroArticleId: heroArticleId || null,
       editorsPicks: picks
         .filter((p) => p.articleId)
         .map((pick, i) => ({ articleId: pick.articleId, sortOrder: i })),
-      categoryModules: modules.map((mod, i) => ({
-        categoryId: mod.categoryId,
-        sectionTitle: mod.sectionTitle,
-        layout: mod.layout,
-        maxItems: mod.maxItems,
-        enabled: mod.enabled,
-        sortOrder: i,
-        articleSelection: "auto",
-      })),
+      categoryModules: modules
+        .filter((m) => m.categoryId)
+        .map((mod, i) => ({
+          categoryId: mod.categoryId,
+          sectionTitle: mod.sectionTitle,
+          layout: mod.layout,
+          maxItems: mod.maxItems,
+          enabled: mod.enabled,
+          sortOrder: i,
+          articleSelection: "auto",
+        })),
       spotlightCreatorId: spotlightCreatorId || null,
       featuredCreators: featuredCreatorIds.map((creatorId, index) => ({
         creatorId,
@@ -240,10 +262,14 @@ export function HomepageBuilderPage() {
         action={
           <AdminButton
             onClick={save}
-            disabled={isPending || loading}
+            disabled={isPending || loading || validation.hasErrors}
             leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
           >
-            {isPending ? "Saving…" : "Save"}
+            {isPending
+              ? "Saving…"
+              : validation.hasErrors
+                ? "Pick a value for each slot"
+                : "Save"}
           </AdminButton>
         }
       />
@@ -329,7 +355,11 @@ export function HomepageBuilderPage() {
                           canDown={index < picks.length - 1}
                         />
                         <div className="min-w-0 flex-1">
-                          <AdminField label={`Pick ${index + 1}`} htmlFor={`hb-pick-${index}`}>
+                          <AdminField
+                            label={`Pick ${index + 1}`}
+                            htmlFor={`hb-pick-${index}`}
+                            error={!pick.articleId ? "Select an article or remove this pick." : undefined}
+                          >
                             <AdminSearchableSelect
                               id={`hb-pick-${index}`}
                               value={pick.articleId}
@@ -417,7 +447,11 @@ export function HomepageBuilderPage() {
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <AdminField label="Category" htmlFor={`hb-cat-${index}`}>
+                        <AdminField
+                          label="Category"
+                          htmlFor={`hb-cat-${index}`}
+                          error={!mod.categoryId ? "Select a category or remove this module." : undefined}
+                        >
                           <AdminSearchableSelect
                             id={`hb-cat-${index}`}
                             value={mod.categoryId}
