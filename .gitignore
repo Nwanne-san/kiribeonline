@@ -57,3 +57,6 @@ next-env.d.ts
 /test-results/
 /playwright/.cache/
 /e2e/.auth/
+
+# Local scheduled-task runtime state (harness-managed)
+.claude/scheduled_tasks.lock
