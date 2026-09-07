@@ -3,7 +3,7 @@
 import AddRounded from "@mui/icons-material/AddRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import SaveRounded from "@mui/icons-material/SaveRounded";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AdminButton,
   AdminCheckboxRow,
@@ -25,6 +25,35 @@ import Link from "next/link";
 
 type NavLinkRow = { id: string; label: string; href: string; visible: boolean };
 type FooterColumn = { id: string; title: string; links: NavLinkRow[] };
+
+/**
+ * Mirror of the server-side `hrefSchema` in `navigation.dto.ts` so we can
+ * disable Save (and show inline errors) before the network round-trip.
+ * Rejects `javascript:`, `data:`, and protocol-relative `//host` — same
+ * open-redirect / XSS surface the server refuses.
+ */
+function validateHref(value: string): string | null {
+  const v = value.trim();
+  if (!v) return "URL is required";
+  if (v.length > 300) return "URL is too long";
+  const relative = v.startsWith("/") && !v.startsWith("//");
+  const absolute = /^https?:\/\//i.test(v);
+  if (!relative && !absolute) {
+    return "Use a site path like /about or a full https:// URL";
+  }
+  return null;
+}
+
+function validateLabel(value: string): string | null {
+  const v = value.trim();
+  if (!v) return "Label is required";
+  if (v.length > 60) return "Label is too long (60 max)";
+  return null;
+}
+
+function isRowEmpty(row: { label: string; href: string }) {
+  return !row.label.trim() && !row.href.trim();
+}
 
 type NavigationPayload = {
   headerLinks: NavLinkRow[];
@@ -69,6 +98,36 @@ export function NavigationAdminPage() {
   const atHeaderLimit = headerLinks.length >= maxHeaderLinks;
   const socialCount = settings?.socialLinks?.filter((l) => l?.url).length ?? 0;
 
+  /**
+   * Per-row validation. Rows where BOTH label and href are empty are treated
+   * as "not yet filled in" — they're dropped silently on save. Rows with one
+   * side filled are surfaced as errors so the editor can't accidentally lose
+   * half a link they meant to keep.
+   */
+  const validation = useMemo(() => {
+    const headerErrors = headerLinks.map((row) => {
+      if (isRowEmpty(row)) return { label: null, href: null, empty: true };
+      return { label: validateLabel(row.label), href: validateHref(row.href), empty: false };
+    });
+    const footerErrors = footerColumns.map((col) => ({
+      title: col.title.trim() ? null : "Column title is required",
+      links: col.links.map((row) => {
+        if (isRowEmpty(row)) return { label: null, href: null, empty: true };
+        return { label: validateLabel(row.label), href: validateHref(row.href), empty: false };
+      }),
+    }));
+    const hasHeaderErrors = headerErrors.some((e) => e.label !== null || e.href !== null);
+    const hasFooterErrors = footerErrors.some(
+      (col) =>
+        col.title !== null || col.links.some((l) => l.label !== null || l.href !== null)
+    );
+    return {
+      headerErrors,
+      footerErrors,
+      hasErrors: hasHeaderErrors || hasFooterErrors,
+    };
+  }, [headerLinks, footerColumns]);
+
   const saveNavigation = useMutationService<
     { headerLinks: unknown[]; footerColumns: unknown[] },
     NavigationPayload
@@ -82,10 +141,15 @@ export function NavigationAdminPage() {
   });
 
   const save = () => {
+    if (validation.hasErrors) return;
     saveNavigation.mutate({
       // `id` is a client-side row key only — the API schema rejects extras.
+      // Rows where both label and href are blank are dropped silently so an
+      // editor who clicked "Add" and then reconsidered doesn't have to also
+      // click Remove to save.
       headerLinks: headerLinks
         .slice(0, maxHeaderLinks)
+        .filter((row) => !isRowEmpty(row))
         .map(({ label, href, visible }) => ({
           label: label.trim(),
           href: href.trim(),
@@ -93,11 +157,13 @@ export function NavigationAdminPage() {
         })),
       footerColumns: footerColumns.map((col) => ({
         title: col.title.trim(),
-        links: col.links.map(({ label, href, visible }) => ({
-          label: label.trim(),
-          href: href.trim(),
-          visible,
-        })),
+        links: col.links
+          .filter((row) => !isRowEmpty(row))
+          .map(({ label, href, visible }) => ({
+            label: label.trim(),
+            href: href.trim(),
+            visible,
+          })),
       })),
     });
   };
@@ -115,10 +181,14 @@ export function NavigationAdminPage() {
           canManage ? (
             <AdminButton
               onClick={save}
-              disabled={saveNavigation.isPending}
+              disabled={saveNavigation.isPending || validation.hasErrors}
               leftIcon={<SaveRounded className="text-[16px]" />}
             >
-              {saveNavigation.isPending ? "Saving…" : "Save"}
+              {saveNavigation.isPending
+                ? "Saving…"
+                : validation.hasErrors
+                  ? "Fix errors to save"
+                  : "Save"}
             </AdminButton>
           ) : null
         }
@@ -168,12 +238,15 @@ export function NavigationAdminPage() {
                 <span className="text-ink-secondary">/categories</span> and the
                 mobile menu.
               </p>
-              {headerLinks.map((link, index) => (
+              {headerLinks.map((link, index) => {
+                const rowError = validation.headerErrors[index];
+                return (
                 <div key={link.id} className="space-y-2 border border-border p-3">
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <AdminField label="Label">
+                    <AdminField label="Label" error={rowError?.label ?? undefined}>
                       <AdminInput
                         value={link.label}
+                        invalid={Boolean(rowError?.label)}
                         disabled={!canManage}
                         onChange={(e) =>
                           setHeaderLinks((prev) =>
@@ -184,9 +257,10 @@ export function NavigationAdminPage() {
                         }
                       />
                     </AdminField>
-                    <AdminField label="URL">
+                    <AdminField label="URL" error={rowError?.href ?? undefined}>
                       <AdminInput
                         value={link.href}
+                        invalid={Boolean(rowError?.href)}
                         disabled={!canManage}
                         onChange={(e) =>
                           setHeaderLinks((prev) =>
@@ -225,7 +299,8 @@ export function NavigationAdminPage() {
                     ) : null}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </AdminPanel>
@@ -237,11 +312,18 @@ export function NavigationAdminPage() {
             </div>
           ) : (
             <div className="space-y-4 p-5">
-              {footerColumns.map((col, colIndex) => (
+              {footerColumns.map((col, colIndex) => {
+                const colError = validation.footerErrors[colIndex];
+                return (
                 <div key={col.id} className="border border-border p-3">
-                  <AdminField label="Column title" className="mb-3">
+                  <AdminField
+                    label="Column title"
+                    className="mb-3"
+                    error={colError?.title ?? undefined}
+                  >
                     <AdminInput
                       value={col.title}
+                      invalid={Boolean(colError?.title)}
                       disabled={!canManage}
                       onChange={(e) =>
                         setFooterColumns((prev) =>
@@ -253,13 +335,17 @@ export function NavigationAdminPage() {
                     />
                   </AdminField>
                   <div className="space-y-2">
-                    {col.links.map((link, linkIndex) => (
+                    {col.links.map((link, linkIndex) => {
+                      const linkError = colError?.links[linkIndex];
+                      return (
                       <div
                         key={link.id}
-                        className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
+                        className="space-y-1"
                       >
+                        <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                         <AdminInput
                           value={link.label}
+                          invalid={Boolean(linkError?.label)}
                           disabled={!canManage}
                           onChange={(e) =>
                             setFooterColumns((prev) =>
@@ -281,6 +367,7 @@ export function NavigationAdminPage() {
                         />
                         <AdminInput
                           value={link.href}
+                          invalid={Boolean(linkError?.href)}
                           disabled={!canManage}
                           onChange={(e) =>
                             setFooterColumns((prev) =>
@@ -327,11 +414,19 @@ export function NavigationAdminPage() {
                             searchable={false}
                           />
                         </div>
+                        </div>
+                        {(linkError?.label || linkError?.href) && (
+                          <p className="text-xs text-[#b42318]">
+                            {linkError?.label ?? linkError?.href}
+                          </p>
+                        )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </AdminPanel>
