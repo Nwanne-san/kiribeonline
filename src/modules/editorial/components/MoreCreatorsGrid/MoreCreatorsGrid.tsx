@@ -22,7 +22,7 @@ export function MoreCreatorsGrid({ creators }: MoreCreatorsGridProps) {
   return (
     <EditorialSection sx={{ py: { xs: 5, md: 8 }, bgcolor: "background.paper" }}>
       <EditorialContainer>
-        <SectionHeader title="More Creators" viewAllHref={PublicRoutes.about} />
+        <SectionHeader title="More Creators" viewAllHref={PublicRoutes.spotlight} />
 
         {hasCreators ? (
           // Eight portraits stack into a very long column on a phone — swipe
