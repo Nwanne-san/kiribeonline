@@ -112,6 +112,13 @@ export function CategoryHero({
               color: "#D1D5DC",
               fontSize: "1rem",
               lineHeight: 1.625,
+              // Match the two-line clamp used on the categories listing —
+              // a long description otherwise pushes the hero body below the
+              // fold and collides with the article grid on narrow screens.
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
             }}
           >
             {description}
