@@ -1,3 +1,5 @@
+import { APP_URL } from "../resend";
+
 /**
  * Shared brand shell for every Kiribé transactional email. Callers hand in
  * copy + optional CTA + optional fine-print/footer; this file owns the layout,
@@ -37,17 +39,25 @@ const SITE_URL = "https://kiribeonline.com";
 const CONTACT_URL = "https://kiribeonline.com/contact";
 
 /**
- * Optional social icons rendered in the footer. Icons are PNGs on R2 (SVG
- * doesn't survive Outlook desktop's Word renderer), 48×48 with 24×24 display
- * size for retina crispness. Read from env at render time so assets can be
- * swapped without a redeploy — set `EMAIL_ASSETS_BASE_URL` to the R2 folder
- * and the `SOCIAL_*_URL` vars to profile URLs. Any icon whose URL is missing
- * is skipped; if all four are missing the whole row disappears.
+ * Optional social icons rendered in the footer. Icons ship with the app at
+ * `public/email/icons/*.png` (48×48, mustard-on-transparent — Simple Icons
+ * source SVGs are in the same folder for reference) and are served from the
+ * public site via `NEXT_PUBLIC_APP_URL`. PNG rather than SVG because Outlook
+ * desktop's Word renderer doesn't render SVG in `<img>`. Set
+ * `EMAIL_ASSETS_BASE_URL` to override (e.g. point at R2/CDN in production).
+ *
+ * Each icon is opt-in by profile URL: set `SOCIAL_{INSTAGRAM,X,LINKEDIN,
+ * YOUTUBE}_URL` for the platforms you want linked; unset vars are skipped,
+ * and if all are unset the whole footer row disappears. Note LinkedIn's PNG
+ * is not yet in the repo — set `SOCIAL_LINKEDIN_URL` only after adding
+ * `public/email/icons/linkedin.png`, otherwise mail clients render a broken
+ * image where the icon would be.
  */
 type SocialLink = { key: string; label: string; icon: string; url: string };
 function resolveSocialLinks(): SocialLink[] {
-  const base = process.env.EMAIL_ASSETS_BASE_URL?.replace(/\/$/, "");
-  if (!base) return [];
+  const base = (
+    process.env.EMAIL_ASSETS_BASE_URL ?? `${APP_URL}/email/icons`
+  ).replace(/\/$/, "");
   const candidates: Array<Omit<SocialLink, "url"> & { envVar: string }> = [
     { key: "instagram", label: "Instagram", icon: "instagram.png", envVar: "SOCIAL_INSTAGRAM_URL" },
     { key: "x", label: "X", icon: "x.png", envVar: "SOCIAL_X_URL" },
