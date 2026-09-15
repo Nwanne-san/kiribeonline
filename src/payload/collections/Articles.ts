@@ -13,7 +13,11 @@ import {
   articleBeforeValidate,
 } from "../hooks/article-workflow";
 import { mediaUsageAfterChange } from "../hooks/media-usage";
-import { revalidateArticlesAfterChange } from "../hooks/revalidate-articles";
+import {
+  revalidateArticlesAfterChange,
+  revalidateArticlesAfterDelete,
+  scrubHomepageBeforeArticleDelete,
+} from "../hooks/revalidate-articles";
 
 export const Articles: CollectionConfig = {
   slug: "articles",
@@ -183,6 +187,7 @@ export const Articles: CollectionConfig = {
     beforeValidate: [articleBeforeValidate],
     beforeChange: [articleBeforeChange],
     afterChange: [auditAfterChange("articles"), revalidateArticlesAfterChange, mediaUsageAfterChange],
-    afterDelete: [auditAfterDelete("articles")],
+    beforeDelete: [scrubHomepageBeforeArticleDelete],
+    afterDelete: [auditAfterDelete("articles"), revalidateArticlesAfterDelete],
   },
 };

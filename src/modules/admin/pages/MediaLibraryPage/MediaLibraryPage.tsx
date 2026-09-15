@@ -96,6 +96,10 @@ export function MediaLibraryPage() {
     options: {
       successTitle: "Asset deleted",
       invalidateKeys: [adminQueryKeys.media],
+      // Close the delete-confirm dialog only after the mutation resolves so
+      // "Working…" stays visible for the round-trip and another action can't
+      // fire mid-flight.
+      onSuccess: () => setPendingDelete(null),
       onError: (error) => {
         // 409: the asset is still referenced. List where so the editor can
         // detach it before retrying.
