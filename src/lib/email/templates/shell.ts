@@ -46,12 +46,13 @@ const CONTACT_URL = "https://kiribeonline.com/contact";
  * desktop's Word renderer doesn't render SVG in `<img>`. Set
  * `EMAIL_ASSETS_BASE_URL` to override (e.g. point at R2/CDN in production).
  *
- * Each icon is opt-in by profile URL: set `SOCIAL_{INSTAGRAM,X,LINKEDIN,
- * YOUTUBE}_URL` for the platforms you want linked; unset vars are skipped,
- * and if all are unset the whole footer row disappears. Note LinkedIn's PNG
- * is not yet in the repo — set `SOCIAL_LINKEDIN_URL` only after adding
- * `public/email/icons/linkedin.png`, otherwise mail clients render a broken
- * image where the icon would be.
+ * Each icon is opt-in by profile URL: set `SOCIAL_{INSTAGRAM,FACEBOOK,TIKTOK,
+ * LINKEDIN}_URL` for the platforms you want linked; unset vars are skipped,
+ * and if all are unset the whole footer row disappears. Icons currently in
+ * the repo: instagram, facebook, tiktok. LinkedIn is listed as a candidate
+ * so it lights up as soon as `public/email/icons/linkedin.png` is added —
+ * setting `SOCIAL_LINKEDIN_URL` before that file lands renders a broken
+ * image, so leave it unset until the file is in.
  */
 type SocialLink = { key: string; label: string; icon: string; url: string };
 function resolveSocialLinks(): SocialLink[] {
@@ -60,9 +61,9 @@ function resolveSocialLinks(): SocialLink[] {
   ).replace(/\/$/, "");
   const candidates: Array<Omit<SocialLink, "url"> & { envVar: string }> = [
     { key: "instagram", label: "Instagram", icon: "instagram.png", envVar: "SOCIAL_INSTAGRAM_URL" },
-    { key: "x", label: "X", icon: "x.png", envVar: "SOCIAL_X_URL" },
+    { key: "facebook", label: "Facebook", icon: "facebook.png", envVar: "SOCIAL_FACEBOOK_URL" },
+    { key: "tiktok", label: "TikTok", icon: "tiktok.png", envVar: "SOCIAL_TIKTOK_URL" },
     { key: "linkedin", label: "LinkedIn", icon: "linkedin.png", envVar: "SOCIAL_LINKEDIN_URL" },
-    { key: "youtube", label: "YouTube", icon: "youtube.png", envVar: "SOCIAL_YOUTUBE_URL" },
   ];
   return candidates.flatMap<SocialLink>((c) => {
     const url = process.env[c.envVar];
