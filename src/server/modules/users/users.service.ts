@@ -2,7 +2,22 @@ import { randomUUID } from "node:crypto";
 import type { Where } from "payload";
 import { ValidationError } from "@/lib/api";
 import { getPayloadClient } from "@/lib/payload/get-payload";
-import { resolveRole } from "@/server/access/roles";
+import { ROLE_LABELS, USER_ROLES, resolveRole } from "@/server/access/roles";
+
+/**
+ * Names that would render as a role on the public byline (`author.name` flows
+ * straight to `resolvePublicByline`). If someone's `name` is literally "Admin"
+ * or "Writer", every article they publish shows that word instead of a real
+ * person's name — the exact bug we saw with an early admin account. Reject
+ * both the internal role slugs and the display labels, case-insensitive.
+ */
+const RESERVED_NAMES = new Set<string>([
+  ...USER_ROLES,
+  ...Object.values(ROLE_LABELS).map((label) => label.toLowerCase()),
+]);
+function isReservedName(name: string): boolean {
+  return RESERVED_NAMES.has(name.trim().toLowerCase());
+}
 import { writeAuditLog } from "@/lib/audit";
 import { sendAdminInviteEmail } from "./invite-email";
 import { sendAdminPasswordChangedEmail } from "./password-changed-email";
@@ -109,6 +124,16 @@ export async function getAdminUser(id: string) {
 
 export async function updateAdminUser(id: string, input: UserUpdateInput) {
   const payload = await getPayloadClient();
+  if (input.name !== undefined) {
+    const trimmed = input.name.trim();
+    if (isReservedName(trimmed)) {
+      throw new ValidationError("Name would render as a role on the public byline", {
+        name: [
+          `“${trimmed}” looks like a role, not a person. Every article this user publishes would show that word as the byline. Use a real name instead.`,
+        ],
+      });
+    }
+  }
   const data: Record<string, unknown> = {};
   if (input.name !== undefined) data.name = input.name;
   if (input.role !== undefined) data.role = input.role;
@@ -156,6 +181,41 @@ export async function inviteAdminUser(
     throw new ValidationError("User with this email already exists", {
       email: ["A team member with this email address already exists."],
     });
+  }
+
+  // Guard against dual accounts under the same person's name (writer + admin
+  // for the same human, etc). The email column is the only uniqueness we get
+  // for free; a second, case-insensitive check on `name` catches the "invited
+  // myself twice" pattern the byline system can't distinguish from two
+  // genuine people. Postgres `equals` is case-sensitive and Payload's `like`
+  // maps to `ILIKE %v%` (substring), so we pre-filter with `like` and then
+  // narrow to an exact case-insensitive match in memory.
+  const normalizedName = input.name?.trim();
+  if (normalizedName && isReservedName(normalizedName)) {
+    throw new ValidationError("Name would render as a role on the public byline", {
+      name: [
+        `“${normalizedName}” looks like a role, not a person. Every article this user publishes would show that word as the byline. Use a real name (e.g. “Chima Nwoke”) instead.`,
+      ],
+    });
+  }
+  if (normalizedName) {
+    const nameMatches = await payload.find({
+      collection: "users",
+      where: { name: { like: normalizedName } },
+      limit: 20,
+      overrideAccess: true,
+    });
+    const target = normalizedName.toLowerCase();
+    const clash = (nameMatches.docs as UserDoc[]).find(
+      (doc) => (doc.name ?? "").trim().toLowerCase() === target,
+    );
+    if (clash) {
+      throw new ValidationError("A team member with this name already exists", {
+        name: [
+          `A team member named “${normalizedName}” already exists. Use a distinguishing form (middle initial, suffix) or promote the existing account instead of creating a second one.`,
+        ],
+      });
+    }
   }
 
   const { raw, hash } = generateInviteToken();
@@ -408,16 +468,22 @@ export async function completePasswordReset(
     targetId: String(user.id),
   });
 
-  // Fire-and-forget the security receipt. The reset itself already succeeded
-  // and we do not want the response blocked on the mail transport; the audit
-  // trail above is the durable record either way.
-  void sendAdminPasswordChangedEmail({
-    email: user.email,
-    changedAtISO: new Date().toISOString(),
-    ipAddress: context?.ipAddress,
-  }).catch((err) => {
+  // Await the security receipt (~200ms) before returning so it is queued at
+  // Resend before the reset endpoint responds. Without this the user's next
+  // action (log in with the new password) fires its own login-notification
+  // email that can race and arrive first — the audit trail is durable either
+  // way, but users expect "your password was changed" to precede "new
+  // sign-in". Failure is still swallowed: the reset already succeeded and the
+  // audit row above is the authoritative record.
+  try {
+    await sendAdminPasswordChangedEmail({
+      email: user.email,
+      changedAtISO: new Date().toISOString(),
+      ipAddress: context?.ipAddress,
+    });
+  } catch (err) {
     console.error("[users] password changed notification failed", err);
-  });
+  }
 
   return { id: String(user.id), email: user.email };
 }
