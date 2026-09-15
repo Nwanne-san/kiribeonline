@@ -158,6 +158,34 @@ export async function inviteAdminUser(
     });
   }
 
+  // Guard against dual accounts under the same person's name (writer + admin
+  // for the same human, etc). The email column is the only uniqueness we get
+  // for free; a second, case-insensitive check on `name` catches the "invited
+  // myself twice" pattern the byline system can't distinguish from two
+  // genuine people. Postgres `equals` is case-sensitive and Payload's `like`
+  // maps to `ILIKE %v%` (substring), so we pre-filter with `like` and then
+  // narrow to an exact case-insensitive match in memory.
+  const normalizedName = input.name?.trim();
+  if (normalizedName) {
+    const nameMatches = await payload.find({
+      collection: "users",
+      where: { name: { like: normalizedName } },
+      limit: 20,
+      overrideAccess: true,
+    });
+    const target = normalizedName.toLowerCase();
+    const clash = (nameMatches.docs as UserDoc[]).find(
+      (doc) => (doc.name ?? "").trim().toLowerCase() === target,
+    );
+    if (clash) {
+      throw new ValidationError("A team member with this name already exists", {
+        name: [
+          `A team member named “${normalizedName}” already exists. Use a distinguishing form (middle initial, suffix) or promote the existing account instead of creating a second one.`,
+        ],
+      });
+    }
+  }
+
   const { raw, hash } = generateInviteToken();
   const expiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS).toISOString();
 
