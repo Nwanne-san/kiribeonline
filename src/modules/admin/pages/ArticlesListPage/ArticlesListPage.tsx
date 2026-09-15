@@ -269,6 +269,10 @@ export function ArticlesListPage() {
         queryClient.invalidateQueries({ queryKey: ["admin", "articles"] });
         queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
         setSelected(new Set());
+        // Close the delete-confirm dialog only after the mutation resolves so
+        // the "Working…" state stays visible for the full round-trip and the
+        // user can't fire another action mid-flight.
+        setPendingDelete(null);
       },
     },
   });
@@ -710,7 +714,6 @@ export function ArticlesListPage() {
         onCancel={() => setPendingDelete(null)}
         onConfirm={() => {
           if (pendingDelete) bulk.mutate({ ids: pendingDelete, action: "delete" });
-          setPendingDelete(null);
         }}
         isPending={bulk.isPending}
       />
