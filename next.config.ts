@@ -81,6 +81,14 @@ const nextConfig: NextConfig = {
       static: 180,
     },
   },
+  // Guarantee inline email assets (e.g. the wordmark PNG attached to every
+  // transactional email via CID) ship with the serverless function bundles on
+  // Vercel. Next's default tracer usually picks them up via readFileSync +
+  // import.meta.url, but making it explicit avoids a "logo missing in prod
+  // only" surprise if the trace ever misses.
+  outputFileTracingIncludes: {
+    "/**/*": ["./src/lib/email/assets/**/*"],
+  },
   async redirects() {
     return [
       {

@@ -1,4 +1,4 @@
-import { APP_URL } from "../resend";
+import { APP_URL, WORDMARK_CONTENT_ID } from "../resend";
 
 /**
  * Shared brand shell for every Kiribé transactional email. Callers hand in
@@ -205,6 +205,7 @@ const EMAIL_STYLE_BLOCK = `
         .k-outer { padding: 16px 8px !important; }
         .k-mast { padding: 32px 20px 22px !important; }
         .k-mast-brand { font-size: 20px !important; letter-spacing: .2em !important; }
+        .k-mast-logo { width: 180px !important; }
         .k-mast-tagline { font-size: 10px !important; letter-spacing: .2em !important; }
         .k-content { padding: 28px 20px 24px !important; }
         .k-heading { font-size: 22px !important; line-height: 30px !important; }
@@ -310,7 +311,8 @@ export function renderEmailShell(input: EmailShellInput): EmailShellOutput {
             <!-- Editorial banner: brand mark, gold rule, tagline, sub-hairline -->
             <tr>
               <td class="k-mast" style="background:${BRAND.burgundy};padding:40px 32px 28px;text-align:center;color:${BRAND.surface};background-image:linear-gradient(180deg, ${BRAND.burgundy} 0%, ${BRAND.burgundy} 78%, ${BRAND.burgundyDark} 100%);">
-                <div class="k-mast-brand" style="font-family:${FONT_HEADLINE};font-weight:700;font-size:24px;letter-spacing:.22em;text-transform:uppercase;line-height:1;">${escapeHtml(brand)}</div>
+                <!-- Wordmark PNG is attached inline (multipart/related, cid:kiribe-wordmark) by sendTransactionalEmail; alt text is the fallback if a client strips the attachment. -->
+                <img class="k-mast-logo" src="cid:${WORDMARK_CONTENT_ID}" alt="${escapeHtml(brand)}" width="220" style="display:inline-block;width:220px;max-width:60%;height:auto;border:0;outline:none;-ms-interpolation-mode:bicubic;" />
                 <div class="k-mast-rule" style="height:2px;width:64px;background:${BRAND.mustard};margin:14px auto 12px;"></div>
                 <div class="k-mast-tagline" style="font-family:${FONT_HEADLINE};font-weight:400;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,0.78);">${escapeHtml(BRAND_TAGLINE)}</div>
               </td>
