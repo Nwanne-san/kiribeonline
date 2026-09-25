@@ -23,5 +23,9 @@ async function renderWordmark({ fill, outName, width }) {
   console.log(`${outName}: ${meta.width}x${meta.height}, ${buf.length} bytes`);
 }
 
+// White for the transactional email masthead (rendered on the burgundy hero).
 await renderWordmark({ fill: "#ffffff", outName: "kiribe-wordmark-white.png", width: 640 });
-await renderWordmark({ fill: "#1a1a1a", outName: "kiribe-wordmark-dark.png", width: 640 });
+// Burgundy (--color-burgundy #6b1d2a) for signatures on white/cream backgrounds.
+// This is the on-brand wordmark for mail signatures, letterheads, and any UI
+// where the wordmark sits on a light surface.
+await renderWordmark({ fill: "#6b1d2a", outName: "kiribe-wordmark-dark.png", width: 640 });
