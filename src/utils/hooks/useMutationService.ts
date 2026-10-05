@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import client from "@/utils/client";
 import { ApiMethods } from "../../../types/service";
 import { useKiribeToast } from "@/modules/shared/components/feedback/KiribeSnackbar";
+import { unwrapApiData } from "@/lib/api/unwrap";
 
 type ServiceConfig<Req> =
   | {
@@ -71,12 +72,14 @@ export function useMutationService<Req extends object, Resp = unknown>(
         data?: Req;
       };
 
-      return client.request<Req, Resp>({
+      const result = await client.request<Req, Resp>({
         ...serviceConfig,
         path: resolved.path,
         method: resolved.method ?? ApiMethods.POST,
         data: requestBody !== undefined ? requestBody : data,
       });
+
+      return unwrapApiData(result as Resp);
     },
     onSuccess: async (response, variables) => {
       if (onSuccess) {

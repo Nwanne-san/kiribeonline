@@ -27,8 +27,16 @@ export async function POST(request: Request) {
   }
   const payload = await getPayloadClient();
   const prefix = payload.config.cookiePrefix;
+  const cookieDomain = process.env.COOKIE_DOMAIN?.trim() || undefined;
   const response = NextResponse.json(apiSuccess({ loggedOut: true }).body);
-  response.cookies.set(`${prefix}-token`, "", { httpOnly: true, path: "/", maxAge: 0 });
+  response.cookies.set(`${prefix}-token`, "", {
+    httpOnly: true,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 0,
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
+  });
 
   try {
     const headerList = await nextHeaders();

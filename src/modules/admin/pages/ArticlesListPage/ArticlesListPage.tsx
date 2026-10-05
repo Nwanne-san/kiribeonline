@@ -225,12 +225,18 @@ export function ArticlesListPage() {
     options: { keys: ["admin", "categories"], staleTime: 5 * 60 * 1000 },
   });
 
+  const canManageUsers = can("users:manage");
+
   const { data: userData } = useQueryService<
     Record<string, never>,
     Paginated<AuthorRef>
   >({
     service: adminUsersService.list,
-    options: { keys: ["admin", "users"], staleTime: 5 * 60 * 1000 },
+    options: {
+      keys: ["admin", "users"],
+      staleTime: 5 * 60 * 1000,
+      enabled: canManageUsers,
+    },
   });
 
   const categoryOptions = categoryData?.docs ?? [];
@@ -424,16 +430,18 @@ export function ArticlesListPage() {
               placeholder="All categories"
               options={categoryOptions.map((c) => ({ value: c.id, label: c.name }))}
             />
-            <FilterSelect
-              label="Author"
-              value={author}
-              onChange={(v) => updateParams({ [PARAM.author]: v })}
-              placeholder="All authors"
-              options={authorOptions.map((a) => ({
-                value: a.id,
-                label: a.name ?? a.email ?? "Unnamed",
-              }))}
-            />
+            {canManageUsers && (
+              <FilterSelect
+                label="Author"
+                value={author}
+                onChange={(v) => updateParams({ [PARAM.author]: v })}
+                placeholder="All authors"
+                options={authorOptions.map((a) => ({
+                  value: a.id,
+                  label: a.name ?? a.email ?? "Unnamed",
+                }))}
+              />
+            )}
             <FilterSelect
               label="Sort by date"
               value={sort}

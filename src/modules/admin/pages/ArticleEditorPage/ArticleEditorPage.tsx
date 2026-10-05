@@ -195,6 +195,9 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     setDirty(true);
   }, []);
 
+  /* ── Unsaved changes guard (beforeunload + in-app nav) ── */
+  const { navigateSafely, dialog: unsavedDialog } = useUnsavedChangesGuard(dirty && !saving);
+
   /* ── Load taxonomies ── */
 
   const { data: categories } = useQueryService<
@@ -312,8 +315,8 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     body,
     status,
     publishedAt: fromLocalDatetimeInputValue(publishedAt),
-    featured,
-    featuredPriority,
+    featured: canPublish ? featured : false,
+    featuredPriority: canPublish ? featuredPriority : 0,
     categoryIds,
     tagIds,
     heroImageId: heroImage?.id ?? null,
@@ -335,6 +338,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     publishedAt,
     featured,
     featuredPriority,
+    canPublish,
     categoryIds,
     tagIds,
     heroImage?.id,
@@ -381,9 +385,13 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
           setDirty(false);
         }
         setLastSavedAt(nowHhMm());
+        const effectiveStatus = overrideStatus ?? status;
         if (!opts?.silent) {
           showToast({
-            message: "Article saved",
+            message:
+              effectiveStatus === "in_review"
+                ? "Article submitted for review"
+                : "Article saved",
             severity: "success",
           });
         }
@@ -393,16 +401,12 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         queryClient.invalidateQueries({ queryKey: ["admin", "articles"] });
         queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
 
-        if (opts?.closeAfter) {
-          // Use navigateSafely — dirty may still be true in state even though
-          // we called setDirty(false) synchronously above (React batches),
-          // so the router.push is likely still guarded on this tick.
-          navigateSafely(AdminRoutes.articles, "push");
-        } else if (!isEdit && saved.id) {
-          // Same reasoning for the new-article auto-redirect: without the
-          // bypass the user gets a "Leave without saving?" prompt on the
-          // very save that cleared the dirty flag.
-          navigateSafely(`${AdminRoutes.articles}/${saved.id}`, "replace");
+        if (!opts?.silent) {
+          if (effectiveStatus === "in_review") {
+            navigateSafely(AdminRoutes.review, "push");
+          } else {
+            navigateSafely(AdminRoutes.articles, "push");
+          }
         }
         return saved;
       } catch (error) {
@@ -419,7 +423,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         setSaving(false);
       }
     },
-    [articleId, buildPayload, isEdit, router, showToast]
+    [articleId, buildPayload, isEdit, navigateSafely, queryClient, showToast, status]
   );
 
   /* ── Autosave ── */
@@ -485,10 +489,6 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     ARTICLE_AUTOSAVE_DEBOUNCE_MS
   );
 
-  /* ── Unsaved changes guard (beforeunload + in-app nav) ── */
-
-  const { navigateSafely, dialog: unsavedDialog } = useUnsavedChangesGuard(dirty && !saving);
-
   /* ── Status picker ── */
 
   const statusOptions = useMemo(() => {
@@ -521,6 +521,12 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         hard: true,
       },
       {
+        key: "tag",
+        label: "At least one tag",
+        ok: tagIds.length > 0,
+        hard: true,
+      },
+      {
         key: "seoTitle",
         label: "SEO title (recommended)",
         ok: seoTitle.trim().length > 0,
@@ -542,13 +548,13 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
         hard: false,
       },
     ];
-  }, [heroImage, excerpt, categoryIds.length, seoTitle, seoDescription, seoOgImage]);
+  }, [heroImage, excerpt, categoryIds.length, tagIds.length, seoTitle, seoDescription, seoOgImage]);
 
   const publishBlocked = checklistItems.some((item) => item.hard && !item.ok);
 
   /* ── Submit handlers ── */
 
-  const commonSaveGuards = (): boolean => {
+  const commonSaveGuards = (targetStatus?: string): boolean => {
     if (slugError) {
       showToast({
         message: "Fix the slug before saving",
@@ -559,6 +565,23 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
     if (!title.trim()) {
       showToast({ message: "Title is required", severity: "error" });
       return false;
+    }
+    const effectiveStatus = targetStatus ?? status;
+    if (effectiveStatus === "in_review") {
+      if (categoryIds.length === 0) {
+        showToast({
+          message: "Please select at least one category before submitting for review",
+          severity: "error",
+        });
+        return false;
+      }
+      if (tagIds.length === 0) {
+        showToast({
+          message: "Please select at least one tag before submitting for review",
+          severity: "error",
+        });
+        return false;
+      }
     }
     return true;
   };
@@ -581,6 +604,7 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
   const handleConfirmPublish = async () => {
     if (!pendingPublish) return;
     const { targetStatus, closeAfter } = pendingPublish;
+    if (!commonSaveGuards(targetStatus)) return;
     const result = await persist(targetStatus, { closeAfter });
     if (result) {
       setPendingPublish(null);
@@ -857,32 +881,34 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
             </div>
           </AdminPanel>
 
-          <AdminPanel title="Homepage">
-            <div className="space-y-3 p-5">
-              <AdminCheckboxRow
-                label="Featured"
-                hint="Show on homepage featured modules"
-                checked={featured}
-                onChange={(e) => {
-                  setFeatured(e.target.checked);
-                  bumpDirty();
-                }}
-              />
-              {featured && (
-                <AdminField label="Featured priority" htmlFor="ae-featured-priority">
-                  <AdminInput
-                    id="ae-featured-priority"
-                    type="number"
-                    value={featuredPriority}
-                    onChange={(e) => {
-                      setFeaturedPriority(Number(e.target.value));
-                      bumpDirty();
-                    }}
-                  />
-                </AdminField>
-              )}
-            </div>
-          </AdminPanel>
+          {canPublish && (
+            <AdminPanel title="Homepage">
+              <div className="space-y-3 p-5">
+                <AdminCheckboxRow
+                  label="Featured"
+                  hint="Show on homepage featured modules"
+                  checked={featured}
+                  onChange={(e) => {
+                    setFeatured(e.target.checked);
+                    bumpDirty();
+                  }}
+                />
+                {featured && (
+                  <AdminField label="Featured priority" htmlFor="ae-featured-priority">
+                    <AdminInput
+                      id="ae-featured-priority"
+                      type="number"
+                      value={featuredPriority}
+                      onChange={(e) => {
+                        setFeaturedPriority(Number(e.target.value));
+                        bumpDirty();
+                      }}
+                    />
+                  </AdminField>
+                )}
+              </div>
+            </AdminPanel>
+          )}
 
           <AdminPanel title="Hero image">
             <div className="p-5">
@@ -937,7 +963,11 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
           disabled={saving}
           leftIcon={<SaveRounded sx={{ fontSize: 16 }} />}
         >
-          {saving ? "Saving…" : "Save"}
+          {saving
+            ? "Saving…"
+            : status === "in_review"
+              ? "Submit for review"
+              : "Save"}
         </AdminButton>
         <AdminButton
           type="button"
