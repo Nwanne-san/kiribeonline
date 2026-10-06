@@ -1,1 +1,1 @@
-export { KiribeSnackbarProvider, useKiribeToast } from "./KiribeSnackbar";
+export { KiribeSnackbarProvider, useKiribeToast, setPendingToast } from "./KiribeSnackbar";

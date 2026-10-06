@@ -11,7 +11,8 @@ import {
 } from "@/modules/admin/components/AdminAuthShell";
 import { AdminButton } from "@/modules/admin/components/ui/AdminPrimitives";
 import { unwrapApiData } from "@/lib/api/unwrap";
-import { useKiribeToast } from "@/modules/shared/components/feedback/KiribeSnackbar";
+import { setPendingToast, useKiribeToast } from "@/modules/shared/components/feedback/KiribeSnackbar";
+import { setAdminSessionExpiry } from "@/modules/admin/lib/session";
 
 /**
  * `?next=` is a raw string from the URL. String-prefix checks (`startsWith`)
@@ -76,7 +77,8 @@ function LoginForm() {
         return;
       }
       unwrapApiData(json);
-      showToast({
+      setAdminSessionExpiry();
+      setPendingToast({
         message: "Signed in",
         description: "Welcome back to the Kiribé admin.",
         severity: "success",

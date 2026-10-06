@@ -10,6 +10,7 @@ import {
   type ComponentType,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
@@ -103,8 +104,25 @@ const severityConfig: Record<ToastSeverity, SeverityConfig> = {
 let counter = 0;
 const nextId = () => `kiribe-toast-${++counter}-${Date.now()}`;
 
+export const PENDING_TOAST_KEY = "kiribe_pending_toast";
+
+/**
+ * Stage a toast to be displayed on the next page view or after hard navigation.
+ * Uses sessionStorage so the message survives full-page document redirects
+ * (e.g. login/logout redirect).
+ */
+export function setPendingToast(options: ShowToastOptions): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(PENDING_TOAST_KEY, JSON.stringify(options));
+  } catch {
+    // Ignore storage quota / security exceptions
+  }
+}
+
 export function KiribeSnackbarProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const pathname = usePathname();
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -124,6 +142,23 @@ export function KiribeSnackbarProvider({ children }: { children: ReactNode }) {
     ]);
     return id;
   }, []);
+
+  // Show any toast staged before a navigation or reload
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = sessionStorage.getItem(PENDING_TOAST_KEY);
+      if (stored) {
+        sessionStorage.removeItem(PENDING_TOAST_KEY);
+        const parsed = JSON.parse(stored) as ShowToastOptions;
+        if (parsed?.message) {
+          showToast(parsed);
+        }
+      }
+    } catch {
+      // Ignore parse/storage errors
+    }
+  }, [pathname, showToast]);
 
   const value = useMemo(
     () => ({ showToast, dismissToast: removeToast }),
