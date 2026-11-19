@@ -192,7 +192,14 @@ export function CategoriesTagsPage() {
         )}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.7fr_1fr]">
+      {/*
+        Explicit `minmax(0, …)` on both tracks — the default `minmax(auto, 1fr)`
+        lets the category rows' fixed-width controls (drag handle, badge,
+        article count, visibility + delete buttons) push the first column
+        beyond its 1.7fr share, which on standard desktop widths shoves the
+        Tags column off-screen. With `min 0`, the grid honors the ratio.
+      */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         {/* ── Categories ── */}
         <AdminPanel
           title="Categories"
