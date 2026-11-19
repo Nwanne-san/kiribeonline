@@ -124,6 +124,22 @@ export const articleInputSchema = z
         message: "Scheduled articles require a publish date.",
       });
     }
+    if (data.status === "in_review") {
+      if (!data.categoryIds || data.categoryIds.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["categoryIds"],
+          message: "At least one category is required to submit for review.",
+        });
+      }
+      if (!data.tagIds || data.tagIds.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["tagIds"],
+          message: "At least one tag is required to submit for review.",
+        });
+      }
+    }
   });
 
 const articleBaseSchema = z.object({
@@ -161,6 +177,22 @@ export const articlePatchSchema = articleBaseSchema.partial().superRefine((data,
       path: ["publishedAt"],
       message: "Scheduled articles require a publish date.",
     });
+  }
+  if (data.status === "in_review") {
+    if (data.categoryIds !== undefined && data.categoryIds.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["categoryIds"],
+        message: "At least one category is required to submit for review.",
+      });
+    }
+    if (data.tagIds !== undefined && data.tagIds.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["tagIds"],
+        message: "At least one tag is required to submit for review.",
+      });
+    }
   }
 });
 

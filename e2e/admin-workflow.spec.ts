@@ -27,7 +27,13 @@ test.describe("Admin workflow — In-Review + calendar + reels validation", () =
     const categories: Array<{ id: string | number; slug: string }> =
       catJson.data?.docs ?? catJson.docs ?? [];
     const smokeCat = categories.find((c) => c.slug === SMOKE_CATEGORY_SLUG);
-    expect(smokeCat, "smoke category should be seeded").toBeTruthy();
+    const tagRes = await page.request.get("/api/admin/tags");
+    expect(tagRes.status()).toBe(200);
+    const tagJson = await tagRes.json();
+    const tags: Array<{ id: string | number }> =
+      tagJson.data?.docs ?? tagJson.docs ?? [];
+    const smokeTag = tags[0];
+    expect(smokeTag, "at least one tag should be seeded").toBeTruthy();
 
     // Seed an in-review article via the admin API (mirrors the write path
     // used by the article editor's "Submit for review" flow).
@@ -38,6 +44,7 @@ test.describe("Admin workflow — In-Review + calendar + reels validation", () =
         excerpt: "Awaiting editorial review.",
         bodyText: "This article is in the approvals queue.",
         categoryIds: [smokeCat!.id],
+        tagIds: [smokeTag.id],
         status: "in_review",
       },
     });

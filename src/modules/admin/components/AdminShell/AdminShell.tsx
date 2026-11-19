@@ -22,6 +22,8 @@ import { InitialAvatar } from "@/modules/admin/components/ui/AdminPrimitives";
 import { AdminConfirmDialog } from "@/modules/admin/components/ui/AdminDialog";
 import { usePermissions } from "@/modules/admin/hooks/usePermissions";
 import { useBreakpointUp } from "@/utils/hooks";
+import { setPendingToast } from "@/modules/shared/components/feedback/KiribeSnackbar";
+import { clearAdminSessionExpiry } from "@/modules/admin/lib/session";
 import { NAV_GROUPS, isNavActive, type NavGroup, type NavItem } from "./nav";
 
 const COLLAPSE_KEY = "kiribe.admin.sidebarCollapsed";
@@ -104,15 +106,19 @@ function AdminShellBody({ children }: { children: React.ReactNode }) {
     setLoggingOut(true);
     try {
       await fetch("/api/admin/auth/logout", { method: "POST" });
-      router.replace(AdminRoutes.login);
+      clearAdminSessionExpiry();
+      setPendingToast({
+        message: "Signed out",
+        description: "You have been successfully signed out.",
+        severity: "success",
+      });
+      window.location.assign(AdminRoutes.login);
     } finally {
-      // A router.replace may or may not tear down this component before the
-      // finally block runs — resetting is cheap and prevents a stuck spinner
-      // in the edge case where the redirect is intercepted.
+      // Resetting prevents a stuck spinner in case the redirect is intercepted
       setLoggingOut(false);
       setLogoutOpen(false);
     }
-  }, [loggingOut, router]);
+  }, [loggingOut]);
 
   const activeLabel =
     navGroups.flatMap((g) => g.items).find((i) => isNavActive(i, pathname))?.label ??

@@ -495,19 +495,31 @@ function InviteUserModal({ onClose }: { onClose: () => void }) {
       // Toast title still splits on outcome so the admin can see at a glance
       // whether Resend accepted the send. Message copy makes clear that even
       // an accepted send is not the same as delivery.
-      successTitle: (r) =>
-        r.emailSent ? "Invite created, email queued" : "Invite created, email did not go out",
-      successMessage: (r) =>
-        r.emailSent
+      successTitle: (r) => {
+        const isSent = Boolean(
+          r?.emailSent ??
+            (r as unknown as { data?: InviteResponse })?.data?.emailSent
+        );
+        return isSent ? "Invite created, email queued" : "Invite created, email did not go out";
+      },
+      successMessage: (r) => {
+        const isSent = Boolean(
+          r?.emailSent ??
+            (r as unknown as { data?: InviteResponse })?.data?.emailSent
+        );
+        return isSent
           ? "An invitation email is on the way. If it does not land in a minute, share the link on the next screen instead."
-          : "Resend did not accept the email. Share the invite link below with the new member directly.",
+          : "Resend did not accept the email. Share the invite link below with the new member directly.";
+      },
       errorTitle: "Could not send invite",
       // Always land on the invite-link panel. Even a successful email send
       // can silently fail downstream (bounce, spam filter, unverified
       // domain), so the admin needs a shareable link as a backup on every
       // invite. The panel copy reflects delivery state.
       onSuccess: (r) => {
-        if (r.inviteToken) setFallback(r);
+        const unwrapped =
+          (r as unknown as { data?: InviteResponse })?.data ?? r;
+        if (unwrapped?.inviteToken) setFallback(unwrapped);
         else onClose();
       },
     },

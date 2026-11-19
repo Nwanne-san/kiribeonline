@@ -2,4 +2,4 @@ export { DataRenderer, DefaultEmptyElement, DefaultErrorElement, DefaultLoadingE
 export { EmptyState, type EmptyStateProps, type EmptyStateAction } from "./EmptyState";
 export { GlobalEmptyState } from "./GlobalEmptyState";
 export { RichTextRenderer, richTextConverters } from "./RichTextRenderer";
-export { KiribeSnackbarProvider, useKiribeToast } from "./KiribeSnackbar";
+export { KiribeSnackbarProvider, useKiribeToast, setPendingToast } from "./KiribeSnackbar";
