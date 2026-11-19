@@ -12,6 +12,7 @@ import * as migration_20260721_090000_reset_token_fields from './20260721_090000
 import * as migration_20260729_160424_pages_and_navigation_chrome from './20260729_160424_pages_and_navigation_chrome';
 import * as migration_20260731_120000_article_hide_byline from './20260731_120000_article_hide_byline';
 import * as migration_20260904_120000_article_publish_notified_at from './20260904_120000_article_publish_notified_at';
+import * as migration_20261119_120000_media_hidden_from_library from './20261119_120000_media_hidden_from_library';
 
 export const migrations = [
   {
@@ -83,5 +84,10 @@ export const migrations = [
     up: migration_20260904_120000_article_publish_notified_at.up,
     down: migration_20260904_120000_article_publish_notified_at.down,
     name: '20260904_120000_article_publish_notified_at',
+  },
+  {
+    up: migration_20261119_120000_media_hidden_from_library.up,
+    down: migration_20261119_120000_media_hidden_from_library.down,
+    name: '20261119_120000_media_hidden_from_library',
   },
 ];

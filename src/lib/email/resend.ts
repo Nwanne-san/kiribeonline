@@ -1,26 +1,44 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { Resend } from "resend";
 
 let cached: Resend | null = null;
 
-const WORDMARK_FILENAME = "kiribe-wordmark-white.png";
-
 /**
- * Public HTTPS URL for the white wordmark PNG rendered on the burgundy masthead.
- * Served from Vercel edge CDN / public assets, ensuring it renders reliably across
- * all webmail and native email clients without requiring file attachments.
+ * Content-ID for the inline wordmark PNG embedded on every transactional email.
+ * Templates reference this via `<img src="cid:kiribe-wordmark">`; keep this
+ * value in sync with the `cid:` reference in `templates/shell.ts`.
+ *
+ * Inline (multipart/related, `cid:`) rather than a hosted `<img src>` because
+ * Gmail hides remote images behind a "load images" prompt on the first email
+ * from an unknown sender, and Outlook desktop blocks them entirely by default —
+ * both render inline attachments without prompting. Bytes are loaded lazily on
+ * first send and cached so we don't hit disk per email.
  */
-export function resolveWordmarkUrl(): string {
-  if (process.env.EMAIL_ASSETS_BASE_URL) {
-    return `${process.env.EMAIL_ASSETS_BASE_URL.replace(/\/$/, "")}/${WORDMARK_FILENAME}`;
-  }
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
-  if (appUrl && !appUrl.includes("localhost") && !appUrl.includes("127.0.0.1")) {
-    return `${appUrl}/brand/${WORDMARK_FILENAME}`;
-  }
-  return `https://kiribeonline.com/brand/${WORDMARK_FILENAME}`;
-}
-
 export const WORDMARK_CONTENT_ID = "kiribe-wordmark";
+const WORDMARK_FILENAME = "kiribe-wordmark-white.png";
+const WORDMARK_PATH = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "assets",
+  WORDMARK_FILENAME
+);
+let wordmarkBuffer: Buffer | null = null;
+function loadWordmark(): Buffer | null {
+  if (wordmarkBuffer) return wordmarkBuffer;
+  try {
+    wordmarkBuffer = readFileSync(WORDMARK_PATH);
+    return wordmarkBuffer;
+  } catch (err) {
+    // Not fatal — the shell falls back to alt text. Log once so a missing
+    // bundle in production is discoverable.
+    console.warn(
+      `[email] wordmark asset missing at ${WORDMARK_PATH}; emails will send without inline logo.`,
+      err
+    );
+    return null;
+  }
+}
 
 /** Returns the Resend client, or null when no API key is configured (dev fallback). */
 export function getResendClient(): Resend | null {
@@ -90,6 +108,19 @@ export async function sendTransactionalEmail({
     );
     return false;
   }
+
+  const wordmark = loadWordmark();
+  const attachments = wordmark
+    ? [
+        {
+          filename: WORDMARK_FILENAME,
+          content: wordmark,
+          contentId: WORDMARK_CONTENT_ID,
+          contentType: "image/png",
+        },
+      ]
+    : undefined;
+
   try {
     const { data, error } = await resend.emails.send({
       from: RESEND_FROM_EMAIL,
@@ -97,6 +128,7 @@ export async function sendTransactionalEmail({
       subject,
       html,
       text,
+      ...(attachments ? { attachments } : {}),
     });
 
     if (error) {

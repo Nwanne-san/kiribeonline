@@ -14,6 +14,7 @@ import FormatStrikethroughIcon from "@mui/icons-material/FormatStrikethrough";
 import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import CollectionsIcon from "@mui/icons-material/Collections";
+import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined";
 import FormatQuoteRoundedIcon from "@mui/icons-material/FormatQuoteRounded";
 import ImageIcon from "@mui/icons-material/Image";
 import LinkIcon from "@mui/icons-material/Link";
@@ -88,9 +89,10 @@ import {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from "lexical";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminCard, AdminFieldLabel } from "@/modules/admin/components/AdminUi";
 import { KiribeTextField } from "@/modules/shared/components/ui";
+import { useKiribeToast } from "@/modules/shared/components/feedback";
 import { MediaPicker } from "@/modules/admin/components/MediaPicker";
 import type { AdminMediaRef } from "@/server/modules";
 import { normalizeLexicalBody } from "@/server/shared/text-to-lexical";
@@ -98,6 +100,12 @@ import { $createUploadNode, UploadNode } from "./UploadNode";
 import { $createEmbedNode, EmbedNode } from "./EmbedNode";
 import { $createPullQuoteNode, PullQuoteNode } from "./PullQuoteNode";
 import { $createGalleryNode, GalleryNode, type GalleryItem } from "./GalleryNode";
+import { PastePlugin } from "./PastePlugin";
+import { InlineDropPlugin } from "./InlineDropPlugin";
+import {
+  uploadInlineImages,
+  type InlineUploadError,
+} from "@/modules/admin/lib/inline-media-upload";
 import {
   EmbedInsertDialog,
   type EmbedInsertPayload,
@@ -193,12 +201,16 @@ function Toolbar({
   onOpenEmbed,
   onOpenPullQuote,
   onOpenGallery,
+  onInsertFromDevice,
+  insertFromDeviceBusy,
 }: {
   onOpenImage: () => void;
   onOpenLink: (currentUrl: string | null) => void;
   onOpenEmbed: () => void;
   onOpenPullQuote: () => void;
   onOpenGallery: () => void;
+  onInsertFromDevice: () => void;
+  insertFromDeviceBusy: boolean;
 }) {
   const [editor] = useLexicalComposerContext();
   const [blockType, setBlockType] = useState("paragraph");
@@ -321,7 +333,6 @@ function Toolbar({
     <Stack
       direction="row"
       spacing={0.25}
-      flexWrap="wrap"
       sx={{
         rowGap: 0.5,
         p: 1,
@@ -329,8 +340,15 @@ function Toolbar({
         borderColor: "divider",
         bgcolor: "background.paper",
         position: "sticky",
-        top: 0,
-        zIndex: 1,
+        // Sits flush under the AdminShell TopBar (h-16 = 64px, z-30).
+        // z=2 keeps the TopBar on top but outranks the editor body.
+        top: { xs: 56, md: 64 },
+        zIndex: 2,
+        // Below md, let the row scroll horizontally instead of wrapping into
+        // 3–4 stacked rows that eat screen height on phones.
+        flexWrap: { xs: "nowrap", md: "wrap" },
+        overflowX: { xs: "auto", md: "visible" },
+        boxShadow: "0 1px 0 rgba(15, 23, 42, 0.04)",
       }}
     >
       <IconButton
@@ -490,8 +508,16 @@ function Toolbar({
       >
         <HorizontalRuleIcon fontSize="small" />
       </IconButton>
-      <IconButton size="small" aria-label="Insert image" onClick={onOpenImage}>
+      <IconButton size="small" aria-label="Insert image from library" onClick={onOpenImage}>
         <ImageIcon fontSize="small" />
+      </IconButton>
+      <IconButton
+        size="small"
+        aria-label="Insert images from device"
+        onClick={onInsertFromDevice}
+        disabled={insertFromDeviceBusy}
+      >
+        <FileUploadOutlinedIcon fontSize="small" />
       </IconButton>
       <IconButton size="small" aria-label="Insert gallery" onClick={onOpenGallery}>
         <CollectionsIcon fontSize="small" />
@@ -520,28 +546,39 @@ function OnChangePlugin({
   return null;
 }
 
-function InsertUploadPlugin({ media }: { media: AdminMediaRef | null }) {
+function InsertUploadPlugin({
+  queue,
+  onDrained,
+}: {
+  /** Media to insert, in order. Each `queue` identity (new array ref) drains
+   *  all items in a single editor.update — same-ref renders are no-ops. */
+  queue: AdminMediaRef[];
+  onDrained?: () => void;
+}) {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    if (!media) return;
+    if (queue.length === 0) return;
     editor.update(() => {
-      const uploadNode = $createUploadNode({
-        relationTo: "media",
-        // Coerce numeric-string ids to numbers for the Postgres relationship
-        // (matches the article relationship handling on the server).
-        value: /^\d+$/.test(media.id) ? Number(media.id) : media.id,
-        src: media.url,
-        altText: media.alt,
-      });
+      const nodes = queue.map((media) =>
+        $createUploadNode({
+          relationTo: "media",
+          // Coerce numeric-string ids to numbers for the Postgres relationship
+          // (matches the article relationship handling on the server).
+          value: /^\d+$/.test(media.id) ? Number(media.id) : media.id,
+          src: media.url,
+          altText: media.alt,
+        }),
+      );
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        selection.insertNodes([uploadNode]);
+        selection.insertNodes(nodes);
       } else {
         // No caret (e.g. inserted from a toolbar button) — append to the root.
-        $insertNodes([uploadNode]);
+        $insertNodes(nodes);
       }
     });
-  }, [editor, media]);
+    onDrained?.();
+  }, [editor, queue, onDrained]);
   return null;
 }
 
@@ -654,6 +691,20 @@ function InsertGalleryPlugin({
   return null;
 }
 
+/** One-line toast description bucketing inline-upload failures by reason, so
+ *  a mixed set ("one too big, two wrong format") reads at a glance. */
+function summarizeInlineUploadFailures(failures: InlineUploadError[]): string {
+  const tooLarge = failures.filter((f) => f.kind === "too-large").length;
+  const unsupported = failures.filter((f) => f.kind === "unsupported-type").length;
+  const server = failures.filter((f) => f.kind === "server");
+
+  const parts: string[] = [];
+  if (tooLarge > 0) parts.push(`${tooLarge} exceeded the size limit`);
+  if (unsupported > 0) parts.push(`${unsupported} had an unsupported format`);
+  if (server.length > 0) parts.push(server[0].message);
+  return parts.join("; ");
+}
+
 export type AdminRichTextEditorProps = {
   label?: string;
   value?: Record<string, unknown> | null;
@@ -669,8 +720,54 @@ export function AdminRichTextEditor({
   error,
   required,
 }: AdminRichTextEditorProps) {
+  const { showToast } = useKiribeToast();
   const [imageDialog, setImageDialog] = useState(false);
-  const [pendingUpload, setPendingUpload] = useState<AdminMediaRef | null>(null);
+  const [pendingUploads, setPendingUploads] = useState<AdminMediaRef[]>([]);
+  // Throttles the "Insert from device" toolbar button so the operator can't
+  // double-pick a file picker and double-upload the same images.
+  const [isUploadingInline, setIsUploadingInline] = useState(false);
+  const deviceFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleInlineFiles = useCallback(
+    async (files: File[]) => {
+      if (files.length === 0 || isUploadingInline) return;
+      setIsUploadingInline(true);
+      showToast({
+        message: files.length === 1 ? "Uploading image…" : `Uploading ${files.length} images…`,
+        severity: "info",
+      });
+      try {
+        const results = await uploadInlineImages(files);
+        const refs = results
+          .filter((r): r is Extract<typeof r, { ok: true }> => r.ok)
+          .map((r) => r.media);
+        const failures = results
+          .filter((r): r is Extract<typeof r, { ok: false }> => !r.ok)
+          .map((r) => r.error);
+
+        if (refs.length > 0) {
+          // Set as a fresh array so InsertUploadPlugin picks up the change.
+          setPendingUploads(refs);
+        }
+
+        if (failures.length > 0) {
+          showToast({
+            message: `${failures.length} image${failures.length === 1 ? "" : "s"} didn't upload`,
+            description: summarizeInlineUploadFailures(failures),
+            severity: "error",
+          });
+        } else if (refs.length > 0) {
+          showToast({
+            message: refs.length === 1 ? "Image inserted" : `${refs.length} images inserted`,
+            severity: "success",
+          });
+        }
+      } finally {
+        setIsUploadingInline(false);
+      }
+    },
+    [isUploadingInline, showToast],
+  );
   const [linkDialog, setLinkDialog] = useState<{ url: string } | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [pendingLink, setPendingLink] = useState<{ url: string } | null>(null);
@@ -725,7 +822,7 @@ export function AdminRichTextEditor({
   );
 
   return (
-    <AdminCard sx={{ p: 0, overflow: "hidden" }}>
+    <AdminCard sx={{ p: 0, overflow: "visible" }}>
       <Box sx={{ p: 2, pb: 0 }}>
         <AdminFieldLabel label={label} required={required} />
       </Box>
@@ -739,6 +836,20 @@ export function AdminRichTextEditor({
           onOpenEmbed={() => setEmbedDialog(true)}
           onOpenPullQuote={() => setPullQuoteDialog(true)}
           onOpenGallery={() => setGalleryDialog(true)}
+          onInsertFromDevice={() => deviceFileInputRef.current?.click()}
+          insertFromDeviceBusy={isUploadingInline}
+        />
+        <input
+          ref={deviceFileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          style={{ display: "none" }}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            event.target.value = "";
+            if (files.length > 0) void handleInlineFiles(files);
+          }}
         />
         <Box
           sx={{
@@ -822,8 +933,25 @@ export function AdminRichTextEditor({
           <ListPlugin />
           <LinkPlugin />
           <HorizontalRulePlugin />
+          <PastePlugin
+            onImagesStripped={() =>
+              showToast({
+                message: "Pasted images weren't carried over",
+                description:
+                  "Re-insert them with the image or gallery button so they upload to our media library.",
+                severity: "info",
+              })
+            }
+          />
           <OnChangePlugin onChange={onChange} />
-          <InsertUploadPlugin media={pendingUpload} />
+          <InsertUploadPlugin
+            queue={pendingUploads}
+            onDrained={() => setPendingUploads([])}
+          />
+          <InlineDropPlugin
+            disabled={isUploadingInline}
+            onFiles={(files) => void handleInlineFiles(files)}
+          />
           <InsertLinkPlugin
             pending={pendingLink}
             onApplied={() => setPendingLink(null)}
@@ -862,8 +990,10 @@ export function AdminRichTextEditor({
             value={null}
             onChange={(media) => {
               if (media) {
-                setPendingUpload(media);
-                setTimeout(() => setPendingUpload(null), 0);
+                // New array ref so the plugin's effect refires even when the
+                // same media is re-inserted; InsertUploadPlugin resets us via
+                // onDrained after it consumes the queue.
+                setPendingUploads([media]);
               }
               setImageDialog(false);
             }}
