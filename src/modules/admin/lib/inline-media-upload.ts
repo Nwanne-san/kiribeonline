@@ -18,16 +18,32 @@ export type InlineUploadResult =
   | { ok: true; media: AdminMediaRef }
   | { ok: false; error: InlineUploadError };
 
+export type UploadMediaOptions = {
+  file: File;
+  /** Final alt text. For the inline fast-lane we derive it from the filename;
+   *  for library uploads the operator hand-edits it before submit. */
+  alt: string;
+  /** Optional rename — falls back to the file's own name, sanitized. */
+  filename?: string;
+  /** Marks the row as hidden from the Media Library grid. See the
+   *  `hiddenFromLibrary` field on the Media collection. */
+  hiddenFromLibrary?: boolean;
+};
+
 /**
- * Upload a single image straight to R2 from the article editor without
- * surfacing it in the Media Library grid. Alt text is derived from the
- * filename (operator can edit the resulting UploadNode's alt after insertion).
+ * Generic client-side upload primitive used by both the inline-from-editor
+ * fast lane (`uploadInlineImage`) and the Media Library's multi-file form
+ * (`uploadLibraryImage`). Handles pre-flight checks, browser-side downscale,
+ * filename sanitization, and the FormData POST to `/api/admin/media`.
  *
- * This is the "insert from device" / drop-onto-editor path — a fast lane
- * distinct from `MediaUploadForm`, which is tuned for curated library
- * uploads with hand-picked alt text.
+ * Returns a tagged union rather than throwing so batch callers can surface
+ * per-file failures without aborting the whole queue.
  */
-export async function uploadInlineImage(file: File): Promise<InlineUploadResult> {
+export async function uploadMediaImage(
+  options: UploadMediaOptions,
+): Promise<InlineUploadResult> {
+  const { file, alt, hiddenFromLibrary } = options;
+
   if (!ACCEPTED_MIME.has(file.type)) {
     return { ok: false, error: { kind: "unsupported-type", file } };
   }
@@ -40,21 +56,16 @@ export async function uploadInlineImage(file: File): Promise<InlineUploadResult>
     return { ok: false, error: { kind: "too-large", file } };
   }
 
-  const altFromName = file.name
-    .replace(/\.[^.]+$/, "")
-    .replace(/[-_]+/g, " ")
-    .trim();
-  const alt = altFromName.length > 0 ? altFromName : "Inline image";
-
-  const finalName = (file.name || "image").replace(/[/\\]/g, "-");
+  const finalName = (options.filename?.trim() || file.name || "image").replace(
+    /[/\\]/g,
+    "-",
+  );
   const renamed = new File([optimized], finalName, { type: optimized.type });
 
   const formData = new FormData();
   formData.append("file", renamed);
   formData.append("alt", alt);
-  // Keeps the upload off the Media Library grid — the article still renders
-  // it fine, it just isn't catalogued among library-visible assets.
-  formData.append("hiddenFromLibrary", "true");
+  if (hiddenFromLibrary) formData.append("hiddenFromLibrary", "true");
 
   const response = await fetch("/api/admin/media", {
     method: "POST",
@@ -83,6 +94,25 @@ export async function uploadInlineImage(file: File): Promise<InlineUploadResult>
     ok: true,
     media: { id: String(media.id), url: media.url, alt: media.alt ?? alt },
   };
+}
+
+/**
+ * Upload a single image straight to R2 from the article editor without
+ * surfacing it in the Media Library grid. Alt text is derived from the
+ * filename (operator can edit the resulting UploadNode's alt after insertion).
+ *
+ * This is the "insert from device" / drop-onto-editor path — a fast lane
+ * distinct from `MediaUploadForm`, which is tuned for curated library
+ * uploads with hand-picked alt text.
+ */
+export async function uploadInlineImage(file: File): Promise<InlineUploadResult> {
+  const altFromName = file.name
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .trim();
+  const alt = altFromName.length > 0 ? altFromName : "Inline image";
+
+  return uploadMediaImage({ file, alt, hiddenFromLibrary: true });
 }
 
 /** Upload multiple files in parallel (up to `concurrency` at a time). Preserves

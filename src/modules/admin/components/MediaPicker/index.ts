@@ -5,3 +5,4 @@ export {
   MediaUploadForm,
   type MediaLibraryGridProps,
 } from "./MediaPicker";
+export { MediaMultiUploadForm } from "./MediaMultiUploadForm";
