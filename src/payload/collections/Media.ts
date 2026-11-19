@@ -82,6 +82,20 @@ export const Media: CollectionConfig = {
         hidden: true,
       },
     },
+    {
+      // Set when an image is uploaded inline from the article editor ("Insert
+      // from device" / drag-drop onto the body). The file still lives in R2
+      // and is reachable by URL — it's just hidden from the Media Library
+      // grid so one-off body images don't swamp the gallery view.
+      name: "hiddenFromLibrary",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        readOnly: true,
+        description:
+          "Inline uploads from the article body are hidden from the library grid.",
+      },
+    },
   ],
   hooks: {
     beforeChange: [generateBlurPlaceholder],

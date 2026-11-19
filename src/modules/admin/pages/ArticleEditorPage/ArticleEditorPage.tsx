@@ -758,8 +758,16 @@ export function ArticleEditorPage({ articleId }: ArticleEditorPageProps) {
           </AdminPanel>
         </div>
 
-        {/* Sidebar column */}
-        <aside className="space-y-5">
+        {/* Sidebar column.
+            Sticky on desktop so publish/status/featured/categories/tags/SEO
+            stay reachable without scrolling to the top of a 5k-character
+            body. `top-20` (80px) sits just below the AdminShell TopBar
+            (sticky, h-16 = 64px) with ~16px of breathing room; the
+            parent grid's `lg:items-start` keeps the aside from stretching
+            to the body's height (which would break `position: sticky`).
+            Internal `overflow-y-auto` lets a long sidebar scroll on its
+            own when it's taller than the viewport. */}
+        <aside className="space-y-5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
           <AdminPanel title="Publish">
             <div className="space-y-4 p-5">
               <AdminField
