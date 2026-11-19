@@ -180,6 +180,10 @@ export interface Media {
   credit?: string | null;
   usageCount?: number | null;
   blurDataUrl?: string | null;
+  /**
+   * Inline uploads from the article body are hidden from the library grid.
+   */
+  hiddenFromLibrary?: boolean | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -665,6 +669,7 @@ export interface MediaSelect<T extends boolean = true> {
   credit?: T;
   usageCount?: T;
   blurDataUrl?: T;
+  hiddenFromLibrary?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

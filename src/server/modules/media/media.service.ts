@@ -42,6 +42,12 @@ export type ListMediaParams = {
    * treated as absent when empty so the library defaults to newest-first.
    */
   q?: string | null;
+  /**
+   * Include images that were uploaded inline from the article editor and
+   * marked `hiddenFromLibrary`. Defaults to false so the Media Library grid
+   * doesn't fill up with one-off body images.
+   */
+  includeHidden?: boolean;
 };
 
 export async function listMedia(
@@ -55,14 +61,30 @@ export async function listMedia(
   // Payload's `like` is a case-insensitive substring match on Postgres. Search
   // both the raw filename (what editors typed on upload) and the alt (what
   // they'd remember describing).
-  const where: Where | undefined = q
+  const searchClause: Where | null = q
     ? {
         or: [
           { filename: { like: q } },
           { alt: { like: q } },
         ],
       }
-    : undefined;
+    : null;
+
+  // Default view hides inline body uploads. `not_equals: true` matches both
+  // `false` and `null` (legacy rows pre-migration) without a second clause.
+  const hiddenClause: Where | null = params.includeHidden
+    ? null
+    : { hiddenFromLibrary: { not_equals: true } };
+
+  const clauses = [searchClause, hiddenClause].filter(
+    (clause): clause is Where => clause !== null,
+  );
+  const where: Where | undefined =
+    clauses.length === 0
+      ? undefined
+      : clauses.length === 1
+        ? clauses[0]
+        : { and: clauses };
 
   const result = await payload.find({
     collection: "media",

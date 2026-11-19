@@ -1,7 +1,9 @@
 "use client";
 
 import AddRounded from "@mui/icons-material/AddRounded";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiMethods } from "../../../../../types/service";
 import {
@@ -10,9 +12,11 @@ import {
   AdminPanel,
   Pill,
 } from "@/modules/admin/components/ui/AdminPrimitives";
+import { AdminConfirmDialog } from "@/modules/admin/components/ui/AdminDialog";
 import { TableSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
 import { AdminRoutes, adminRoute } from "@/routes/admin.routes";
 import { useQueryService } from "@/utils/hooks/useQueryService";
+import { useMutationService } from "@/utils/hooks/useMutationService";
 
 type ReelRow = { id: string; title: string; platform: string; published?: boolean };
 
@@ -30,6 +34,20 @@ export function ReelsListPage() {
   });
 
   const reels = data?.docs ?? [];
+
+  const [pendingDelete, setPendingDelete] = useState<ReelRow | null>(null);
+
+  const deleteReel = useMutationService<{ id: string }>({
+    service: (vars) => ({
+      path: `/api/admin/reels/${vars.id}`,
+      method: ApiMethods.DELETE,
+    }),
+    options: {
+      invalidateKeys: ["admin", "reels"],
+      successMessage: "Reel deleted.",
+      onSuccess: () => setPendingDelete(null),
+    },
+  });
 
   return (
     <div className="space-y-5">
@@ -87,19 +105,33 @@ export function ReelsListPage() {
                       )}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <AdminButton
-                        variant="secondary"
-                        size="sm"
-                        leftIcon={<EditRounded sx={{ fontSize: 14 }} />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(
-                            adminRoute(AdminRoutes.reelEdit, { id: String(reel.id) })
-                          );
-                        }}
-                      >
-                        Edit
-                      </AdminButton>
+                      <div className="flex items-center justify-end gap-2">
+                        <AdminButton
+                          variant="secondary"
+                          size="sm"
+                          leftIcon={<EditRounded sx={{ fontSize: 14 }} />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(
+                              adminRoute(AdminRoutes.reelEdit, { id: String(reel.id) })
+                            );
+                          }}
+                        >
+                          Edit
+                        </AdminButton>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPendingDelete(reel);
+                          }}
+                          aria-label={`Delete reel ${reel.title}`}
+                          className="grid h-8 w-8 place-items-center rounded-none text-muted-soft transition-colors hover:bg-[#fee4e2] hover:text-[#b42318] disabled:opacity-50"
+                          disabled={deleteReel.isPending}
+                        >
+                          <DeleteOutlineRounded sx={{ fontSize: 16 }} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -108,6 +140,35 @@ export function ReelsListPage() {
           </div>
         )}
       </AdminPanel>
+
+      <AdminConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete reel?"
+        description={
+          pendingDelete ? (
+            <>
+              <p>
+                Delete <strong>{pendingDelete.title}</strong>?
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                The reel is removed from the public site immediately. The
+                source video stays on its original platform —
+                {" "}
+                {PLATFORM_LABEL[pendingDelete.platform] ?? pendingDelete.platform}
+                {" "}
+                — and is unaffected.
+              </p>
+            </>
+          ) : null
+        }
+        confirmLabel="Delete reel"
+        tone="danger"
+        isPending={deleteReel.isPending}
+        onConfirm={() => {
+          if (pendingDelete) deleteReel.mutate({ id: pendingDelete.id });
+        }}
+        onCancel={() => !deleteReel.isPending && setPendingDelete(null)}
+      />
     </div>
   );
 }

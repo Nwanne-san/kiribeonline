@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       page: searchParams.get("page") ?? undefined,
       limit: searchParams.get("limit") ?? undefined,
       q: searchParams.get("q"),
+      includeHidden: searchParams.get("includeHidden") === "1",
     });
     return apiSuccess(result);
   } catch (error) {
@@ -61,6 +62,12 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file");
     const alt = String(formData.get("alt") ?? "").trim();
+    // Inline uploads from the article editor set this so they don't crowd
+    // the Media Library grid. Any string that isn't exactly "true" (the
+    // explicit opt-in the client sends) resolves to visible, so missing /
+    // malformed values default safely to the library-visible behavior.
+    const hiddenFromLibrary =
+      String(formData.get("hiddenFromLibrary") ?? "").toLowerCase() === "true";
 
     if (!(file instanceof File)) {
       return apiError("File is required.", 400);
@@ -97,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     const doc = await payload.create({
       collection: "media",
-      data: { alt },
+      data: { alt, hiddenFromLibrary },
       file: {
         data: buffer,
         // Store what the bytes actually are, not what the client claimed.

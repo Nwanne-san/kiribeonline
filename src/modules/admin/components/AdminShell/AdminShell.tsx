@@ -11,6 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminRoutes } from "@/routes/admin.routes";
 import { PublicRoutes } from "@/routes/public.routes";
+import { toAbsoluteUrl } from "@/lib/seo/site-url";
 import { ROLE_LABELS } from "@/server/access/roles";
 import {
   NavigationProgressProvider,
@@ -250,7 +251,11 @@ function Sidebar({
           icon={<PublicOutlined fontSize="small" />}
           label="View Website"
           collapsed={collapsed}
-          href={PublicRoutes.home}
+          // The admin lives on admin.kiribeonline.com — a plain `/` link opens
+          // the admin root, not the public site. Resolve against
+          // NEXT_PUBLIC_APP_URL (the canonical public origin) so this always
+          // points at kiribeonline.com regardless of host.
+          href={toAbsoluteUrl(PublicRoutes.home)}
         />
         <FooterRow
           icon={<LogoutRounded fontSize="small" />}
