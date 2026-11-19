@@ -17,7 +17,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { AdminButton, AdminPanel, formatCompact } from "@/modules/admin/components/ui/AdminPrimitives";
 import { AdminConfirmDialog } from "@/modules/admin/components/ui/AdminDialog";
 import { MediaGridSkeleton } from "@/modules/admin/components/ui/AdminSkeletons";
-import { MediaMetadataDialog, MediaUploadForm } from "@/modules/admin/components/MediaPicker";
+import { MediaMetadataDialog, MediaMultiUploadForm } from "@/modules/admin/components/MediaPicker";
 import type { AdminMediaRef } from "@/server/modules";
 import { ApiMethods } from "../../../../../types/service";
 import { adminMediaService, adminQueryKeys } from "@/services/admin.service";
@@ -47,13 +47,14 @@ export function MediaLibraryPage() {
     useDebouncedUrlParam();
 
   /**
-   * Upload preview dialog state. Files land here first — the operator sees
-   * dimensions, size, and confirms the alt text before the upload actually
-   * hits R2. `preloadedFile` is the drag-dropped or picked file; `null` means
-   * the dialog opened via the "Upload files" button with no pre-selection.
+   * Upload dialog state. Files land here first — one row per file, with alt
+   * text pre-filled from the filename stem so the operator can accept or
+   * edit. `preloadedFiles` carries the drag-dropped / picked batch;
+   * an empty array means the dialog opened via the header button with no
+   * pre-selection.
    */
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [preloadedFile, setPreloadedFile] = useState<File | null>(null);
+  const [preloadedFiles, setPreloadedFiles] = useState<File[]>([]);
   const [editing, setEditing] = useState<AdminMediaItem | null>(null);
 
   const {
@@ -122,26 +123,25 @@ export function MediaLibraryPage() {
   });
 
   /**
-   * Route every file that arrives (drag-drop or file picker) into the preview
-   * dialog. Pre-flight the type + size here so unsupported files never even
-   * open the dialog — a helpful toast is friendlier than a preview that can't
-   * be uploaded. Multi-file drops are not supported through the preview flow;
-   * the first valid file wins and the rest surface a note so the operator can
-   * queue them one at a time.
+   * Route every file that arrives (drag-drop or file picker) into the bulk
+   * upload dialog. We filter out unsupported types / oversized files up front
+   * so the dialog only renders rows the operator can actually submit — any
+   * rejections surface a toast naming the file.
    */
   const stageFiles = useCallback(
     (fileList: FileList | File[]) => {
       const files = Array.from(fileList);
       if (files.length === 0) return;
 
-      const first = files.find((file) => {
+      const valid: File[] = [];
+      for (const file of files) {
         if (!ACCEPTED_MIME.includes(file.type)) {
           showToast({
             message: "Unsupported file",
             description: `${file.name} is not a ${ACCEPTED_LABEL} image.`,
             severity: "error",
           });
-          return false;
+          continue;
         }
         if (file.size > MAX_UPLOAD_BYTES) {
           showToast({
@@ -149,34 +149,26 @@ export function MediaLibraryPage() {
             description: `${file.name} exceeds the ${MAX_UPLOAD_MB}MB limit.`,
             severity: "error",
           });
-          return false;
+          continue;
         }
-        return true;
-      });
-      if (!first) return;
-
-      if (files.length > 1) {
-        showToast({
-          message: "One at a time",
-          description: `Previewing “${first.name}”. Drop the rest after this one uploads.`,
-          severity: "info",
-        });
+        valid.push(file);
       }
+      if (valid.length === 0) return;
 
-      setPreloadedFile(first);
+      setPreloadedFiles(valid);
       setUploadOpen(true);
     },
     [showToast],
   );
 
   const openUploadDialog = useCallback(() => {
-    setPreloadedFile(null);
+    setPreloadedFiles([]);
     setUploadOpen(true);
   }, []);
 
   const closeUploadDialog = useCallback(() => {
     setUploadOpen(false);
-    setPreloadedFile(null);
+    setPreloadedFiles([]);
   }, []);
 
   const onDrop = useCallback(
@@ -211,18 +203,16 @@ export function MediaLibraryPage() {
     setEditing(item);
   }, []);
 
-  const handleUploaded = useCallback(
-    (media: AdminMediaRef) => {
-      // Refresh happens through the invalidate hook attached to the upload
-      // mutation inside MediaUploadForm. Close the preview and offer the
-      // metadata editor so the operator can polish alt/caption/credit if the
-      // preview default wasn't quite right.
-      closeUploadDialog();
-      const asItem = items.find((item) => item.id === media.id);
-      if (asItem) setEditing(asItem);
-      else refetch();
+  const handleBatchComplete = useCallback(
+    (uploaded: AdminMediaRef[]) => {
+      // MediaMultiUploadForm uploads via direct fetch (not useMutationService),
+      // so React Query doesn't auto-invalidate. Refetch once per batch rather
+      // than per file so the grid flashes once at the end. Leave the dialog
+      // open — the per-row "Uploaded" badges act as receipts the operator can
+      // scan before dismissing.
+      if (uploaded.length > 0) refetch();
     },
-    [closeUploadDialog, items, refetch],
+    [refetch],
   );
 
   return (
@@ -243,7 +233,7 @@ export function MediaLibraryPage() {
           onClick={openUploadDialog}
           leftIcon={<AddRounded sx={{ fontSize: 16 }} />}
         >
-          Upload file
+          Upload files
         </AdminButton>
       </div>
 
@@ -252,6 +242,7 @@ export function MediaLibraryPage() {
         ref={inputRef}
         type="file"
         accept={ACCEPT_ATTR}
+        multiple
         hidden
         onChange={(event) => {
           if (event.target.files?.length) stageFiles(event.target.files);
@@ -301,10 +292,10 @@ export function MediaLibraryPage() {
       >
         <CloudUploadOutlined sx={{ fontSize: 40 }} className="text-muted-soft" />
         <div className="font-semibold uppercase tracking-wide text-ink-secondary">
-          Drag &amp; drop or click to preview
+          Drag &amp; drop or click to upload
         </div>
         <p className="text-xs text-muted-soft">
-          {ACCEPTED_LABEL} up to {MAX_UPLOAD_MB}MB · one at a time
+          {ACCEPTED_LABEL} up to {MAX_UPLOAD_MB}MB · multiple files supported
         </p>
       </div>
 
@@ -377,12 +368,12 @@ export function MediaLibraryPage() {
         />
       ) : null}
 
-      <Dialog open={uploadOpen} onClose={closeUploadDialog} fullWidth maxWidth="sm">
-        <DialogTitle>Preview &amp; upload</DialogTitle>
+      <Dialog open={uploadOpen} onClose={closeUploadDialog} fullWidth maxWidth="md">
+        <DialogTitle>Upload images</DialogTitle>
         <DialogContent dividers>
-          <MediaUploadForm
-            onUploaded={handleUploaded}
-            initialFile={preloadedFile}
+          <MediaMultiUploadForm
+            initialFiles={preloadedFiles}
+            onComplete={handleBatchComplete}
           />
         </DialogContent>
       </Dialog>
